@@ -26,7 +26,7 @@ from django.conf import settings
 # ✅ Swagger schema configuration
 schema_view = get_schema_view(
    openapi.Info(
-      title="Restaurant API",
+      title="ADSO API",
       default_version="v1",
       description="API for managing restaurant operations",
       terms_of_service="https://www.example.com/terms/",
