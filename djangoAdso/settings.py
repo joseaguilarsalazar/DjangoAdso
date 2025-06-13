@@ -26,7 +26,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
-    'https://lp5-backend.jmtqu4.easypanel.host',
+    'https://flask-django-adso.jmtqu4.easypanel.host/',
 ]
 CORS_ALLOW_ALL_ORIGINS = True
 
