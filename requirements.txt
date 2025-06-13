@@ -1,0 +1,13 @@
+asgiref
+Django>=4.2
+djangorestframework
+djangorestframework-simplejwt
+pillow
+PyJWT
+sqlparse
+tzdata
+psycopg2-binary
+django-filter
+django-cors-headers
+Pillow
+drf-yasg
