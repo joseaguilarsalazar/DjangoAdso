@@ -27,8 +27,8 @@ from django.conf import settings
 schema_view = get_schema_view(
    openapi.Info(
       title="ADSO API",
-      default_version="v1",
-      description="API for managing restaurant operations",
+      default_version="v0.1",
+      description="API for managing adso operations",
       terms_of_service="https://www.example.com/terms/",
       contact=openapi.Contact(email="admin@example.com"),
       license=openapi.License(name="BSD License"),
