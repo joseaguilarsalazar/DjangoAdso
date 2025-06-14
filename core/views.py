@@ -43,6 +43,7 @@ class HistorialViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = HistorialFilter
     ordering_fields = '__all__'
+    permission_classes = [AllowAny]
 
 class TratamientoViewSet(viewsets.ModelViewSet):
     queryset = Tratamiento.objects.all()
@@ -50,6 +51,7 @@ class TratamientoViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = TratamientoFilter
     ordering_fields = '__all__'
+    permission_classes = [AllowAny]
 
 class EspecialidadViewSet(viewsets.ModelViewSet):
     queryset = Especialidad.objects.all()
@@ -57,6 +59,7 @@ class EspecialidadViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = EspecialidadFilter
     ordering_fields = '__all__'
+    permission_classes = [AllowAny]
 
 class CitaViewSet(viewsets.ModelViewSet):
     queryset = Cita.objects.all()
@@ -64,6 +67,7 @@ class CitaViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = CitaFilter
     ordering_fields = '__all__'
+    permission_classes = [AllowAny]
 
 class PagosViewSet(viewsets.ModelViewSet):
     queryset = Pagos.objects.all()
@@ -71,6 +75,7 @@ class PagosViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = PagosFilter
     ordering_fields = '__all__'
+    permission_classes = [AllowAny]
 
 
 @swagger_auto_schema(
