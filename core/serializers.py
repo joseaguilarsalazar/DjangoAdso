@@ -5,6 +5,13 @@ from .models import Historial, Tratamiento, Especialidad, Cita, Pagos, Paciente
 
 User = get_user_model()
 
+class UserSerialier(serializers.ModelSerializer):
+    class  Meta:
+        model = User
+        # excluimos campos sensibles o de sistema
+        fields = '__all__'
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
 
 class PacienteSerializer(serializers.ModelSerializer):
     class Meta:

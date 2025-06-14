@@ -16,7 +16,7 @@ from .models import (
 )
 from .serializers import (
     HistorialSerializer, TratamientoSerializer, EspecialidadSerializer, 
-    CitaSerializer, PagosSerializer
+    CitaSerializer, PagosSerializer, UserSerialier
 )
 from .filters import (
     HistorialFilter, TratamientoFilter, EspecialidadFilter,
@@ -27,6 +27,11 @@ from drf_yasg import openapi
 
 User = get_user_model()
 
+class UserViewset(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerialier
+    ordering_fields = '__all__'
+    permission_classes = [AllowAny]
 
 class PacienteViewSet(viewsets.ModelViewSet):
     queryset = Paciente.objects.all().order_by('id')
