@@ -7,7 +7,6 @@ router.register(r'pacientes', PacienteViewSet)
 router.register(r'historiales', HistorialViewSet)
 router.register(r'tratamientos', TratamientoViewSet)
 router.register(r'especialidades', EspecialidadViewSet)
-router.register(r'medicos', MedicoViewSet)
 router.register(r'citas', CitaViewSet)
 router.register(r'pagos', PagosViewSet)
 

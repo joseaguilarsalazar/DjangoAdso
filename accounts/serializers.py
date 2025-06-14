@@ -4,7 +4,6 @@ from django.contrib.auth.tokens import default_token_generator
 
 User = get_user_model()
 
-
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirmation = serializers.CharField(write_only=True)
@@ -14,7 +13,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'email', 'password', 'password_confirmation',
             'name', 'tipo_doc', 'num_doc', 'rol', 'estado',
-            'telefono', 'foto', 'id_medico'
+            'telefono', 'foto', 'direccion', 'especialidad'
         ]
         read_only_fields = ['id']
 
@@ -44,9 +43,11 @@ class RegisterSerializer(serializers.ModelSerializer):
             estado=validated_data['estado'],
             telefono=validated_data.get('telefono'),
             foto=validated_data.get('foto'),
-            id_medico=validated_data.get('id_medico'),
+            direccion=validated_data['direccion'],
+            especialidad=validated_data.get('especialidad')
         )
         return user
+
 
     
 class ForgotPasswordSerializer(serializers.Serializer):

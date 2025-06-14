@@ -1,5 +1,5 @@
 import django_filters
-from .models import Historial, Tratamiento, Especialidad, Medico, Cita, Pagos
+from .models import Historial, Tratamiento, Especialidad, Cita, Pagos
 
 class HistorialFilter(django_filters.FilterSet):
     class Meta:
@@ -30,15 +30,6 @@ class EspecialidadFilter(django_filters.FilterSet):
             'descripcion': ['icontains'],
         }
 
-class MedicoFilter(django_filters.FilterSet):
-    class Meta:
-        model = Medico
-        fields = {
-            'nombres': ['icontains'],
-            'apellidos': ['icontains'],
-            'DNI': ['exact'],
-            'especialidad': ['exact'],
-        }
 
 class CitaFilter(django_filters.FilterSet):
     class Meta:

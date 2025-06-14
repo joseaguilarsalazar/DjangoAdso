@@ -11,15 +11,15 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
 from .models import (
-    Historial, Tratamiento, Especialidad, Medico, Cita, Pagos
+    Historial, Tratamiento, Especialidad, Cita, Pagos
 )
 from .serializers import (
-    HistorialSerializer, TratamientoSerializer, EspecialidadSerializer,
-    MedicoSerializer, CitaSerializer, PagosSerializer
+    HistorialSerializer, TratamientoSerializer, EspecialidadSerializer, 
+    CitaSerializer, PagosSerializer
 )
 from .filters import (
     HistorialFilter, TratamientoFilter, EspecialidadFilter,
-    MedicoFilter, CitaFilter, PagosFilter
+     CitaFilter, PagosFilter
 )
 
 User = get_user_model()
@@ -53,13 +53,6 @@ class EspecialidadViewSet(viewsets.ModelViewSet):
     serializer_class = EspecialidadSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = EspecialidadFilter
-    ordering_fields = '__all__'
-
-class MedicoViewSet(viewsets.ModelViewSet):
-    queryset = Medico.objects.all()
-    serializer_class = MedicoSerializer
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_class = MedicoFilter
     ordering_fields = '__all__'
 
 class CitaViewSet(viewsets.ModelViewSet):
@@ -109,7 +102,7 @@ def validar_documento(request):
 @api_view(['POST'])
 def validar_dni(request):
     numero = request.data.get('numero')
-    existe = 'Si' if Medico.objects.filter(DNI=numero).exists() else 'No'
+    existe = 'Si' if User.objects.filter(num_doc=numero).exists() else 'No'
     return Response({'datos': existe})
 
 
