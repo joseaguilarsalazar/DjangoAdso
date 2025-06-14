@@ -19,7 +19,7 @@ from .serializers import (
 )
 from .filters import (
     HistorialFilter, TratamientoFilter, EspecialidadFilter,
-     CitaFilter, PagosFilter
+     CitaFilter, PagosFilter, PacienteFilter
 )
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -35,7 +35,7 @@ class PacienteViewSet(viewsets.ModelViewSet):
     queryset = Paciente.objects.all()
     serializer_class = PacienteSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_class = EspecialidadFilter
+    filterset_class = PacienteFilter
     ordering_fields = '__all__'
 
 
