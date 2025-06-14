@@ -9,6 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from rest_framework.permissions import AllowAny
 
 from .models import (
     Historial, Tratamiento, Especialidad, Cita, Pagos
@@ -28,15 +29,12 @@ User = get_user_model()
 
 
 class PacienteViewSet(viewsets.ModelViewSet):
-    """
-    Endpoints para /api/pacientes/
-    Filtra por rol='Paciente' y opcional ?q= para buscar num_doc o name.
-    """
     queryset = Paciente.objects.all()
     serializer_class = PacienteSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = PacienteFilter
     ordering_fields = '__all__'
+    permission_classes = [AllowAny]
 
 
 class HistorialViewSet(viewsets.ModelViewSet):
