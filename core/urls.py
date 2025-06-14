@@ -11,6 +11,7 @@ router.register(r'citas', CitaViewSet)
 router.register(r'pagos', PagosViewSet)
 router.register(r'users', UserViewset)
 
+
 urlpatterns = [
     path('', include(router.urls)),
     path('cargar-costo/', cargar_costo),
