@@ -21,6 +21,8 @@ from .filters import (
     HistorialFilter, TratamientoFilter, EspecialidadFilter,
      CitaFilter, PagosFilter
 )
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 User = get_user_model()
 
@@ -32,6 +34,9 @@ class PacienteViewSet(viewsets.ModelViewSet):
     """
     queryset = Paciente.objects.all()
     serializer_class = PacienteSerializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = EspecialidadFilter
+    ordering_fields = '__all__'
 
 
 class HistorialViewSet(viewsets.ModelViewSet):
@@ -70,6 +75,24 @@ class PagosViewSet(viewsets.ModelViewSet):
     ordering_fields = '__all__'
 
 
+@swagger_auto_schema(
+    method='post',
+    operation_summary="Cargar costo de tratamiento",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['tratamiento'],
+        properties={
+            'tratamiento': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del tratamiento'),
+        },
+    ),
+    responses={
+        200: openapi.Response(description="Costo del tratamiento", schema=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={'costo': openapi.Schema(type=openapi.TYPE_NUMBER)}
+        )),
+        404: openapi.Response(description="Tratamiento no encontrado")
+    }
+)
 @api_view(['POST'])
 def cargar_costo(request):
     tratamiento_id = request.data.get('tratamiento')
@@ -79,6 +102,24 @@ def cargar_costo(request):
     except Tratamiento.DoesNotExist:
         return Response({'error': 'Tratamiento no encontrado'}, status=404)
     
+@swagger_auto_schema(
+    method='post',
+    operation_summary="Buscar nombre de paciente por ID",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['paciente'],
+        properties={
+            'paciente': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del paciente'),
+        },
+    ),
+    responses={
+        200: openapi.Response(description="Nombre del paciente", schema=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={'nombres': openapi.Schema(type=openapi.TYPE_STRING)}
+        )),
+        404: openapi.Response(description="Paciente no encontrado")
+    }
+)
 @api_view(['POST'])
 def buscar_paciente(request):
     paciente_id = request.data.get('paciente')
@@ -89,6 +130,28 @@ def buscar_paciente(request):
         return Response({'error': 'Paciente no encontrado'}, status=404)
 
 
+
+@swagger_auto_schema(
+    method='post',
+    operation_summary="Validar documento y correo de paciente",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['numero', 'correo'],
+        properties={
+            'numero': openapi.Schema(type=openapi.TYPE_STRING, description='Número de documento'),
+            'correo': openapi.Schema(type=openapi.TYPE_STRING, format='email', description='Correo electrónico'),
+        },
+    ),
+    responses={
+        200: openapi.Response(description="Resultado de validación", schema=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'docu': openapi.Schema(type=openapi.TYPE_STRING, enum=['Si', 'No']),
+                'correo': openapi.Schema(type=openapi.TYPE_STRING, enum=['Si', 'No']),
+            }
+        ))
+    }
+)
 @api_view(['POST'])
 def validar_documento(request):
     numero = request.data.get('numero')
@@ -99,6 +162,26 @@ def validar_documento(request):
 
     return Response({'docu': docu, 'correo': email})
 
+
+@swagger_auto_schema(
+    method='post',
+    operation_summary="Validar si un DNI ya existe en el sistema",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['numero'],
+        properties={
+            'numero': openapi.Schema(type=openapi.TYPE_STRING, description='Número de documento a validar'),
+        },
+    ),
+    responses={
+        200: openapi.Response(description="Resultado de validación", schema=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'datos': openapi.Schema(type=openapi.TYPE_STRING, enum=['Si', 'No']),
+            }
+        ))
+    }
+)
 @api_view(['POST'])
 def validar_dni(request):
     numero = request.data.get('numero')
@@ -106,6 +189,27 @@ def validar_dni(request):
     return Response({'datos': existe})
 
 
+@swagger_auto_schema(
+    method='get',
+    operation_summary="Cargar calendario con citas",
+    responses={
+        200: openapi.Response(description="Lista de eventos de citas", schema=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'datos': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Items(type=openapi.TYPE_OBJECT, properties={
+                        'paciente': openapi.Schema(type=openapi.TYPE_STRING),
+                        'tratamiento': openapi.Schema(type=openapi.TYPE_STRING),
+                        'enfermedad': openapi.Schema(type=openapi.TYPE_STRING),
+                        'fecha': openapi.Schema(type=openapi.TYPE_STRING, format='date-time'),
+                        'color': openapi.Schema(type=openapi.TYPE_STRING),
+                    })
+                )
+            }
+        ))
+    }
+)
 @api_view(['GET'])
 def cargar_calendario(request):
     eventos = []
@@ -124,14 +228,60 @@ def cargar_calendario(request):
         })
     return Response({'datos': eventos})
 
+
+@swagger_auto_schema(
+    method='post',
+    operation_summary="Buscar paciente por DNI",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['dni'],
+        properties={
+            'dni': openapi.Schema(type=openapi.TYPE_STRING, description='Número de documento'),
+        },
+    ),
+    responses={
+        200: openapi.Response(description="Lista de pacientes", schema=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'datos': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(type=openapi.TYPE_OBJECT)  # optional: you can pass full serializer schema here
+                )
+            }
+        ))
+    }
+)
 @api_view(['POST'])
 def buscar_dni(request):
     dni = request.data.get('dni')
-    pacientes = Paciente.objects.filter(NumDoc=dni)
+    pacientes = Paciente.objects.filter(num_doc=dni)  # Fix field name if needed
     serializer = PacienteSerializer(pacientes, many=True)
     return Response({'datos': serializer.data})
 
 
+
+@swagger_auto_schema(
+    method='post',
+    operation_summary="Validar rango de horas entre citas de un paciente en la misma fecha",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['idpaciente', 'fecha', 'hora'],
+        properties={
+            'idpaciente': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del paciente'),
+            'fecha': openapi.Schema(type=openapi.TYPE_STRING, format='date', description='Fecha de la nueva cita (YYYY-MM-DD)'),
+            'hora': openapi.Schema(type=openapi.TYPE_STRING, pattern='^\\d{2}:\\d{2}$', description='Hora de la nueva cita (HH:MM)'),
+        },
+    ),
+    responses={
+        200: openapi.Response(description="Rango en horas respecto a la última cita registrada ese día", schema=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'rango': openapi.Schema(type=openapi.TYPE_INTEGER, description='Diferencia en horas entre citas'),
+            }
+        )),
+    },
+    tags=["Citas"]
+)
 @api_view(['POST'])
 def validar_registro(request):
     paciente_id = request.data.get('idpaciente')
