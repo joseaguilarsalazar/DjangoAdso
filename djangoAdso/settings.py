@@ -92,7 +92,7 @@ DATABASES = {
         'NAME': 'adsodb',
         'USER': 'postgres',
         'PASSWORD': '1234',
-        'HOST': 'flask_pg-db',  
+        'HOST': 'flask_pd-db',  
         'PORT': '5432',   
     }
 }
