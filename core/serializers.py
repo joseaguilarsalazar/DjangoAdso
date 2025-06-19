@@ -1,7 +1,23 @@
 # your_app/serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Historial, Tratamiento, Especialidad, Cita, Pagos, Paciente
+from .models import (
+    Historial, 
+    Tratamiento, 
+    Especialidad, 
+    Cita, 
+    Pagos, 
+    Paciente,
+    Clinica,
+    Alergia,
+    PacienteAlergia,
+    Banco,
+    Categoria,
+    PacienteTratamiento,
+    Enfermedad,
+    PacienteEvolucion,
+    PacienteEnfermedad,
+    )
 
 User = get_user_model()
 
@@ -50,4 +66,49 @@ class CitaSerializer(serializers.ModelSerializer):
 class PagosSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pagos
+        fields = '__all__'
+    
+class ClinicaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Clinica
+        fields = '__all__'
+
+class AlergiaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Alergia
+        fields = '__all__'
+
+class PacienteAlergiaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PacienteAlergia
+        fields = '__all__'
+
+class PacienteEnfermedadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PacienteEnfermedad
+        fields = '__all__'
+
+class BancoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Banco
+        fields = '__all__'
+
+class CategoriaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Categoria
+        fields = '__all__'
+
+class PacienteTratamientoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PacienteTratamiento
+        fields = '__all__'
+
+class EnfermedadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Enfermedad
+        fields = '__all__'
+
+class PacienteEvolucionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PacienteEvolucion
         fields = '__all__'

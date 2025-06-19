@@ -12,15 +12,42 @@ from django.shortcuts import get_object_or_404
 from rest_framework.permissions import AllowAny
 
 from .models import (
-    Historial, Tratamiento, Especialidad, Cita, Pagos
+    Historial, Tratamiento, Especialidad, Cita, Pagos,
+    Clinica,
+    Alergia,
+    PacienteAlergia,
+    Banco,
+    Categoria,
+    PacienteTratamiento,
+    Enfermedad,
+    PacienteEvolucion,
+    PacienteEnfermedad,
 )
 from .serializers import (
     HistorialSerializer, TratamientoSerializer, EspecialidadSerializer, 
-    CitaSerializer, PagosSerializer, UserSerialier
+    CitaSerializer, PagosSerializer, UserSerialier,
+    ClinicaSerializer,
+    AlergiaSerializer,
+    PacienteAlergiaSerializer,
+    BancoSerializer,
+    CategoriaSerializer,
+    PacienteTratamientoSerializer,
+    EnfermedadSerializer,
+    PacienteEvolucionSerializer,
+    PacienteEnfermedadSerializer,
 )
 from .filters import (
     HistorialFilter, TratamientoFilter, EspecialidadFilter,
-     CitaFilter, PagosFilter, PacienteFilter
+     CitaFilter, PagosFilter, PacienteFilter,
+     ClinicaFilter,
+    AlergiaFilter,
+    PacienteAlergiaFilter,
+    BancoFilter,
+    CategoriaFilter,
+    PacienteTratamientoFilter,
+    EnfermedadFilter,
+    PacienteEvolucionFilter,
+    PacienteEnfermedadFilter,
 )
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -82,6 +109,79 @@ class PagosViewSet(viewsets.ModelViewSet):
     ordering_fields = '__all__'
     permission_classes = [AllowAny]
 
+class ClinicaViewSet(viewsets.ModelViewSet):
+    queryset = Clinica.objects.all()
+    serializer_class = ClinicaSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ClinicaFilter
+    ordering_fields = '__all__'
+    permission_classes = [AllowAny]
+
+class AlergiaViewSet(viewsets.ModelViewSet):
+    queryset = Alergia.objects.all()
+    serializer_class = AlergiaSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = AlergiaFilter
+    ordering_fields = '__all__'
+    permission_classes = [AllowAny]
+
+class PacienteAlergiaViewSet(viewsets.ModelViewSet):
+    queryset = PacienteAlergia.objects.all()
+    serializer_class = PacienteAlergiaSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = PacienteAlergiaFilter
+    ordering_fields = '__all__'
+    permission_classes = [AllowAny]
+
+class BancoViewSet(viewsets.ModelViewSet):
+    queryset = Banco.objects.all()
+    serializer_class = BancoSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = BancoFilter
+    ordering_fields = '__all__'
+    permission_classes = [AllowAny]
+
+class PacienteTratamientoViewSet(viewsets.ModelViewSet):
+    queryset = PacienteTratamiento.objects.all()
+    serializer_class = PacienteTratamientoSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = PacienteTratamientoFilter
+    ordering_fields = '__all__'
+    permission_classes = [AllowAny]
+
+class CategoriaViewSet(viewsets.ModelViewSet):
+    queryset = Categoria.objects.all()
+    serializer_class = CategoriaSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = CategoriaFilter
+    ordering_fields = '__all__'
+    permission_classes = [AllowAny]
+
+class EnfermedadViewSet(viewsets.ModelViewSet):
+    queryset = Enfermedad.objects.all()
+    serializer_class = EnfermedadSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = EnfermedadFilter
+    ordering_fields = '__all__'
+    permission_classes = [AllowAny]
+
+
+class PacienteEvolucionViewSet(viewsets.ModelViewSet):
+    queryset = PacienteEvolucion.objects.all()
+    serializer_class = PacienteEvolucionSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = PacienteEvolucionFilter
+    ordering_fields = '__all__'
+    permission_classes = [AllowAny]
+
+
+class PacienteEnfermedadViewSet(viewsets.ModelViewSet):
+    queryset = PacienteEnfermedad.objects.all()
+    serializer_class = PacienteEnfermedadSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = PacienteEnfermedadFilter
+    ordering_fields = '__all__'
+    permission_classes = [AllowAny]
 
 @swagger_auto_schema(
     method='post',
