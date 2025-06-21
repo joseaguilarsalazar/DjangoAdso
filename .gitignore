@@ -16,6 +16,8 @@ staticfiles/
 .env
 .env.*
 
+*.sql
+
 # Local dev files
 *.sqlite3
 *.local

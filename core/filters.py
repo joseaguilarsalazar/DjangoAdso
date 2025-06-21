@@ -17,16 +17,41 @@ from .models import (
     PacienteEnfermedad,)
 
 class PacienteFilter(django_filters.FilterSet):
-    nombre = django_filters.CharFilter(lookup_expr='icontains')
-    tipo_doc = django_filters.CharFilter()
-    num_doc = django_filters.CharFilter()
-    sexo = django_filters.ChoiceFilter(choices=Paciente._meta.get_field('sexo').choices)
-    fecha_nac__gte = django_filters.DateFilter(field_name='fecha_nac', lookup_expr='gte')
-    fecha_nac__lte = django_filters.DateFilter(field_name='fecha_nac', lookup_expr='lte')
+    nomb_pac = django_filters.CharFilter(lookup_expr='icontains')
+    apel_pac = django_filters.CharFilter(lookup_expr='icontains')
+    edad_pac = django_filters.CharFilter(lookup_expr='exact')
+    ocupacion = django_filters.CharFilter(lookup_expr='icontains')
+    lugar_nacimiento = django_filters.CharFilter(lookup_expr='icontains')
+    informacion_clinica = django_filters.CharFilter(lookup_expr='icontains')
+    dire_pac = django_filters.CharFilter(lookup_expr='icontains')
+    telf_pac = django_filters.CharFilter(lookup_expr='icontains')
+    dni_pac = django_filters.CharFilter(lookup_expr='icontains')
+    fena_pac = django_filters.DateFromToRangeFilter()
+    fecha_registro = django_filters.DateTimeFromToRangeFilter()
+    civi_pac = django_filters.CharFilter(lookup_expr='exact')
+    afil_pac = django_filters.CharFilter(lookup_expr='icontains')
+    aler_pac = django_filters.CharFilter(lookup_expr='icontains')
+    emai_pac = django_filters.CharFilter(lookup_expr='icontains')
+    titu_pac = django_filters.CharFilter(lookup_expr='icontains')
+    pais_id = django_filters.NumberFilter()
+    departamento_id = django_filters.NumberFilter()
+    provincia_id = django_filters.NumberFilter()
+    distrito_id = django_filters.NumberFilter()
+    observacion = django_filters.CharFilter(lookup_expr='icontains')
+    detalleodontograma_pac = django_filters.CharFilter(lookup_expr='icontains')
+    sexo = django_filters.ChoiceFilter(choices=Paciente.Sexo.choices)
+    esta_pac = django_filters.ChoiceFilter(choices=Paciente.Estado.choices)
+    estudios_pac = django_filters.ChoiceFilter(choices=Paciente.Estudios.choices)
 
     class Meta:
         model = Paciente
-        fields = ['tipo_doc', 'num_doc', 'nombre', 'sexo', 'fecha_nac__gte', 'fecha_nac__lte']
+        fields = [
+            'nomb_pac', 'apel_pac', 'edad_pac', 'ocupacion', 'lugar_nacimiento',
+            'informacion_clinica', 'dire_pac', 'telf_pac', 'dni_pac', 'fena_pac',
+            'fecha_registro', 'civi_pac', 'afil_pac', 'aler_pac', 'emai_pac',
+            'titu_pac', 'pais_id', 'departamento_id', 'provincia_id', 'distrito_id',
+            'observacion', 'estudios_pac', 'detalleodontograma_pac', 'sexo', 'esta_pac'
+        ]
 
 
 class HistorialFilter(django_filters.FilterSet):

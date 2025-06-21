@@ -52,6 +52,9 @@ class Clinica(models.Model):
     cod_plan = models.IntegerField("Código de plan")
     esta_clin = models.CharField("Estado", max_length=1, blank=True, null=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     def __str__(self):
         return self.nomb_clin
 
@@ -102,7 +105,6 @@ class Paciente(models.Model):
     foto_paciente         = models.CharField("Foto (ruta)", max_length=255, blank=True, null=True)
     fena_pac              = models.DateField("Fecha de nacimiento", blank=True, null=True)
     fecha_registro        = models.DateTimeField("Fecha de registro", auto_now_add=True, blank=True, null=True)
-    sexo_pac              = models.CharField("Sexo", max_length=1, choices=[("M", "Masculino"), ("F", "Femenino")], blank=True, null=True)
     civi_pac              = models.CharField("Estado civil", max_length=1, blank=True, null=True)
     afil_pac              = models.CharField("Afiliación", max_length=30, blank=True, null=True)
     aler_pac              = models.CharField("Alergias", max_length=120, blank=True, null=True)
@@ -113,9 +115,9 @@ class Paciente(models.Model):
     provincia_id          = models.IntegerField("ID provincia", blank=True, null=True)
     distrito_id           = models.IntegerField("ID distrito", blank=True, null=True)
     observacion           = models.CharField("Observaciones", max_length=100, blank=True, null=True)
-    esta_pac              = models.CharField("Estado", max_length=1, default='S')
+    
     registro_pac          = models.DateTimeField("Registro paciente", auto_now_add=True, blank=True, null=True)
-    estudios_pac          = models.CharField("Estudios", max_length=100, blank=True, null=True)
+    
     detalleodontograma_pac = models.TextField("Detalle Odontograma", blank=True, null=True)
 
     class Sexo(models.TextChoices):
@@ -123,12 +125,33 @@ class Paciente(models.Model):
         FEMENINO = 'FEMENINO', 'Femenino'
 
     sexo = models.CharField(max_length=100, choices=Sexo, default=Sexo.MASCULINO)
+
+    class Estado(models.TextChoices):
+        ACTIVO = 'ACTIVO', 'Activo'
+        INACTIVO = 'INACTIVO', 'Inactivo'
+
+    esta_pac              = models.CharField("Estado", max_length=8, choices=Estado, default=Estado.ACTIVO)
+
+    class Estudios(models.TextChoices):
+        NINGUNO = 'NINGUNO', 'Ninguno'
+        PRIMARIA = 'PRIMARIA', 'Primaria'
+        SECUNDARIA = 'SECUNDARIA', 'Secundaria'
+        TECNICO = 'TECNICO', 'Tecnico'
+        UNIVERSITARIO = 'UNIVERSITARIO', 'Universitario'
+
+    estudios_pac          = models.CharField("Estudios", max_length=100, choices=Estudios, default=Estudios.SECUNDARIA)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return f"{self.nomb_pac} {self.apel_pac} ({self.dni_pac})"
     
 class Alergia(models.Model):
     nombre_ale = models.CharField("Nombre de la alergia", max_length=200, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.nombre_ale or f"Alergia #{self.cod_ale}"
@@ -138,6 +161,9 @@ class PacienteAlergia(models.Model):
     alergia = models.ForeignKey(Alergia, on_delete=models.CASCADE)
     observacion = models.TextField(max_length=200)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
 class Banco(models.Model):
     descripcion = models.CharField("Descripción", max_length=80, blank=True, null=True)
     
@@ -146,6 +172,9 @@ class Banco(models.Model):
         (2, "Inactivo"),
     ]
     estado = models.IntegerField("Estado", choices=ESTADO_CHOICES, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.descripcion or f"Banco #{self.cod_banco}"
