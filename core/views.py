@@ -1,5 +1,5 @@
 # your_app/views.py
-from rest_framework import viewsets
+from rest_framework import viewsets, views
 from django.contrib.auth import get_user_model
 from .models import Historial, Paciente
 from .serializers import PacienteSerializer, HistorialSerializer
@@ -409,27 +409,28 @@ def validar_registro(request):
     return Response({'rango': rango})
 
 
-@api_view(['POST'])
-def envio_mensaje_test(request):
+class envio_mensaje(views.APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        url = 'https://evol-evolution-api.jmtqu4.easypanel.host/message/sendText/B4412727E411-4FA8-9AD6-6F9A86E2A423'
 
-    url = 'https://evol-evolution-api.jmtqu4.easypanel.host/message/sendText/B4412727E411-4FA8-9AD6-6F9A86E2A423'
+        pacientes = Paciente.objects.all()
 
-    pacientes = Paciente.objects.all()
+        response = requests.post(
+            url,
+            json={
+                "number": "51920891387",
+                "text": "Hola mi amor"
+            },
+            headers={
+                "Content-Type": "application/json",
+                "apikey": evo_key
+            }
+        )
 
-    response = requests.post(
-        url,
-        json={
-            "number": "51920891387",
-            "text": "Hola mi amor"
-        },
-        headers={
-            "Content-Type": "application/json",
-            "apikey": evo_key
-        }
-    )
-
-    if response.status_code == 200:
-        return Response({'exito' : 'se envio el mensaje'}, status=status.HTTP_200_OK)
-    else:
-        return Response({'error' : response.text}, status=status.HTTP_400_BAD_REQUEST)
+        if response.status_code == 200:
+            return Response({'exito' : 'se envio el mensaje'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error' : response.text}, status=status.HTTP_400_BAD_REQUEST)
 
