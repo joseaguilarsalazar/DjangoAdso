@@ -30,5 +30,5 @@ urlpatterns = [
     path('calendario/', cargar_calendario),
     path('uscar-dni/', buscar_dni),
     path('validar-registro/', validar_registro),
-    path('envio_mensaje_test/', envio_mensaje.as_view()),
+    path('envio_mensaje_test/', EnvioMensajeAPIView.as_view()),
 ]
