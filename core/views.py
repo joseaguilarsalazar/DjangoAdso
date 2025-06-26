@@ -413,7 +413,7 @@ class envio_mensaje(views.APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
-        url = 'https://evol-evolution-api.jmtqu4.easypanel.host/message/sendText/B4412727E411-4FA8-9AD6-6F9A86E2A423'
+        url = 'https://evol-evolution-api.jmtqu4.easypanel.host/message/sendText/0B9757007A04-4B0D-B2F5-AACE80FDB387'
 
         pacientes = Paciente.objects.all()
 
