@@ -25,7 +25,7 @@ class Command(BaseCommand):
     help = 'Importa pacientes desde un archivo CSV'
 
     def handle(self, *args, **kwargs):
-        file_path = 'core\management\commands\adsoperu_dental.csv'
+        file_path = './adsoperu_dental.csv'
         count = 0
 
         try:
