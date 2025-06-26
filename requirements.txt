@@ -11,3 +11,4 @@ django-filter
 django-cors-headers
 Pillow
 drf-yasg
+django-environ

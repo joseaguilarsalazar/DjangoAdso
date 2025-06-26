@@ -1,6 +1,5 @@
 # your_app/views.py
 from rest_framework import viewsets
-from django.db.models import Q
 from django.contrib.auth import get_user_model
 from .models import Historial, Paciente
 from .serializers import PacienteSerializer, HistorialSerializer
@@ -8,8 +7,10 @@ from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
 from rest_framework.permissions import AllowAny
+import requests
+from djangoAdso.settings import evo_key
+from rest_framework import status
 
 from .models import (
     Historial, Tratamiento, Especialidad, Cita, Pagos,
@@ -406,3 +407,29 @@ def validar_registro(request):
         rango = abs(int((nueva_fecha - ultima_fecha).total_seconds() // 3600))
 
     return Response({'rango': rango})
+
+
+@api_view(['POST'])
+def envio_mensaje_test(request):
+
+    url = 'https://evol-evolution-api.jmtqu4.easypanel.host/message/sendText/B4412727E411-4FA8-9AD6-6F9A86E2A423'
+
+    pacientes = Paciente.objects.all()
+
+    response = requests.post(
+        url,
+        json={
+            "number": "51920891387",
+            "text": "Hola mi amor"
+        },
+        headers={
+            "Content-Type": "application/json",
+            "apikey": evo_key
+        }
+    )
+
+    if response.status_code == 200:
+        return Response({'exito' : 'se envio el mensaje'}, status=status.HTTP_200_OK)
+    else:
+        return Response({'error' : response.text}, status=status.HTTP_400_BAD_REQUEST)
+
