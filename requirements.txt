@@ -15,3 +15,4 @@ django-environ
 requests
 boto3 
 django-storages
+whitenoise
