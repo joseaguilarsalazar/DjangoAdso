@@ -13,3 +13,5 @@ Pillow
 drf-yasg
 django-environ
 requests
+boto3 
+django-storages
