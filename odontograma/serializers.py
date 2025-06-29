@@ -22,7 +22,7 @@ class DienteOdontogramaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DienteOdontograma
-        fields = fields = '__all__' + ['icono_url'] # or list all manually + "icono_url"
+        fields = fields = '__all__'
         read_only_fields = ['id', 'created_at', 'updated_at']
 
     def get_icono_url(self, obj):
