@@ -8,10 +8,10 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r'pacientes', DienteViewSet)
-router.register(r'pacientes', OdontogramaViewSet)
-router.register(r'pacientes', CasoMultidentalViewSet)
-router.register(r'pacientes', DienteOdontogramaViewSet)
+router.register(r'dientes', DienteViewSet)
+router.register(r'odontogramas', OdontogramaViewSet)
+router.register(r'casos_multidental', CasoMultidentalViewSet)
+router.register(r'diente_odontograma', DienteOdontogramaViewSet)
 
 
 urlpatterns = [
