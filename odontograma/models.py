@@ -29,7 +29,8 @@ class DienteOdontograma(models.Model):
     diente = models.ForeignKey(Diente, on_delete=models.SET_NULL, null=True)
     odontograma = models.ForeignKey(Odontograma, on_delete=models.CASCADE)
     iconoModificado = models.ImageField(upload_to=odontograma_upload_path, null=True, blank=True)
-    datosRecuadro = models.CharField(max_length=3, null=True, blank=True)
+    datosRecuadro = models.CharField(max_length=3, default="", blank=True)
+
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
