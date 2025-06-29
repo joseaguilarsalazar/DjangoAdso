@@ -17,6 +17,9 @@ class Diente(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return f'Diente {self.numeroDiente}'
+
 def odontograma_upload_path(instance, filename):
     ext = filename.split('.')[-1]
     filename = f"{instance.odontograma.paciente.id}_{instance.diente.numeroDiente}.{ext}"
