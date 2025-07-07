@@ -45,6 +45,7 @@ urlpatterns = [
     path('api/', include('core.urls')),
     path('api/', include('accounts.urls')),
     path('api/', include('odontograma.urls')),
+    path('api/', include('transactions.urls')),
 
     # ✅ Swagger and Redoc URLs<
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

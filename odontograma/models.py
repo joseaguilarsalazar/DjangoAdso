@@ -6,6 +6,8 @@ import os
 # Create your models here.
 class Odontograma(models.Model):
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
+    especificaciones = models.TextField(max_length=2000, null=True, blank=True)
+    observaciones = models.TextField(max_length=2000, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

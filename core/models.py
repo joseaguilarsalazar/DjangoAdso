@@ -8,10 +8,12 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class Especialidad(models.Model):
     nombre = models.CharField(max_length=200, null=True)
+    honorariosPorcentaje = models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(1.0)])
     descripcion = models.CharField(max_length=200, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -236,7 +238,7 @@ class Cita(models.Model):
         PARCIAL = 'PARCIAL', 'Parcial'
         PAGADO = 'PAGADO', 'Pagado'
 
-    tratamiento = models.ForeignKey('Tratamiento', on_delete=models.SET_NULL, null=True)
+    tratamiento = models.ForeignKey(Tratamiento, on_delete=models.SET_NULL, null=True)
     medico = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     paciente = models.ForeignKey(Paciente, on_delete=models.SET_NULL, null=True)
     fecha = models.DateField()
@@ -262,17 +264,6 @@ class PacienteTratamiento(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-class Pagos(models.Model):
-    pacienteTratamiento = models.ForeignKey(PacienteTratamiento, on_delete=models.SET_NULL, null=True)
-    monto = models.FloatField()
-    paciente = models.ForeignKey(Paciente, on_delete=models.SET_NULL, null=True)
-    fechaVencimiento = models.DateField(null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f'{self.paciente.__str__} : {self.created_at}'
     
 
 class Enfermedad(models.Model):

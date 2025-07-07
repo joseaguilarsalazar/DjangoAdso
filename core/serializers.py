@@ -6,7 +6,6 @@ from .models import (
     Tratamiento, 
     Especialidad, 
     Cita, 
-    Pagos, 
     Paciente,
     Clinica,
     Alergia,
@@ -62,11 +61,6 @@ class CitaSerializer(serializers.ModelSerializer):
         if not value.medico:
             raise serializers.ValidationError("El usuario seleccionado no está marcado como médico.")
         return value
-
-class PagosSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Pagos
-        fields = '__all__'
     
 class ClinicaSerializer(serializers.ModelSerializer):
     class Meta:

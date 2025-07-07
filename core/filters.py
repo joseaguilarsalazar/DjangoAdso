@@ -4,7 +4,6 @@ from .models import (
     Tratamiento, 
     Especialidad, 
     Cita, 
-    Pagos, 
     Paciente,
     Clinica,
     Alergia,
@@ -94,16 +93,6 @@ class CitaFilter(django_filters.FilterSet):
             'fecha': ['gte', 'lte'],
             'estadoCita': ['exact'],
             'estadoPago': ['exact'],
-        }
-
-class PagosFilter(django_filters.FilterSet):
-    class Meta:
-        model = Pagos
-        fields = {
-            'pacienteTratamiento': ['exact'],
-            'paciente': ['exact'],
-            'monto': ['gte', 'lte'],
-            'created_at': ['date__gte', 'date__lte'],
         }
 
 
