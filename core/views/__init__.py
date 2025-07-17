@@ -25,6 +25,7 @@ from .predoneViews import (
     buscar_paciente,
 )
 from .EnvioMensajeAPIView import EnvioMensajeAPIView
+from .MedicosListView import MedicoListAPIView
 
 __all__ = [
     # coreViewsets
@@ -53,6 +54,7 @@ __all__ = [
     "buscar_dni",
     "buscar_paciente",
 
-    # EnvioMensajeAPIView
+    #other views
     "EnvioMensajeAPIView",
+    'MedicoListAPIView',
 ]

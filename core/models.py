@@ -258,13 +258,6 @@ class Cita(models.Model):
     def __str__(self):
         return f"Cita {self.paciente.name} {self.paciente.last_name} {self.fecha}"
     
-class PacienteTratamiento(models.Model):
-    paciente = models.ForeignKey(Paciente, on_delete=models.SET_NULL, null=True)
-    tratamiento = models.ForeignKey(Tratamiento, on_delete=models.SET_NULL, null=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
 
 class Enfermedad(models.Model):
     descripcion = models.CharField("Descripción", max_length=200, blank=True, null=True)

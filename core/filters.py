@@ -10,7 +10,6 @@ from .models import (
     PacienteAlergia,
     Banco,
     Categoria,
-    PacienteTratamiento,
     Enfermedad,
     PacienteEvolucion,
     PacienteEnfermedad,)
@@ -125,14 +124,6 @@ class PacienteEnfermedadFilter(django_filters.FilterSet):
         fields = ['paciente', 'enfermedad']
 
 
-class PacienteTratamientoFilter(django_filters.FilterSet):
-    paciente = django_filters.NumberFilter(field_name='paciente__id')
-    tratamiento = django_filters.NumberFilter(field_name='tratamiento__id')
-    created_at = django_filters.DateFromToRangeFilter()
-
-    class Meta:
-        model = PacienteTratamiento
-        fields = ['paciente', 'tratamiento', 'created_at']
 
 
 class CategoriaFilter(django_filters.FilterSet):

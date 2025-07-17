@@ -12,7 +12,6 @@ from .models import (
     PacienteAlergia,
     Banco,
     Categoria,
-    PacienteTratamiento,
     Enfermedad,
     PacienteEvolucion,
     PacienteEnfermedad,
@@ -20,7 +19,7 @@ from .models import (
 
 User = get_user_model()
 
-class UserSerialier(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class  Meta:
         model = User
         # excluimos campos sensibles o de sistema
@@ -90,11 +89,6 @@ class BancoSerializer(serializers.ModelSerializer):
 class CategoriaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Categoria
-        fields = '__all__'
-
-class PacienteTratamientoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PacienteTratamiento
         fields = '__all__'
 
 class EnfermedadSerializer(serializers.ModelSerializer):

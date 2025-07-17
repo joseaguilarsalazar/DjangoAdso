@@ -12,7 +12,6 @@ router.register(r'clinicas', ClinicaViewSet)
 router.register(r'alergias', AlergiaViewSet)
 router.register(r'paciente_alergias', PacienteAlergiaViewSet)
 router.register(r'bancos', BancoViewSet)
-router.register(r'pacienteTratamiento', PacienteTratamientoViewSet)
 router.register(r'categorias', CategoriaViewSet)
 router.register(r'enfermedades', EnfermedadViewSet)
 router.register(r'paciente_evoluciones', PacienteEvolucionViewSet)
@@ -30,4 +29,5 @@ urlpatterns = [
     path('uscar-dni/', buscar_dni),
     path('validar-registro/', validar_registro),
     path('envio_mensaje_test/', EnvioMensajeAPIView.as_view()),
+    path('medico_list/', MedicoListAPIView.as_view()),
 ]

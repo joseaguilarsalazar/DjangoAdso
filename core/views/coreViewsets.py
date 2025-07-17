@@ -14,7 +14,6 @@ from ..models import (
     PacienteAlergia,
     Banco,
     Categoria,
-    PacienteTratamiento,
     Enfermedad,
     PacienteEvolucion,
     PacienteEnfermedad,
@@ -28,7 +27,6 @@ from ..serializers import (
     PacienteAlergiaSerializer,
     BancoSerializer,
     CategoriaSerializer,
-    PacienteTratamientoSerializer,
     EnfermedadSerializer,
     PacienteEvolucionSerializer,
     PacienteEnfermedadSerializer,
@@ -41,7 +39,6 @@ from ..filters import (
     PacienteAlergiaFilter,
     BancoFilter,
     CategoriaFilter,
-    PacienteTratamientoFilter,
     EnfermedadFilter,
     PacienteEvolucionFilter,
     PacienteEnfermedadFilter,
@@ -125,14 +122,6 @@ class BancoViewSet(viewsets.ModelViewSet):
     serializer_class = BancoSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = BancoFilter
-    ordering_fields = '__all__'
-    permission_classes = [AllowAny]
-
-class PacienteTratamientoViewSet(viewsets.ModelViewSet):
-    queryset = PacienteTratamiento.objects.all()
-    serializer_class = PacienteTratamientoSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = PacienteTratamientoFilter
     ordering_fields = '__all__'
     permission_classes = [AllowAny]
 
