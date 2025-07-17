@@ -21,7 +21,7 @@ from ..models import (
 from ..serializers import (
     PacienteSerializer,
     HistorialSerializer, TratamientoSerializer, EspecialidadSerializer, 
-    CitaSerializer, UserSerialier,
+    CitaSerializer, UserSerializer,
     ClinicaSerializer,
     AlergiaSerializer,
     PacienteAlergiaSerializer,
@@ -48,7 +48,7 @@ User = get_user_model()
 
 class UserViewset(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerialier
+    serializer_class = UserSerializer
     ordering_fields = '__all__'
     permission_classes = [AllowAny]
 
