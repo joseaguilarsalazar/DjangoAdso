@@ -12,7 +12,6 @@ from .coreViewsets import (
     PacienteAlergiaViewSet,
     PacienteEvolucionViewSet,
     PacienteEnfermedadViewSet,
-    PacienteTratamientoViewSet,
     BancoViewSet,
 )
 from .predoneViews import (
@@ -43,7 +42,6 @@ __all__ = [
     "PacienteAlergiaViewSet",
     "PacienteEvolucionViewSet",
     "PacienteEnfermedadViewSet",
-    "PacienteTratamientoViewSet",
 
     # predoneViews
     "validar_dni",
