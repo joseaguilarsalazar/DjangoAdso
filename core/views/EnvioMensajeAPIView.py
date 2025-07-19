@@ -15,17 +15,21 @@ class EnvioMensajeAPIView(views.APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        api_url = 'https://evol-evolution-api.jmtqu4.easypanel.host/message/sendText/test_instance'
+        api_url = 'https://evolution-api-evolution-api.4oghcf.easypanel.host/message/sendText/adso_instance'
         api_key = evo_key  # Idealmente usar settings o variable de entorno
         enviados = 0
         errores = []
 
-        pacientes = Paciente.objects.exclude(telf_pac__isnull=True).exclude(telf_pac__exact='')
+        pacientes = Paciente.objects.exclude(telf_pac__isnull=True).exclude(telf_pac__exact='').filter(departamento_id=1)
         already_sent = []
 
         for paciente in pacientes:
             numero = f"51{paciente.telf_pac.strip()}"
-            mensaje = f'Buenas tardes {paciente.nomb_pac}, le saludamos del centro odontológico ADSO estamos revisando nuestra base de datos y nos figura su contacto como paciente, para saber cómo le fue en su último tratamiento , quisieramos agendar una cita de evaluación más fluorizacion sin costo como manera preventiva. Le gustaría agendar una cita ? Me indica sus datos completos por favor 🦷🤝'
+            mensaje = f"""Buenos días Estimados Pacientes en esta oportunidad con mucho agrado estamos comunicando que nuestro Equipo de Trabajo (Clínica Odontológica Especializada ADSO) en este mes de Julio está brindando un beneficio en los Tratamientos de Odontología Estética y Ortodoncia 🦷por ser nuestro mes Patrio.🇵🇪 
+
+SI REQUIERE MAYOR INFORMACIÓN NUESTRA ASISTENTE DE ENFERMERÍA ESTARÁ GUSTOSA DE AYUDARLOS PARA MAYOR INFORMACIÓN Y/O CITAS EN NUESTRA NUEVA SEDE EN LA CIUDAD DE YURIMAGUAS 
+
+Que pase un feliz fin de semana y Bendiciones para usted y su familia 😊"""
 
             if numero not in already_sent:
                 already_sent.append(numero)
