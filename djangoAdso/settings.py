@@ -39,7 +39,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
-    'https://adso-adso-backend.4oghcf.easypanel.host/',
+    'https://adso-adso-backend.4oghcf.easypanel.host',
+    'http://adso-adso-backend.4oghcf.easypanel.host',
 ]
 CORS_ALLOW_ALL_ORIGINS = True
 
