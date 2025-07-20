@@ -57,7 +57,7 @@ class CitaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def validate_medico(self, value):
-        if not value.medico:
+        if not value.rol == 'medico':
             raise serializers.ValidationError("El usuario seleccionado no está marcado como médico.")
         return value
     
