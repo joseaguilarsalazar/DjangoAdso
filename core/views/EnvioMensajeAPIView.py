@@ -15,7 +15,7 @@ class EnvioMensajeAPIView(views.APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        api_url = 'https://evolution-api-evolution-api.4oghcf.easypanel.host/message/sendText/adso_instance'
+        api_url = 'https://evolution-api-evolution-api.4oghcf.easypanel.host/message/sendText/adso_iquitos_instance'
         api_key = evo_key  # Idealmente usar settings o variable de entorno
         enviados = 0
         errores = []
