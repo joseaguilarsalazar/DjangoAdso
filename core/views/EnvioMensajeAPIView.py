@@ -26,6 +26,7 @@ class EnvioMensajeAPIView(views.APIView):
         for paciente in pacientes:
             numero = f"51{paciente.telf_pac.strip()}"
             mensaje = f"""🇵🇪✨ ¡Celebra estas Fiestas Patrias con una sonrisa radiante! ✨🇵🇪
+            Un cordial saludo {paciente.nomb_pac}
 En esta semana especial, agenda tu cita dental y aprovecha nuestras promociones exclusivas. Es el momento perfecto para cuidar tu salud bucal y sonreírle al Perú con orgullo.
 
 🦷 ¡Tu sonrisa también es motivo de celebración!
