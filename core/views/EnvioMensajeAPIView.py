@@ -20,16 +20,18 @@ class EnvioMensajeAPIView(views.APIView):
         enviados = 0
         errores = []
 
-        pacientes = Paciente.objects.exclude(telf_pac__isnull=True).exclude(telf_pac__exact='').filter(departamento_id=1)
+        pacientes = Paciente.objects.exclude(telf_pac__isnull=True).exclude(telf_pac__exact='').exclude(departamento_id=1)
         already_sent = []
 
         for paciente in pacientes:
             numero = f"51{paciente.telf_pac.strip()}"
-            mensaje = f"""Buenos días Estimados Pacientes en esta oportunidad con mucho agrado estamos comunicando que nuestro Equipo de Trabajo (Clínica Odontológica Especializada ADSO) en este mes de Julio está brindando un beneficio en los Tratamientos de Odontología Estética y Ortodoncia 🦷por ser nuestro mes Patrio.🇵🇪 
+            mensaje = f"""🇵🇪✨ ¡Celebra estas Fiestas Patrias con una sonrisa radiante! ✨🇵🇪
+En esta semana especial, agenda tu cita dental y aprovecha nuestras promociones exclusivas. Es el momento perfecto para cuidar tu salud bucal y sonreírle al Perú con orgullo.
 
-SI REQUIERE MAYOR INFORMACIÓN NUESTRA ASISTENTE DE ENFERMERÍA ESTARÁ GUSTOSA DE AYUDARLOS PARA MAYOR INFORMACIÓN Y/O CITAS EN NUESTRA NUEVA SEDE EN LA CIUDAD DE YURIMAGUAS 
+🦷 ¡Tu sonrisa también es motivo de celebración!
+📲 Escríbenos y reserva tu cita hoy mismo.
 
-Que pase un feliz fin de semana y Bendiciones para usted y su familia 😊"""
+#FiestasPatrias #SonríeConOrgullo #SaludBucal"""
 
             if numero not in already_sent:
                 already_sent.append(numero)
