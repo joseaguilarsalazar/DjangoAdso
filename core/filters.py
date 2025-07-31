@@ -1,6 +1,5 @@
 import django_filters
 from .models import (
-    Historial, 
     Tratamiento, 
     Especialidad, 
     Cita, 
@@ -12,7 +11,10 @@ from .models import (
     Categoria,
     Enfermedad,
     PacienteEvolucion,
-    PacienteEnfermedad,)
+    PacienteEnfermedad,
+    PacienteDiagnostico,
+    PacientePlaca,
+    )
 
 class PacienteFilter(django_filters.FilterSet):
     nomb_pac = django_filters.CharFilter(lookup_expr='icontains')
@@ -52,26 +54,18 @@ class PacienteFilter(django_filters.FilterSet):
         ]
 
 
-class HistorialFilter(django_filters.FilterSet):
-    class Meta:
-        model = Historial
-        fields = {
-            'id_paciente': ['exact'],
-            'trata_medic': ['exact'],
-            'propen_hemo': ['exact'],
-            'alergico': ['exact'],
-            'hipertenso': ['exact'],
-            'diabetico': ['exact'],
-            'embarazada': ['exact'],
-            'created_at': ['date__gte', 'date__lte'],
-        }
-
 class TratamientoFilter(django_filters.FilterSet):
+    created_at = django_filters.DateFromToRangeFilter()  # ?created_at_after=YYYY-MM-DD&created_at_before=YYYY-MM-DD
+    asunto = django_filters.CharFilter(lookup_expr='icontains')  # partial match search
+    observacion = django_filters.CharFilter(lookup_expr='icontains', required=False)  # partial match search
+
     class Meta:
         model = Tratamiento
         fields = {
-            'tratamiento': ['icontains'],
-            'precio': ['gte', 'lte'],
+            'paciente': ['exact'],  # filter by patient ID
+            'medico': ['exact'],    # filter by doctor ID
+            'asunto': ['exact'],    # exact match (icontains already covers partial)
+            'created_at': ['exact', 'date__gte', 'date__lte'],
         }
 
 class EspecialidadFilter(django_filters.FilterSet):
@@ -86,7 +80,6 @@ class CitaFilter(django_filters.FilterSet):
     class Meta:
         model = Cita
         fields = {
-            'tratamiento': ['exact'],
             'medico': ['exact'],
             'paciente': ['exact'],
             'fecha': ['gte', 'lte'],
@@ -176,3 +169,31 @@ class ClinicaFilter(django_filters.FilterSet):
             'nomb_clin', 'direc_clin', 'email_clin', 'ruc_clin',
             'cod_plan', 'esta_clin', 'fecha_clin'
         ]
+
+class PacienteDiagnosticoFilter(django_filters.FilterSet):
+    created_at = django_filters.DateFromToRangeFilter()  # allows filtering between dates (created_at_after, created_at_before)
+
+    class Meta:
+        model = PacienteDiagnostico
+        fields = {
+            'paciente': ['exact'],      # filter by paciente ID
+            'enfermedad': ['exact'],    # filter by enfermedad ID
+            'activo': ['exact'],        # filter by active status (True/False)
+            'created_at': ['exact', 'date__gte', 'date__lte'],
+        }
+
+class PacientePlacaFilter(django_filters.FilterSet):
+    # Optional: allows date range filtering with ?created_at_after=YYYY-MM-DD&created_at_before=YYYY-MM-DD
+    created_at = django_filters.DateFromToRangeFilter()
+    
+    # Optional: search by nombre (case-insensitive partial match)
+    nombre = django_filters.CharFilter(lookup_expr='icontains')
+    
+    class Meta:
+        model = PacientePlaca
+        fields = {
+            'paciente': ['exact'],    # filter by patient ID
+            'activo': ['exact'],      # true/false
+            'nombre': ['exact'],      # exact match (we also added icontains above)
+            'created_at': ['exact', 'date__gte', 'date__lte'],
+        }

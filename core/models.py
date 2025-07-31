@@ -180,35 +180,7 @@ class Banco(models.Model):
 
     def __str__(self):
         return self.descripcion or f"Banco #{self.cod_banco}"
-    
-class Historial(models.Model):
-    id_paciente   = models.ForeignKey(
-        Paciente,
-        on_delete=models.CASCADE,
-        db_column='id_paciente',
-        related_name='historiales'
-    )
-    trata_medic   = models.BooleanField(default=False)
-    propen_hemo   = models.BooleanField(default=False)
-    alergico      = models.BooleanField(default=False)
-    hipertenso    = models.BooleanField(default=False)
-    diabetico     = models.BooleanField(default=False)
-    embarazada    = models.BooleanField(default=False)
-    motivo_consul = models.TextField()
-    diagnostico   = models.TextField()
-    observacion   = models.TextField(blank=True, null=True)
-    referido      = models.TextField(blank=True, null=True)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        db_table = 'historial'
-        verbose_name = 'Historial'
-        verbose_name_plural = 'Historiales'
-
-    def __str__(self):
-        return f"Historial de {self.id_paciente.name}"
     
 class Categoria(models.Model):
     nomb_cat = models.CharField("Nombre de la categoría", max_length=45, blank=True, null=True)
@@ -218,8 +190,12 @@ class Categoria(models.Model):
         return self.nomb_cat or f"Categoría #{self.codi_cat}"
 
 class Tratamiento(models.Model):
-    tratamiento = models.CharField(max_length=200)
-    precio = models.FloatField()
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
+    medico = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    asunto = models.CharField(max_length=200, default='tratamiento')
+    observacion = models.TextField(max_length=1000, null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -238,7 +214,6 @@ class Cita(models.Model):
         PARCIAL = 'PARCIAL', 'Parcial'
         PAGADO = 'PAGADO', 'Pagado'
 
-    tratamiento = models.ForeignKey(Tratamiento, on_delete=models.SET_NULL, null=True)
     medico = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     paciente = models.ForeignKey(Paciente, on_delete=models.SET_NULL, null=True)
     fecha = models.DateField()
@@ -285,5 +260,28 @@ class PacienteEnfermedad(models.Model):
     enfermedad = models.ForeignKey(Enfermedad, on_delete=models.CASCADE)
     paciente = models.ForeignKey(Paciente, on_delete=models.SET_NULL, null=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+class PacienteDiagnostico(models.Model):
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
+
+    enfermedad = models.ForeignKey(Enfermedad, on_delete=models.CASCADE)
+
+    activo = models.BooleanField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class PacientePlaca(models.Model):
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
+
+    nombre = models.CharField(max_length=100)
+
+    notas = models.TextField(max_length=1000, null=True)
+    archivo = models.ImageField(null=True)
+
+    activo = models.BooleanField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

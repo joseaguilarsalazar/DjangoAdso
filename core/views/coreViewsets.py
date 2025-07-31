@@ -5,7 +5,6 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import AllowAny
 from ..models import (
     Paciente,
-    Historial, 
     Tratamiento, 
     Especialidad, 
     Cita,
@@ -17,10 +16,12 @@ from ..models import (
     Enfermedad,
     PacienteEvolucion,
     PacienteEnfermedad,
+    PacienteDiagnostico,
+    PacientePlaca,
 )
 from ..serializers import (
     PacienteSerializer,
-    HistorialSerializer, TratamientoSerializer, EspecialidadSerializer, 
+    TratamientoSerializer, EspecialidadSerializer, 
     CitaSerializer, UserSerializer,
     ClinicaSerializer,
     AlergiaSerializer,
@@ -30,9 +31,11 @@ from ..serializers import (
     EnfermedadSerializer,
     PacienteEvolucionSerializer,
     PacienteEnfermedadSerializer,
+    PacienteDiagnosticoSerializer,
+    PacientePlacaSerializer,
 )
 from ..filters import (
-    HistorialFilter, TratamientoFilter, EspecialidadFilter,
+    TratamientoFilter, EspecialidadFilter,
      CitaFilter, PacienteFilter,
      ClinicaFilter,
     AlergiaFilter,
@@ -42,6 +45,8 @@ from ..filters import (
     EnfermedadFilter,
     PacienteEvolucionFilter,
     PacienteEnfermedadFilter,
+    PacienteDiagnosticoFilter,
+    PacientePlacaFilter,
 )
 
 User = get_user_model()
@@ -57,15 +62,6 @@ class PacienteViewSet(viewsets.ModelViewSet):
     serializer_class = PacienteSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = PacienteFilter
-    ordering_fields = '__all__'
-    permission_classes = [AllowAny]
-
-
-class HistorialViewSet(viewsets.ModelViewSet):
-    queryset = Historial.objects.all()
-    serializer_class = HistorialSerializer
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_class = HistorialFilter
     ordering_fields = '__all__'
     permission_classes = [AllowAny]
 
@@ -156,5 +152,21 @@ class PacienteEnfermedadViewSet(viewsets.ModelViewSet):
     serializer_class = PacienteEnfermedadSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = PacienteEnfermedadFilter
+    ordering_fields = '__all__'
+    permission_classes = [AllowAny]
+
+class PacienteDiagnosticoViewSet(viewsets.ModelViewSet):
+    queryset = PacienteDiagnostico.objects.all()
+    serializer_class = PacienteDiagnosticoSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = PacienteDiagnosticoFilter
+    ordering_fields = '__all__'
+    permission_classes = [AllowAny]
+
+class PacientePlacaViewSet(viewsets.ModelViewSet):
+    queryset = PacientePlaca.objects.all()
+    serializer_class = PacientePlacaSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = PacientePlacaFilter
     ordering_fields = '__all__'
     permission_classes = [AllowAny]

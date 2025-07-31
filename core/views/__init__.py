@@ -5,7 +5,6 @@ from .coreViewsets import (
     ClinicaViewSet,
     PacienteViewSet,
     CategoriaViewSet,
-    HistorialViewSet,
     EnfermedadViewSet,
     TratamientoViewSet,
     EspecialidadViewSet,
@@ -13,6 +12,8 @@ from .coreViewsets import (
     PacienteEvolucionViewSet,
     PacienteEnfermedadViewSet,
     BancoViewSet,
+    PacienteDiagnosticoViewSet,
+    PacientePlacaViewSet,
 )
 from .predoneViews import (
     validar_dni,
@@ -25,6 +26,7 @@ from .predoneViews import (
 )
 from .EnvioMensajeAPIView import EnvioMensajeAPIView
 from .MedicosListView import MedicoListAPIView
+from .HistorialApiView import HistorialApiView
 
 __all__ = [
     # coreViewsets
@@ -35,13 +37,14 @@ __all__ = [
     "ClinicaViewSet",
     "PacienteViewSet",
     "CategoriaViewSet",
-    "HistorialViewSet",
     "EnfermedadViewSet",
     "TratamientoViewSet",
     "EspecialidadViewSet",
+    "PacientePlacaViewSet",
     "PacienteAlergiaViewSet",
     "PacienteEvolucionViewSet",
     "PacienteEnfermedadViewSet",
+    "PacienteDiagnosticoViewSet",
 
     # predoneViews
     "validar_dni",
@@ -55,4 +58,5 @@ __all__ = [
     #other views
     "EnvioMensajeAPIView",
     'MedicoListAPIView',
+    "HistorialApiView",
 ]

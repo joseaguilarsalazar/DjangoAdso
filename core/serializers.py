@@ -1,8 +1,7 @@
 # your_app/serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import (
-    Historial, 
+from .models import ( 
     Tratamiento, 
     Especialidad, 
     Cita, 
@@ -15,6 +14,8 @@ from .models import (
     Enfermedad,
     PacienteEvolucion,
     PacienteEnfermedad,
+    PacienteDiagnostico,
+    PacientePlaca,
     )
 
 User = get_user_model()
@@ -34,12 +35,6 @@ class PacienteSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['id', 'created_at', 'updated_at']
 
-
-class HistorialSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Historial
-        fields = '__all__'
-        read_only_fields = ['id', 'created_at', 'updated_at']
 
 class TratamientoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -99,4 +94,15 @@ class EnfermedadSerializer(serializers.ModelSerializer):
 class PacienteEvolucionSerializer(serializers.ModelSerializer):
     class Meta:
         model = PacienteEvolucion
+        fields = '__all__'
+
+
+class PacienteDiagnosticoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PacienteDiagnostico
+        fields = '__all__'
+
+class PacientePlacaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PacientePlaca
         fields = '__all__'

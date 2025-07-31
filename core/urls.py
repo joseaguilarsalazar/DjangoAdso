@@ -4,7 +4,6 @@ from .views import *
 
 router = DefaultRouter()
 router.register(r'pacientes', PacienteViewSet)
-router.register(r'historiales', HistorialViewSet)
 router.register(r'tratamientos', TratamientoViewSet)
 router.register(r'especialidades', EspecialidadViewSet)
 router.register(r'citas', CitaViewSet)
@@ -16,6 +15,8 @@ router.register(r'categorias', CategoriaViewSet)
 router.register(r'enfermedades', EnfermedadViewSet)
 router.register(r'paciente_evoluciones', PacienteEvolucionViewSet)
 router.register(r'paciente_enfermedades', PacienteEnfermedadViewSet)
+router.register(r'paciente_diagnosticos', PacienteDiagnosticoViewSet)
+router.register(r'paciente_placas', PacientePlacaViewSet)
 router.register(r'users', UserViewset)
 
 
