@@ -31,4 +31,5 @@ urlpatterns = [
     path('validar-registro/', validar_registro),
     path('envio_mensaje_test/', EnvioMensajeAPIView.as_view()),
     path('medico_list/', MedicoListAPIView.as_view()),
+    path('historial/', HistorialApiView.as_view()),
 ]
