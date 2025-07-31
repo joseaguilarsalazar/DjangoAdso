@@ -75,7 +75,7 @@ class HistorialApiView(views.APIView):
         historic_data['alergias'] = PacienteAlergiaSerializer(alergias, many=True).data if alergias.exists() else None
 
         placas = PacientePlaca.objects.filter(paciente__id = paciente.id)
-        historic_data['alergias'] = PacientePlacaSerializer(placas, many=True).data if placas.exists() else None
+        historic_data['placas'] = PacientePlacaSerializer(placas, many=True).data if placas.exists() else None
         
         evoluciones = PacienteEvolucion.objects.filter(paciente__id = paciente.id)
         historic_data['evoluciones'] = PacienteEvolucionSerializer(evoluciones, many=True).data if evoluciones.exists() else None
