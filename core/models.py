@@ -7,13 +7,12 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class Especialidad(models.Model):
     nombre = models.CharField(max_length=200, null=True)
-    honorariosPorcentaje = models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(1.0)])
+    honorariosPorcentaje = models.FloatField(validators=[MinValueValidator(0.0), MaxValueValidator(1.0)], default=0.3)
     descripcion = models.CharField(max_length=200, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -223,9 +222,11 @@ class Cita(models.Model):
     estadoCita = models.CharField(max_length=15, choices=EstadoCita.choices, default=EstadoCita.PENDIENTE)
     estadoPago = models.CharField(max_length=15, choices=EstadoPago.choices, default=EstadoPago.NO_PAGADO)
 
-    costo = models.FloatField()
-    pagado = models.FloatField()
-    saldo = models.FloatField()
+    costo = models.FloatField(null=True)
+    pagado = models.FloatField(null=True)
+    saldo = models.FloatField(null=True)
+    observaciones = models.TextField(max_length=1000)
+    motivo = models.TextField(max_length=1000)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

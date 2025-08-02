@@ -55,6 +55,14 @@ class CitaSerializer(serializers.ModelSerializer):
         if not value.rol == 'medico':
             raise serializers.ValidationError("El usuario seleccionado no está marcado como médico.")
         return value
+
+    def validate_hora(self, value):
+        """Ensure time is only in 15-minute intervals."""
+        if value.minute % 15 != 0 or value.second != 0 or value.microsecond != 0:
+            raise serializers.ValidationError(
+                "La hora debe estar en intervalos de 15 minutos (ej. 7:00, 7:15, 7:30, 7:45)."
+            )
+        return value
     
 class ClinicaSerializer(serializers.ModelSerializer):
     class Meta:

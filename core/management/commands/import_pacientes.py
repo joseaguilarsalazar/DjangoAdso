@@ -2,7 +2,8 @@ import csv
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.utils.timezone import make_aware
-from core.models import Paciente  # Cambia si tu app tiene otro nombre
+from core.models import Paciente, Especialidad  # Cambia si tu app tiene otro nombre
+import os
 
 
 def parse_date(value):
@@ -22,21 +23,25 @@ def parse_value(value):
 
 
 class Command(BaseCommand):
-    help = 'Importa pacientes desde un archivo CSV'
+    help = 'Importa pacientes y especialidades desde archivos CSV'
 
     def handle(self, *args, **kwargs):
-        import os
-        file_path = os.path.join('core', 'management', 'commands', 'adsoperu_dental.csv')
-        count = 0
+        # File paths
+        pacientes_file_path = os.path.join('core', 'management', 'commands', 'adsoperu_dental.csv')
+        especialidades_file_path = os.path.join('core', 'management', 'commands', 'especialidad.csv')
 
+        pacientes_count = 0
+        especialidades_count = 0
+
+        # ✅ --- IMPORT PACIENTES ---
         try:
-            with open(file_path, newline='', encoding='utf-8') as csvfile:
+            with open(pacientes_file_path, newline='', encoding='utf-8') as csvfile:
                 reader = csv.DictReader(csvfile)
 
                 for row in reader:
                     dni = parse_value(row["dni_pac"])
                     if dni and Paciente.objects.filter(dni_pac=dni).exists():
-                        self.stdout.write(self.style.WARNING(f"⚠️  Paciente con DNI {dni} ya existe. Saltando..."))
+                        self.stdout.write(self.style.WARNING(f"⚠️ Paciente con DNI {dni} ya existe. Saltando..."))
                         continue
                     paciente = Paciente(
                         nomb_pac=parse_value(row["nomb_pac"]),
@@ -66,12 +71,39 @@ class Command(BaseCommand):
                         # sexo, esta_pac, estudios_pac → usarán valores por defecto
                     )
                     paciente.save()
-                    count += 1
+                    pacientes_count += 1
         except FileNotFoundError:
-            self.stderr.write(self.style.ERROR(f"Archivo no encontrado: {file_path}"))
-            return
+            self.stderr.write(self.style.ERROR(f"Archivo de pacientes no encontrado: {pacientes_file_path}"))
         except KeyError as e:
-            self.stderr.write(self.style.ERROR(f"Columna faltante: {e}"))
-            return
+            self.stderr.write(self.style.ERROR(f"Columna faltante en pacientes: {e}"))
 
-        self.stdout.write(self.style.SUCCESS(f"✅ {count} pacientes importados correctamente"))
+        # ✅ --- IMPORT ESPECIALIDADES ---
+        try:
+            with open(especialidades_file_path, newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+
+                for row in reader:
+                    nombre = parse_value(row["nombre_especialidad"])
+                    descripcion = parse_value(row["descripcion_especialidad"])
+
+                    # Check if especialidad already exists by name
+                    if nombre and Especialidad.objects.filter(nombre=nombre).exists():
+                        self.stdout.write(self.style.WARNING(f"⚠️ Especialidad '{nombre}' ya existe. Saltando..."))
+                        continue
+
+                    especialidad = Especialidad(
+                        nombre=nombre,
+                        descripcion=descripcion,
+                        honorariosPorcentaje=0.3  # default value
+                    )
+                    especialidad.save()
+                    especialidades_count += 1
+
+        except FileNotFoundError:
+            self.stderr.write(self.style.ERROR(f"Archivo de especialidades no encontrado: {especialidades_file_path}"))
+        except KeyError as e:
+            self.stderr.write(self.style.ERROR(f"Columna faltante en especialidades: {e}"))
+
+        # ✅ --- FINAL MESSAGE ---
+        self.stdout.write(self.style.SUCCESS(f"✅ {pacientes_count} pacientes importados correctamente"))
+        self.stdout.write(self.style.SUCCESS(f"✅ {especialidades_count} especialidades importadas correctamente"))
