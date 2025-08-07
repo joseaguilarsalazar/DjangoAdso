@@ -4,7 +4,9 @@ from django.core.management.base import BaseCommand
 from django.utils.timezone import make_aware
 from core.models import Paciente, Especialidad  # Cambia si tu app tiene otro nombre
 import os
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
 def parse_date(value):
     try:
@@ -104,6 +106,54 @@ class Command(BaseCommand):
         except KeyError as e:
             self.stderr.write(self.style.ERROR(f"Columna faltante en especialidades: {e}"))
 
+        # ✅ --- IMPORT MÉDICOS ---
+        medicos_file_path = os.path.join('core', 'management', 'commands', 'medicos.csv')
+        medicos_count = 0
+
+        try:
+            with open(medicos_file_path, newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+
+                for row in reader:
+                    dni = parse_value(row["dni_med"])
+                    email = parse_value(row["emai_med"])
+
+                    if not dni or not email:
+                        self.stdout.write(self.style.WARNING("⚠️ Médico sin DNI o Email. Saltando..."))
+                        continue
+
+                    if User.objects.filter(num_doc=dni).exists():
+                        self.stdout.write(self.style.WARNING(f"⚠️ Médico con DNI {dni} ya existe. Saltando..."))
+                        continue
+
+                    especialidad = None
+                    cod_especialidad = parse_value(row["cod_especialidad"])
+                    if cod_especialidad and cod_especialidad.isdigit():
+                        especialidad = Especialidad.objects.filter(id=int(cod_especialidad)).first()
+
+                    user = User(
+                        email=email,
+                        tipo_doc='DNI',
+                        num_doc=dni,
+                        name=f"{parse_value(row['nomb_med'])} {parse_value(row['apel_med'])}",
+                        direccion=parse_value(row["dire_med"]),
+                        telefono=parse_value(row["cel_med"]) or parse_value(row["telf_med"]),
+                        especialidad=especialidad,
+                        estado=parse_value(row["esta_med"]) or "activo",
+                        rol='medico',
+                    )
+                    user.set_password("medico123")  # Default password (you can change this)
+                    user.save()
+                    medicos_count += 1
+
+        except FileNotFoundError:
+            self.stderr.write(self.style.ERROR(f"Archivo de médicos no encontrado: {medicos_file_path}"))
+        except KeyError as e:
+            self.stderr.write(self.style.ERROR(f"Columna faltante en médicos: {e}"))
+
+        
+
         # ✅ --- FINAL MESSAGE ---
         self.stdout.write(self.style.SUCCESS(f"✅ {pacientes_count} pacientes importados correctamente"))
         self.stdout.write(self.style.SUCCESS(f"✅ {especialidades_count} especialidades importadas correctamente"))
+        self.stdout.write(self.style.SUCCESS(f"✅ {medicos_count} médicos importados correctamente"))
