@@ -107,7 +107,7 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f"Columna faltante en especialidades: {e}"))
 
         # ✅ --- IMPORT MÉDICOS ---
-        medicos_file_path = os.path.join('core', 'management', 'commands', 'medicos.csv')
+        medicos_file_path = os.path.join('core', 'management', 'commands', 'medico.csv')
         medicos_count = 0
 
         try:
