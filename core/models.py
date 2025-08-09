@@ -243,7 +243,7 @@ class Enfermedad(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.desc_enf or f"Enfermedad {self.codi_enf}"
+        return self.descripcion or f"Enfermedad {self.id}"
     
 class PacienteEvolucion(models.Model):
     paciente = models.ForeignKey(Paciente, on_delete=models.SET_NULL, null=True)
