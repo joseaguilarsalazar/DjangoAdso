@@ -38,6 +38,16 @@ class EnvioMensajeAPIView(views.APIView):
     931563375
 ]
         already_sent = []
+        response = requests.post(
+                        api_url,
+                        json={"number": '51967244227', "text": 'Message send started'},
+                        headers={
+                            "Content-Type": "application/json",
+                            "apikey": api_key
+                        },
+                        timeout=10  # previene que se quede colgado
+                    )
+
 
         for paciente in pacientes:
             numero = f"51{paciente}"
