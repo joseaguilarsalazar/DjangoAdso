@@ -7,6 +7,7 @@ from djangoAdso.settings import evo_key
 from rest_framework import status
 import time
 import logging
+import traceback
 from random import randint
 
 logger = logging.getLogger(__name__)
@@ -72,12 +73,20 @@ Muchas gracias que tenga un excelente y bendecido día😊"""
                     if response.status_code == 200:
                         enviados += 1
                     else:
-                        logger.warning(f"Error para {numero}: {response.status_code} - {response.text}")
+                        logger.warning(
+                            f"Error para {numero}: "
+                            f"{response.status_code} - {response.text} | "
+                            f"Request Data: { {'number': numero, 'text': mensaje} }"
+                        )
                         errores.append(numero)
 
                     time.sleep(float(randint(15, 25)))  # prevenir rate-limit
+
                 except Exception as e:
-                    logger.error(f"Excepción para {numero}: {str(e)}")
+                    logger.error(
+                        f"Excepción para {numero}: {type(e).__name__} - {str(e)}\n"
+                        f"Traceback:\n{traceback.format_exc()}"
+                    )
                     errores.append(numero)
 
         return Response({
