@@ -50,7 +50,7 @@ class EnvioMensajeAPIView(views.APIView):
 
 
         for paciente in pacientes:
-            numero = f"51{paciente}"
+            numero = f"51{str(paciente)}"
             mensaje = f"""Hola 👋, le saludamos del Centro Odontológico ADSO.
 Ah pasado un tiempo desde su última visita con nosotros, nos gustaría saber si desea agendar una cita para una evaluación dental sin costo alguno como parte de su convenio. 
 Quedamos atentos a su confirmación y esperamos su pronta respuesta.
