@@ -20,19 +20,31 @@ class EnvioMensajeAPIView(views.APIView):
         enviados = 0
         errores = []
 
-        pacientes = Paciente.objects.exclude(telf_pac__isnull=True).exclude(telf_pac__exact='').exclude(departamento_id=1)
+        pacientes = [
+    990643439,
+    986428906,
+    940421575,
+    94858940,
+    960197917,
+    944826970,
+    929450814,
+    913950205,
+    958697273,
+    945285413,
+    963368770,
+    965644590,
+    978001619,
+    921927051,
+    931563375
+]
         already_sent = []
 
         for paciente in pacientes:
-            numero = f"51{paciente.telf_pac.strip()}"
-            mensaje = f"""🇵🇪✨ ¡Celebra estas Fiestas Patrias con una sonrisa radiante! ✨🇵🇪
-Un cordial saludo {paciente.nomb_pac}
-En esta semana especial, agenda tu cita dental y aprovecha nuestras promociones exclusivas. Es el momento perfecto para cuidar tu salud bucal y sonreírle al Perú con orgullo.
-
-🦷 ¡Tu sonrisa también es motivo de celebración!
-📲 Escríbenos y reserva tu cita hoy mismo.
-
-#FiestasPatrias #SonríeConOrgullo #SaludBucal"""
+            numero = f"51{paciente}"
+            mensaje = f"""Hola 👋, le saludamos del Centro Odontológico ADSO.
+Ah pasado un tiempo desde su última visita con nosotros, nos gustaría saber si desea agendar una cita para una evaluación dental sin costo alguno como parte de su convenio. 
+Quedamos atentos a su confirmación y esperamos su pronta respuesta.
+Muchas gracias que tenga un excelente y bendecido día😊"""
 
             if numero not in already_sent:
                 already_sent.append(numero)
