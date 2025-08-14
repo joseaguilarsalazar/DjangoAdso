@@ -49,6 +49,8 @@ from ..filters import (
     PacientePlacaFilter,
     UserFilter
 )
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 User = get_user_model()
 
@@ -59,6 +61,85 @@ class UserViewset(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     ordering_fields = '__all__'
     permission_classes = [IsAuthenticatedOrReadOnly]
+
+    # ---------------------------
+    # Create (POST /users/)
+    # ---------------------------
+    @swagger_auto_schema(
+        operation_summary="Crear un usuario",
+        operation_description=(
+            "Crea un usuario. **Para crear** un usuario con contraseña, debe enviar **password** y **password2** "
+            "y ambos deben coincidir. El campo `password` es write-only y no se devuelve en la respuesta.\n\n"
+            "Si no envía contraseña, se creará con contraseña no usable (no podrá iniciar sesión hasta establecerla)."
+        ),
+        request_body=UserSerializer,
+        responses={
+            201: openapi.Response(
+                description="Usuario creado correctamente",
+                schema=UserSerializer()
+            ),
+            400: openapi.Response(description="Error de validación (p. ej. contraseñas no coinciden)"),
+            401: openapi.Response(description="No autorizado"),
+        }
+    )
+    def create(self, request, *args, **kwargs):
+        """
+        create: usado por drf ModelViewSet para crear usuarios.
+        La lógica real de hashing de contraseña está en UserSerializer.create().
+        """
+        return super().create(request, *args, **kwargs)
+
+    # ---------------------------
+    # Full update (PUT /users/{pk}/)
+    # ---------------------------
+    @swagger_auto_schema(
+        operation_summary="Actualizar un usuario (reemplazo completo)",
+        operation_description=(
+            "Actualiza todos los campos de un usuario. Si desea cambiar la contraseña, incluya **password** y **password2** "
+            "y asegúrese de que coincidan. Si omite `password`, la contraseña permanecerá sin cambios."
+        ),
+        request_body=UserSerializer,
+        responses={
+            200: openapi.Response(
+                description="Usuario actualizado correctamente",
+                schema=UserSerializer()
+            ),
+            400: openapi.Response(description="Error de validación"),
+            401: openapi.Response(description="No autorizado"),
+            404: openapi.Response(description="Usuario no encontrado"),
+        }
+    )
+    def update(self, request, *args, **kwargs):
+        """
+        update: sobrescribe el registro completo. La lógica de set_password está en UserSerializer.update().
+        """
+        return super().update(request, *args, **kwargs)
+
+    # ---------------------------
+    # Partial update (PATCH /users/{pk}/)
+    # ---------------------------
+    @swagger_auto_schema(
+        operation_summary="Actualizar parcialmente un usuario",
+        operation_description=(
+            "Actualiza solo los campos enviados. Para cambiar contraseña envíe **password** y **password2** juntos. "
+            "Si cambia otros campos, puede enviar únicamente los que desea modificar."
+        ),
+        request_body=UserSerializer,
+        responses={
+            200: openapi.Response(
+                description="Usuario parcialmente actualizado",
+                schema=UserSerializer()
+            ),
+            400: openapi.Response(description="Error de validación"),
+            401: openapi.Response(description="No autorizado"),
+            404: openapi.Response(description="Usuario no encontrado"),
+        }
+    )
+    def partial_update(self, request, *args, **kwargs):
+        """
+        partial_update: maneja cambios parciales; la verificación de password/password2 también ocurre en el serializer.
+        """
+        return super().partial_update(request, *args, **kwargs)
 
 class PacienteViewSet(viewsets.ModelViewSet):
     queryset = Paciente.objects.all()
