@@ -15,6 +15,38 @@ from .models import (
     PacienteDiagnostico,
     PacientePlaca,
     )
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class UserFilter(django_filters.FilterSet):
+    # text searches
+    name = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
+    email = django_filters.CharFilter(field_name="email", lookup_expr="icontains")
+    direccion = django_filters.CharFilter(field_name="direccion", lookup_expr="icontains")
+    telefono = django_filters.CharFilter(field_name="telefono", lookup_expr="icontains")
+    num_doc = django_filters.CharFilter(field_name="num_doc", lookup_expr="icontains")
+    tipo_doc = django_filters.CharFilter(field_name="tipo_doc", lookup_expr="iexact")
+
+    # exact choices
+    rol = django_filters.CharFilter(field_name="rol", lookup_expr="iexact")
+    estado = django_filters.CharFilter(field_name="estado", lookup_expr="iexact")
+
+    # foreign key (by id) and by name
+    especialidad = django_filters.NumberFilter(field_name="especialidad__id", lookup_expr="exact")
+    especialidad_nombre = django_filters.CharFilter(field_name="especialidad__nombre", lookup_expr="icontains")
+
+    # date range on created_at
+    created_at_after = django_filters.DateTimeFilter(field_name="created_at", lookup_expr="gte")
+    created_at_before = django_filters.DateTimeFilter(field_name="created_at", lookup_expr="lte")
+
+    class Meta:
+        model = User
+        fields = [
+            "name", "email", "direccion", "telefono", "num_doc", "tipo_doc",
+            "rol", "estado", "especialidad", "especialidad_nombre",
+            "created_at_after", "created_at_before",
+        ]
 
 class PacienteFilter(django_filters.FilterSet):
     nomb_pac = django_filters.CharFilter(lookup_expr='icontains')

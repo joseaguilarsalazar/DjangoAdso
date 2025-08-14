@@ -2,7 +2,7 @@ from rest_framework import viewsets, views
 from django.contrib.auth import get_user_model
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from ..models import (
     Paciente,
     Tratamiento, 
@@ -47,23 +47,26 @@ from ..filters import (
     PacienteEnfermedadFilter,
     PacienteDiagnosticoFilter,
     PacientePlacaFilter,
+    UserFilter
 )
 
 User = get_user_model()
 
 class UserViewset(viewsets.ModelViewSet):
     queryset = User.objects.all()
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = UserFilter
     serializer_class = UserSerializer
     ordering_fields = '__all__'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 class PacienteViewSet(viewsets.ModelViewSet):
-    queryset = Paciente.objects.all().order_by('id')
+    queryset = Paciente.objects.all()
     serializer_class = PacienteSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = PacienteFilter
     ordering_fields = '__all__'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 class TratamientoViewSet(viewsets.ModelViewSet):
     queryset = Tratamiento.objects.all()
@@ -71,7 +74,7 @@ class TratamientoViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = TratamientoFilter
     ordering_fields = '__all__'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 class EspecialidadViewSet(viewsets.ModelViewSet):
     queryset = Especialidad.objects.all()
@@ -79,7 +82,7 @@ class EspecialidadViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = EspecialidadFilter
     ordering_fields = '__all__'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 class CitaViewSet(viewsets.ModelViewSet):
     queryset = Cita.objects.all()
@@ -87,7 +90,7 @@ class CitaViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = CitaFilter
     ordering_fields = '__all__'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 class ClinicaViewSet(viewsets.ModelViewSet):
     queryset = Clinica.objects.all()
@@ -95,7 +98,7 @@ class ClinicaViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = ClinicaFilter
     ordering_fields = '__all__'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 class AlergiaViewSet(viewsets.ModelViewSet):
     queryset = Alergia.objects.all()
@@ -103,7 +106,7 @@ class AlergiaViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = AlergiaFilter
     ordering_fields = '__all__'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 class PacienteAlergiaViewSet(viewsets.ModelViewSet):
     queryset = PacienteAlergia.objects.all()
@@ -111,7 +114,7 @@ class PacienteAlergiaViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = PacienteAlergiaFilter
     ordering_fields = '__all__'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 class BancoViewSet(viewsets.ModelViewSet):
     queryset = Banco.objects.all()
@@ -119,7 +122,7 @@ class BancoViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = BancoFilter
     ordering_fields = '__all__'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
@@ -127,7 +130,7 @@ class CategoriaViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = CategoriaFilter
     ordering_fields = '__all__'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 class EnfermedadViewSet(viewsets.ModelViewSet):
     queryset = Enfermedad.objects.all()
@@ -135,7 +138,7 @@ class EnfermedadViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = EnfermedadFilter
     ordering_fields = '__all__'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 
 class PacienteEvolucionViewSet(viewsets.ModelViewSet):
@@ -144,7 +147,7 @@ class PacienteEvolucionViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = PacienteEvolucionFilter
     ordering_fields = '__all__'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 
 class PacienteEnfermedadViewSet(viewsets.ModelViewSet):
@@ -153,7 +156,7 @@ class PacienteEnfermedadViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = PacienteEnfermedadFilter
     ordering_fields = '__all__'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 class PacienteDiagnosticoViewSet(viewsets.ModelViewSet):
     queryset = PacienteDiagnostico.objects.all()
@@ -161,7 +164,7 @@ class PacienteDiagnosticoViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = PacienteDiagnosticoFilter
     ordering_fields = '__all__'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 class PacientePlacaViewSet(viewsets.ModelViewSet):
     queryset = PacientePlaca.objects.all()
@@ -169,4 +172,4 @@ class PacientePlacaViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = PacientePlacaFilter
     ordering_fields = '__all__'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]

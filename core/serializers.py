@@ -21,11 +21,51 @@ from .models import (
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False, allow_blank=False)
+    password2 = serializers.CharField(write_only=True, required=False)
     class  Meta:
         model = User
         # excluimos campos sensibles o de sistema
         fields = '__all__'
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    
+    def validate(self, attrs):
+        # si se envían password y password2, validarlas
+        pwd = attrs.get('password')
+        pwd2 = attrs.get('password2')
+        if pwd or pwd2:
+            if pwd != pwd2:
+                raise serializers.ValidationError({"password": "Las contraseñas no coinciden."})
+        return attrs
+
+    def create(self, validated_data):
+        validated_data.pop('password2', None)
+        password = validated_data.pop('password', None)
+        user = self.Meta.model(**validated_data)
+        if password:
+            user.set_password(password)
+        else:
+            # si quieres forzar password requerido al crear, lanza error aquí
+            user.set_unusable_password()
+        user.save()
+        return user
+
+    def update(self, instance, validated_data):
+        # quita password2 si existe
+        validated_data.pop('password2', None)
+        password = validated_data.pop('password', None)
+
+        # actualizar campos normales
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        # si viene contraseña, usar set_password
+        if password:
+            instance.set_password(password)
+
+        instance.save()
+        return instance
 
 
 class PacienteSerializer(serializers.ModelSerializer):

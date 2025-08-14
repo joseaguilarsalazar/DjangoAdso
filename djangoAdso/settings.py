@@ -19,11 +19,15 @@ env = environ.Env(
     DEBUG=(bool, False)
 )
 
+
 # Set the project base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env_file = os.path.join(BASE_DIR, '.env')
 # Take environment variables from .env file
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+if os.path.exists(env_file):
+    environ.Env.read_env(env_file)
+
 
 evo_key = env('evo_key')
 
@@ -102,18 +106,16 @@ WSGI_APPLICATION = 'djangoAdso.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'adsodb',
-        'USER': 'postgres',
-        'PASSWORD': '1234',
-        'HOST': 'adso_pg-db',  
-        'PORT': '5432',   
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
     }
 }
-
 
 
 # Password validation
