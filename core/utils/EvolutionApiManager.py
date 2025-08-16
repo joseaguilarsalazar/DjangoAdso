@@ -75,7 +75,7 @@ class EvolutionApiManager:
         if not debug:
             payload = {"number": '51967244227', "text": message}
         else:
-            payload = {"number": number, "text": message}
+            payload = {"number": f'51{number}', "text": message}
         
 
         backoff = 1.0
