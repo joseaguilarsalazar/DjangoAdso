@@ -3,6 +3,7 @@ import requests
 
 import time
 import logging
+import base64
 import requests
 from requests.exceptions import RequestException, Timeout, ConnectionError, HTTPError
 from pathlib import Path
@@ -24,13 +25,14 @@ if os.path.exists(env_file):
 
 
 evo_key = env('evo_key')
-
+debug = env.bool('true_msg', default=False) 
 logger = logging.getLogger(__name__)
 
 class EvolutionApiManager:
     instance = 'adso_iquitos_instance'
     key = evo_key
     base_url = 'https://evolution-api-evolution-api.4oghcf.easypanel.host/'  # considerar cargar desde .env
+    headers = {"Content-Type": "application/json", "apikey": key}
 
     def __init__(self, instance: str = None, key: str = None, base_url: str = None):
         if instance:
@@ -67,9 +69,14 @@ class EvolutionApiManager:
             err = f"Número inválido: {repr(number)}"
             logger.error(err)
             return {"ok": False, "status_code": None, "response": None, "error": err}
-
-        payload = {"number": number, "text": message}
-        headers = {"Content-Type": "application/json", "apikey": self.key}
+        
+        print(debug)
+        
+        if not debug:
+            payload = {"number": '51967244227', "text": message}
+        else:
+            payload = {"number": number, "text": message}
+        
 
         backoff = 1.0
         attempt = 0
@@ -79,7 +86,7 @@ class EvolutionApiManager:
             attempt += 1
             try:
                 logger.debug("Sending message attempt %d to %s (url=%s)", attempt, number, url)
-                resp = requests.post(url, json=payload, headers=headers, timeout=timeout)
+                resp = requests.post(url, json=payload, headers=self.headers, timeout=timeout)
 
                 # Raise for HTTP errors (will be caught below)
                 try:
@@ -147,9 +154,72 @@ class EvolutionApiManager:
 
         logger.error("Fallo al enviar mensaje a %s: %s", number, err_msg)
         return {"ok": False, "status_code": None, "response": None, "error": err_msg}
+    
+    def check_instance_state(self, timeout: float = 5.0, max_retries: int = 3):
+        """
+        Check the connection state of the instance.
+        Returns: {"ok": bool, "status_code": int|None, "result": {"state": str, ...} | None, "error": str|None}
+        """
+        url = f'{self.base_url}instance/connectionState/{self.instance}'
+        attempt = 0
+        backoff = 1.0
+        last_exc = None
 
-        
+        while attempt < max_retries:
+            attempt += 1
+            try:
+                logger.debug("Checking instance state (attempt %d) url=%s", attempt, url)
+                resp = requests.get(url, headers=self.headers, timeout=timeout)
+                try:
+                    resp.raise_for_status()
+                except HTTPError:
+                    logger.warning("HTTP error checking instance state: %s - %s", resp.status_code, resp.text)
+
+                # parse JSON if possible
+                try:
+                    data = resp.json()
+                except ValueError:
+                    data = {"raw": resp.text}
+
+                # Extract a sensible state if present
+                state = None
+                if isinstance(data, dict):
+                    # many evolution APIs wrap within 'instance' -> { 'state': 'connecting' }
+                    if "instance" in data and isinstance(data["instance"], dict):
+                        state = data["instance"].get("state")
+                    # fallback: top-level 'state'
+                    state = state or data.get("state")
+
+                return {"ok": True, "status_code": resp.status_code, "result": {"state": state, "data": data}, "error": None}
+
+            except (Timeout, ConnectionError) as e:
+                last_exc = e
+                logger.warning("Network error checking instance state (attempt %d/%d): %s", attempt, max_retries, str(e))
+                time.sleep(backoff)
+                backoff *= 2
+                continue
+            except RequestException as e:
+                last_exc = e
+                logger.exception("RequestException checking instance state: %s", str(e))
+                break
+            except Exception as e:
+                last_exc = e
+                logger.exception("Unexpected error checking instance state: %s", str(e))
+                break
+
+        err = f"Failed to get instance state. Last error: {type(last_exc).__name__}: {str(last_exc)}" if last_exc else "Failed to get instance state."
+        logger.error(err)
+        return {"ok": False, "status_code": None, "result": None, "error": err}
+
+
 
 if __name__ == "__main__":
-    a = EvolutionApiManager()
-    a.send_message(number='51967244227', message='Mensaje de Prueba')
+    manager = EvolutionApiManager()
+
+    # 1️⃣ Send test message
+    print("📨 Sending Message...")
+    print(manager.send_message(number="51967244237", message="Mensaje de Prueba"))
+
+    # 3️⃣ Check Instance State
+    print("\n🔍 Checking Instance State...")
+    print(manager.check_instance_state())
