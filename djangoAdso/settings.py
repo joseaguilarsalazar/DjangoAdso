@@ -39,12 +39,15 @@ evo_key = env('evo_key')
 SECRET_KEY = 'django-insecure-v!7-3=4noomy@+u1txc@@0t6jly9pex^#%&zqm5fl77!k4!b6j'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env.bool('debug', default=True)
 
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
     'https://adso-adso-backend.4oghcf.easypanel.host',
     'http://adso-adso-backend.4oghcf.easypanel.host',
+    'https://web-backend.w0br5o.easypanel.host/',
+    'http://web-backend.w0br5o.easypanel.host/',
+    'https://api.adso-peru.org/',
 ]
 CORS_ALLOW_ALL_ORIGINS = True
 

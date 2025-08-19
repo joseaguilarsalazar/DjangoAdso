@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
-    Pagos,
+    Ingreso,
 )
 
 # Register your models here.
-admin.site.register(Pagos)
+admin.site.register(Ingreso)

@@ -160,7 +160,7 @@ class Alergia(models.Model):
 class PacienteAlergia(models.Model):
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
     alergia = models.ForeignKey(Alergia, on_delete=models.CASCADE)
-    observacion = models.TextField(max_length=200)
+    observacion = models.TextField(max_length=200, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -208,10 +208,10 @@ class Cita(models.Model):
         CANCELADA = 'CANCELADA', 'Cancelada'
         COMPLETADA = 'COMPLETADA', 'Completada'
 
-    class EstadoPago(models.TextChoices):
-        NO_PAGADO = 'NO_PAGADO', 'No Pagado'
-        PARCIAL = 'PARCIAL', 'Parcial'
-        PAGADO = 'PAGADO', 'Pagado'
+   # class EstadoPago(models.TextChoices):
+      #  NO_PAGADO = 'NO_PAGADO', 'No Pagado'
+      #  PARCIAL = 'PARCIAL', 'Parcial'
+      #  PAGADO = 'PAGADO', 'Pagado'
 
     medico = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     paciente = models.ForeignKey(Paciente, on_delete=models.SET_NULL, null=True)
@@ -220,13 +220,10 @@ class Cita(models.Model):
     enfermedad = models.CharField(max_length=100)
 
     estadoCita = models.CharField(max_length=15, choices=EstadoCita.choices, default=EstadoCita.PENDIENTE)
-    estadoPago = models.CharField(max_length=15, choices=EstadoPago.choices, default=EstadoPago.NO_PAGADO)
+    #estadoPago = models.CharField(max_length=15, choices=EstadoPago.choices, default=EstadoPago.NO_PAGADO)
 
-    costo = models.FloatField(null=True)
-    pagado = models.FloatField(null=True)
-    saldo = models.FloatField(null=True)
-    observaciones = models.TextField(max_length=1000)
-    motivo = models.TextField(max_length=1000)
+    observaciones = models.TextField(max_length=1000, null=True, blank=True)
+    motivo = models.TextField(max_length=1000, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -280,7 +277,7 @@ class PacientePlaca(models.Model):
 
     nombre = models.CharField(max_length=100)
 
-    notas = models.TextField(max_length=1000, null=True)
+    notas = models.TextField(max_length=1000, null=True, blank=True)
     archivo = models.ImageField(null=True)
 
     activo = models.BooleanField()

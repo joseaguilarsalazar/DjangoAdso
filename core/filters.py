@@ -116,7 +116,6 @@ class CitaFilter(django_filters.FilterSet):
             'paciente': ['exact'],
             'fecha': ['gte', 'lte'],
             'estadoCita': ['exact'],
-            'estadoPago': ['exact'],
         }
 
 
