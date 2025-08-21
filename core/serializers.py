@@ -89,7 +89,7 @@ class EspecialidadSerializer(serializers.ModelSerializer):
 class CitaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cita
-        fields = '__all__'
+        exclude = ['reminder_sent', 'cancelado', 'reprogramado']
 
     def validate_medico(self, value):
         if not value.rol == 'medico':
@@ -97,10 +97,10 @@ class CitaSerializer(serializers.ModelSerializer):
         return value
 
     def validate_hora(self, value):
-        """Ensure time is only in 15-minute intervals."""
-        if value.minute % 15 != 0 or value.second != 0 or value.microsecond != 0:
+        """Ensure time is only in 30-minute intervals."""
+        if value.minute % 30 != 0 or value.second != 0 or value.microsecond != 0:
             raise serializers.ValidationError(
-                "La hora debe estar en intervalos de 15 minutos (ej. 7:00, 7:15, 7:30, 7:45)."
+                "La hora debe estar en intervalos de 30 minutos (ej. 7:00, 7:30, 8:00, 8:30)."
             )
         return value
     

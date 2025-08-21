@@ -1,4 +1,5 @@
 import django_filters
+import django_filters as filters
 from .models import (
     Tratamiento, 
     Especialidad, 
@@ -14,6 +15,7 @@ from .models import (
     PacienteEnfermedad,
     PacienteDiagnostico,
     PacientePlaca,
+    Consultorio,
     )
 from django.contrib.auth import get_user_model
 
@@ -108,15 +110,43 @@ class EspecialidadFilter(django_filters.FilterSet):
         }
 
 
-class CitaFilter(django_filters.FilterSet):
+class CitaFilter(filters.FilterSet):
+    # FK filters (accept an id or the full model instance via ModelChoice)
+    medico = filters.ModelChoiceFilter(queryset=User.objects.all())
+    paciente = filters.ModelChoiceFilter(queryset=Paciente.objects.all())
+    consultorio = filters.ModelChoiceFilter(queryset=Consultorio.objects.all())
+
+    # Boolean flags
+    cancelado = filters.BooleanFilter()
+    reprogramado = filters.BooleanFilter()
+    reminder_sent = filters.BooleanFilter()
+
+    # Date range for the appointment date (use ?fecha_after=YYYY-MM-DD&fecha_before=YYYY-MM-DD)
+    fecha = filters.DateFromToRangeFilter(field_name="fecha")
+
+    # Time bounds (use ?hora_after=07:00&hora_before=12:00)
+    hora_after = filters.TimeFilter(field_name="hora", lookup_expr="gte")
+    hora_before = filters.TimeFilter(field_name="hora", lookup_expr="lte")
+
+    # Created at datetime range (ISO datetimes). Example:
+    # ?created_at_after=2025-08-01T00:00:00Z&created_at_before=2025-08-31T23:59:59Z
+    created_at = filters.DateTimeFromToRangeFilter(field_name="created_at")
+
     class Meta:
         model = Cita
-        fields = {
-            'medico': ['exact'],
-            'paciente': ['exact'],
-            'fecha': ['gte', 'lte'],
-            'estadoCita': ['exact'],
-        }
+        # expose named filters in the API (these are the "public" filter names)
+        fields = [
+            "medico",
+            "paciente",
+            "consultorio",
+            "cancelado",
+            "reprogramado",
+            "reminder_sent",
+            "fecha",
+            "hora_after",
+            "hora_before",
+            "created_at",
+        ]
 
 
 class EnfermedadFilter(django_filters.FilterSet):

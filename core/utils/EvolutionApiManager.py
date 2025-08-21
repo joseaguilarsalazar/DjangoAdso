@@ -29,7 +29,7 @@ debug = env.bool('true_msg', default=False)
 logger = logging.getLogger(__name__)
 
 class EvolutionApiManager:
-    instance = 'adso_iquitos_instance'
+    instance = env('evo_instance')
     key = evo_key
     base_url = 'https://evolution-api-evolution-api.4oghcf.easypanel.host/'  # considerar cargar desde .env
     headers = {"Content-Type": "application/json", "apikey": key}

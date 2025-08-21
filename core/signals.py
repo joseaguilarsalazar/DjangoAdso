@@ -4,7 +4,9 @@ from django.utils import timezone
 from .models import Cita
 from .utils.EvolutionApiManager import EvolutionApiManager
 import logging
-
+from .tasks import send_cita_reminder
+from datetime import datetime, timedelta
+from django.conf import settings
 # Set up logging
 logger = logging.getLogger(__name__)
 
@@ -61,6 +63,21 @@ Nueva hora: {instance.hora}'''
     
     # Send messages
     _send_notifications(doctor, paciente, mssg_dtr, mssg_pct, instance.id, "created/updated")
+
+    if created:
+        # Build the appointment datetime in project TZ
+        naive_dt = datetime.combine(instance.fecha, instance.hora)
+        tz = timezone.get_current_timezone()
+        cita_dt = tz.localize(naive_dt) if timezone.is_naive(naive_dt) else naive_dt.astimezone(tz)
+
+        offset = getattr(settings, "REMINDER_OFFSET_HOURS", 3)
+        remind_at = cita_dt - timedelta(hours=offset)
+
+        # If reminder time has passed (e.g., appointment soon), send shortly
+        eta = remind_at if remind_at > timezone.now() else timezone.now() + timedelta(minutes=1)
+
+        # Schedule the reminder task; Celery worker handles ETA without Celery Beat
+        send_cita_reminder.apply_async((instance.id,), eta=eta)
 
 @receiver(post_delete, sender=Cita)
 def notify_appointment_deleted(sender, instance: Cita, **kwargs):
@@ -121,30 +138,3 @@ def _send_notifications(doctor, paciente, mssg_dtr: str, mssg_pct: str, appointm
             logger.error(f"Failed to send {action} notification to patient {paciente.id} for appointment {appointment_id}: {str(e)}")
     else:
         logger.warning(f"Patient {paciente.id} has no phone number for appointment {appointment_id}")
-
-# Optional: Add a utility function for manual notifications
-def send_appointment_reminder(cita_id: int):
-    """
-    Utility function to manually send appointment reminders
-    """
-    try:
-        cita = Cita.objects.get(id=cita_id)
-        
-        dia_nombre = DIAS_SEMANA.get(cita.fecha.weekday(), 'N/A')
-        fecha_formateada = cita.fecha.strftime('%d/%m/%Y')
-        
-        mssg_pct = f'''🔔 Recordatorio: Tiene una cita programada para mañana
-                   {dia_nombre} {fecha_formateada} a las {cita.hora}. 
-                   Doctor: {cita.medico.nombre if hasattr(cita.medico, "nombre") else "N/A"}'''
-        
-        mssg_dtr = f'''🔔 Recordatorio de cita:
-                   Paciente: {cita.paciente.nombre if hasattr(cita.paciente, "nombre") else "N/A"}
-                   Fecha: {dia_nombre} {fecha_formateada}
-                   Hora: {cita.hora}'''
-        
-        _send_notifications(cita.medico, cita.paciente, mssg_dtr, mssg_pct, cita.id, "reminder")
-        
-    except Cita.DoesNotExist:
-        logger.error(f"Appointment with id {cita_id} does not exist")
-    except Exception as e:
-        logger.error(f"Failed to send reminder for appointment {cita_id}: {str(e)}")
