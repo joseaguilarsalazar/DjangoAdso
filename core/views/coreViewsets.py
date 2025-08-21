@@ -187,7 +187,7 @@ class CitaViewSet(viewsets.ModelViewSet):
 
         # Example: filter by medico assigned to the paciente
         if user.is_authenticated:
-            queryset = queryset.filter(clinica=user.clinica)
+            queryset = queryset.filter(paciente__clinica=user.clinica)
 
         return queryset
 

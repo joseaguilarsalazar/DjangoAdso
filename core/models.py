@@ -220,6 +220,8 @@ class Cita(models.Model):
     fecha = models.DateField()
     hora = models.TimeField()
 
+    
+
     reminder_sent = models.BooleanField(default=False, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)

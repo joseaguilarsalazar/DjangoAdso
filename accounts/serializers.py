@@ -13,7 +13,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'email', 'password', 'password_confirmation',
             'name', 'tipo_doc', 'num_doc', 'rol', 'estado',
-            'telefono', 'foto', 'direccion', 'especialidad'
+            'telefono', 'foto', 'direccion', 'especialidad', 'clinica'
         ]
         read_only_fields = ['id']
 
@@ -44,7 +44,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             telefono=validated_data.get('telefono'),
             foto=validated_data.get('foto'),
             direccion=validated_data['direccion'],
-            especialidad=validated_data.get('especialidad')
+            especialidad=validated_data.get('especialidad'),
+            clinica_id=validated_data.get('clinica_id'),
         )
         return user
 
