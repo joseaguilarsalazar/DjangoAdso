@@ -52,12 +52,12 @@ class Command(BaseCommand):
 
         #create consultorios
 
-        for i in len(range(2)):
+        for i in range(2):
             consultorio, create = Consultorio.objects.get_or_create(
                 nombreConsultorio = f'Iquitos n {i+1}',
                 clinica = clinicaIquitos
             )
-        for i in len(range(3)):
+        for i in range(3):
             consultorio, create = Consultorio.objects.get_or_create(
                 nombreConsultorio = f'Yurimaguas n {i+1}',
                 clinica = clinicaYurimaguas
