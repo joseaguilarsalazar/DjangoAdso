@@ -17,6 +17,7 @@ if not User.objects.filter(email='admin@gmail.com').exists():
         num_doc='00000001',
         name='Administrador General',
         rol='admin',
-        estado='activo'
+        estado='activo',
+        clinica__id = 1,
     )
 
