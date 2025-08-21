@@ -28,6 +28,6 @@ if not User.objects.filter(email='admin@gmail.com').exists():
         name='Administrador General',
         rol='admin',
         estado='activo',
-        clinica = clinicaIquitos,
+        clinica_id = 1,
     )
 
