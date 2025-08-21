@@ -26,7 +26,7 @@ class UserSerializer(serializers.ModelSerializer):
     class  Meta:
         model = User
         # excluimos campos sensibles o de sistema
-        exclude = ['groups', 'user_permissions', 'clinica']
+        exclude = ['groups', 'user_permissions']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
     

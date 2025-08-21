@@ -2,7 +2,7 @@ import csv
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.utils.timezone import make_aware
-from core.models import Paciente, Especialidad, Clinica,  Consultorio  # Cambia si tu app tiene otro nombre
+from core.models import Paciente, Especialidad, Clinica,  Consultorio 
 import os
 from django.contrib.auth import get_user_model
 
@@ -47,6 +47,20 @@ class Command(BaseCommand):
                 'telf_clin' : 900366452,
                 'email_clin' : 'email 2',
             }
+            )
+        
+
+        #create consultorios
+
+        for i in len(range(2)):
+            consultorio, create = Consultorio.objects.get_or_create(
+                nombreConsultorio = f'Iquitos n {i+1}',
+                clinica = clinicaIquitos
+            )
+        for i in len(range(3)):
+            consultorio, create = Consultorio.objects.get_or_create(
+                nombreConsultorio = f'Yurimaguas n {i+1}',
+                clinica = clinicaYurimaguas
             )
         # File paths
         pacientes_iquitos_file_path = os.path.join('core', 'management', 'commands', 'pacientes_iquitos.csv')
