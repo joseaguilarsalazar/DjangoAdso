@@ -68,7 +68,7 @@ Nueva hora: {instance.hora}'''
         # Build the appointment datetime in project TZ
         naive_dt = datetime.combine(instance.fecha, instance.hora)
         tz = timezone.get_current_timezone()
-        cita_dt = tz.localize(naive_dt) if timezone.is_naive(naive_dt) else naive_dt.astimezone(tz)
+        cita_dt = naive_dt.replace(tzinfo=tz) if timezone.is_naive(naive_dt) else naive_dt.astimezone(tz)
 
         offset = getattr(settings, "REMINDER_OFFSET_HOURS", 3)
         remind_at = cita_dt - timedelta(hours=offset)
