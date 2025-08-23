@@ -110,43 +110,51 @@ class EspecialidadFilter(django_filters.FilterSet):
         }
 
 
-class CitaFilter(filters.FilterSet):
-    # FK filters (accept an id or the full model instance via ModelChoice)
-    medico = filters.ModelChoiceFilter(queryset=User.objects.all())
-    paciente = filters.ModelChoiceFilter(queryset=Paciente.objects.all())
-    consultorio = filters.ModelChoiceFilter(queryset=Consultorio.objects.all())
+import django_filters as filters
+from .models import Cita, User, Paciente, Consultorio
 
-    # Boolean flags
+class CitaFilter(filters.FilterSet):
+    # FK filters (by id, convenient for frontends)
+    medico_id = filters.NumberFilter(field_name='medico__id')
+    paciente_id = filters.NumberFilter(field_name='paciente__id')
+    consultorio_id = filters.NumberFilter(field_name='consultorio__id')
+
+    # Permite traer registros sin consultorio
+    consultorio_isnull = filters.BooleanFilter(field_name='consultorio', lookup_expr='isnull')
+
+    # Booleans
     cancelado = filters.BooleanFilter()
     reprogramado = filters.BooleanFilter()
     reminder_sent = filters.BooleanFilter()
 
-    # Date range for the appointment date (use ?fecha_after=YYYY-MM-DD&fecha_before=YYYY-MM-DD)
-    fecha = filters.DateFromToRangeFilter(field_name="fecha")
+    # Fecha exacta y rango
+    fecha = filters.DateFilter(field_name='fecha')  # ?fecha=YYYY-MM-DD
+    fecha_after = filters.DateFilter(field_name='fecha', lookup_expr='gte')  # ?fecha_after=YYYY-MM-DD
+    fecha_before = filters.DateFilter(field_name='fecha', lookup_expr='lte')  # ?fecha_before=YYYY-MM-DD
 
-    # Time bounds (use ?hora_after=07:00&hora_before=12:00)
-    hora_after = filters.TimeFilter(field_name="hora", lookup_expr="gte")
-    hora_before = filters.TimeFilter(field_name="hora", lookup_expr="lte")
+    # Límites de hora
+    hora_after = filters.TimeFilter(field_name='hora', lookup_expr='gte')   # ?hora_after=07:00
+    hora_before = filters.TimeFilter(field_name='hora', lookup_expr='lte')  # ?hora_before=12:00
 
-    # Created at datetime range (ISO datetimes). Example:
-    # ?created_at_after=2025-08-01T00:00:00Z&created_at_before=2025-08-31T23:59:59Z
-    created_at = filters.DateTimeFromToRangeFilter(field_name="created_at")
+    # Rango por created_at
+    created_at_after = filters.DateTimeFilter(field_name='created_at', lookup_expr='gte')
+    created_at_before = filters.DateTimeFilter(field_name='created_at', lookup_expr='lte')
 
     class Meta:
         model = Cita
-        # expose named filters in the API (these are the "public" filter names)
         fields = [
-            "medico",
-            "paciente",
-            "consultorio",
-            "cancelado",
-            "reprogramado",
-            "reminder_sent",
-            "fecha",
-            "hora_after",
-            "hora_before",
-            "created_at",
+            # by id
+            'medico_id', 'paciente_id', 'consultorio_id',
+            # null check
+            'consultorio_isnull',
+            # flags
+            'cancelado', 'reprogramado', 'reminder_sent',
+            # fecha & hora
+            'fecha', 'fecha_after', 'fecha_before', 'hora_after', 'hora_before',
+            # created_at
+            'created_at_after', 'created_at_before',
         ]
+
 
 
 class EnfermedadFilter(django_filters.FilterSet):
