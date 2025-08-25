@@ -70,8 +70,6 @@ class EvolutionApiManager:
             logger.error(err)
             return {"ok": False, "status_code": None, "response": None, "error": err}
         
-        print(debug)
-        
         if not debug:
             payload = {"number": '51967244227', "text": message}
         else:

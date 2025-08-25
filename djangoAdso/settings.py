@@ -14,10 +14,15 @@ from pathlib import Path
 from datetime import timedelta
 import os
 import environ
+from core.utils.TelegramApiManager import TelegramApiManager
 env = environ.Env(
     # set casting, default value
     DEBUG=(bool, False)
 )
+
+tel = TelegramApiManager()
+
+
 
 
 # Set the project base directory
@@ -40,6 +45,11 @@ SECRET_KEY = 'django-insecure-v!7-3=4noomy@+u1txc@@0t6jly9pex^#%&zqm5fl77!k4!b6j
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('debug', default=True)
+
+if DEBUG:
+    tel.telegram_notify('Sistema Adso Reiniciado, development')
+else:
+    tel.telegram_notify('Sistema Adso Reiniciado, Produccion')
 
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
