@@ -86,47 +86,13 @@ class EspecialidadSerializer(serializers.ModelSerializer):
         model = Especialidad
         fields = '__all__'
 
-class CustomPacienteSerializer(serializers.ModelSerializer):
-    nombre = serializers.CharField(source="nomb_pac")
-    apellido = serializers.CharField(source="apel_pac")
-    dni = serializers.CharField(source = 'dni_pac')
-    edad = serializers.CharField(source = 'edad_pac')
-    telefono = serializers.CharField(source = 'telf_pac')
-    estado = serializers.CharField(source = 'esta_pac')
-
-    class Meta:
-        model = Paciente
-        fields = [
-            "id",
-            "nombre",    
-            "apellido", 
-            "edad",
-            "dni",
-            "telefono",
-            "estado",
-        ]
-
-class MedicoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = [
-            "id",
-            "name",
-            "email",
-            "telefono",
-            "rol",
-            "estado",
-        ]
 class CitaSerializer(serializers.ModelSerializer):
-    paciente = CustomPacienteSerializer(read_only=True)
-    medico = MedicoSerializer(read_only=True)
-
     class Meta:
         model = Cita
-        exclude = ["reminder_sent", "cancelado", "reprogramado", "old_cod_cit"]
+        exclude = ['reminder_sent', 'cancelado', 'reprogramado', 'old_cod_cit']
 
     def validate_medico(self, value):
-        if not value.rol == "medico":
+        if not value.rol == 'medico':
             raise serializers.ValidationError("El usuario seleccionado no está marcado como médico.")
         return value
 

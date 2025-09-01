@@ -33,7 +33,6 @@ from ..serializers import (
     PacienteEnfermedadSerializer,
     PacienteDiagnosticoSerializer,
     PacientePlacaSerializer,
-    CustomPacienteSerializer,
     )
 from ..filters import (
     TratamientoFilter, EspecialidadFilter,
@@ -143,7 +142,7 @@ class UserViewset(viewsets.ModelViewSet):
         return super().partial_update(request, *args, **kwargs)
 
 class PacienteViewSet(viewsets.ModelViewSet):
-    serializer_class = CustomPacienteSerializer
+    serializer_class = PacienteSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = PacienteFilter
     ordering_fields = '__all__'
