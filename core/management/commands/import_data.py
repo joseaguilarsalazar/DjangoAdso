@@ -2,9 +2,11 @@ import csv
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.utils.timezone import make_aware
-from core.models import Paciente, Especialidad, Clinica,  Consultorio 
+from core.models import Paciente, Especialidad, Clinica,  Consultorio, Enfermedad, Cita 
 import os
 from django.contrib.auth import get_user_model
+from core.signals import notify_appointment_created_updated, notify_appointment_deleted
+from django.db.models.signals import post_save
 
 User = get_user_model()
 
@@ -66,6 +68,7 @@ class Command(BaseCommand):
         pacientes_iquitos_file_path = os.path.join('core', 'management', 'commands', 'pacientes_iquitos.csv')
         pacientes_yurimaguas_file_path = os.path.join('core', 'management', 'commands', 'pacientes_yurimaguas.csv')
         especialidades_file_path = os.path.join('core', 'management', 'commands', 'especialidad.csv')
+        enfermedades_file_path = os.path.join('core', 'management', 'commands', 'enfermedades.csv')
 
         pacientes_count = 0
         especialidades_count = 0
@@ -78,12 +81,17 @@ class Command(BaseCommand):
                 for row in reader:
                     dni = parse_value(row["dni_pac"])
                     if dni and Paciente.objects.filter(dni_pac=dni).exists():
+                        paciente = Paciente.objects.filter(dni_pac=dni).first()
+                        if paciente.old_cod_pac != parse_value(row['codi_pac']):
+                            paciente.old_cod_pac = parse_value(row['codi_pac'])
+                            paciente.save()
                         continue
                     if row['sexo_pac'] == 'M':
                         sexo_pac = 'MASCULINO'
                     else:
                         sexo_pac = 'FEMENINO'
                     paciente = Paciente(
+                        old_cod_pac=parse_value(row["codi_pac"]),
                         nomb_pac=parse_value(row["nomb_pac"]),
                         apel_pac=parse_value(row["apel_pac"]),
                         edad_pac=parse_value(row["edad_pac"]),
@@ -127,12 +135,17 @@ class Command(BaseCommand):
                 for row in reader:
                     dni = parse_value(row["dni_pac"])
                     if dni and Paciente.objects.filter(dni_pac=dni).exists():
+                        paciente = Paciente.objects.filter(dni_pac=dni).first()
+                        if paciente.old_cod_pac != parse_value(row['codi_pac']):
+                            paciente.old_cod_pac = parse_value(row['codi_pac'])
+                            paciente.save()
                         continue
                     if row['sexo_pac'] == 'M':
                         sexo_pac = 'MASCULINO'
                     else:
                         sexo_pac = 'FEMENINO'
                     paciente = Paciente(
+                        old_cod_pac=parse_value(row["codi_pac"]),
                         nomb_pac=parse_value(row["nomb_pac"]),
                         apel_pac=parse_value(row["apel_pac"]),
                         edad_pac=parse_value(row["edad_pac"]),
@@ -158,7 +171,7 @@ class Command(BaseCommand):
                         registro_pac=parse_date(row["registro_pac"]),
                         detalleodontograma_pac=parse_value(row["detalleodontograma_pac"]),
                         sexo=sexo_pac,
-                        clinica = clinicaIquitos
+                        clinica = clinicaYurimaguas
                         #esta_pac, estudios_pac → usarán valores por defecto
                     )
                     paciente.save()
@@ -194,6 +207,35 @@ class Command(BaseCommand):
         except KeyError as e:
             self.stderr.write(self.style.ERROR(f"Columna faltante en especialidades: {e}"))
 
+        # ✅ --- IMPORT ENFERMEDADES ---
+        enfermedades_count=0
+        try:
+            with open(enfermedades_file_path, newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+
+                for row in reader:
+                    codigo = parse_value(row.get("codi_enf"))
+                    descripcion = parse_value(row.get("desc_enf"))
+                    estado = parse_value(row.get("esta_enf")) or 'S'
+
+                    # Check if enfermedad already exists by codigo or descripcion
+                    if (codigo and Enfermedad.objects.filter(codigo=codigo).exists()) or \
+                    (descripcion and Enfermedad.objects.filter(descripcion=descripcion).exists()):
+                        continue
+
+                    enfermedad = Enfermedad(
+                        codigo=codigo,
+                        descripcion=descripcion,
+                        estado=estado,
+                    )
+                    enfermedad.save()
+                    enfermedades_count += 1
+
+        except FileNotFoundError:
+            self.stderr.write(self.style.ERROR(f"Archivo de enfermedades no encontrado: {enfermedades_file_path}"))
+        except KeyError as e:
+            self.stderr.write(self.style.ERROR(f"Columna faltante en enfermedades: {e}"))
+
         # ✅ --- IMPORT MÉDICOS ---
         medicos_iquitos_file_path = os.path.join('core', 'management', 'commands', 'medico_iquitos.csv')
         medicos_yurimaguas_file_path = os.path.join('core', 'management', 'commands', 'medico_yurimaguas.csv')
@@ -212,6 +254,10 @@ class Command(BaseCommand):
                         continue
 
                     if User.objects.filter(num_doc=dni).exists():
+                        user = User.objects.filter(num_doc=dni).first()
+                        if user.old_cod_med != parse_value(row['codi_med']):
+                            user.old_cod_med = parse_value(row['codi_med'])
+                            user.save()
                         continue
 
                     especialidad = None
@@ -220,6 +266,7 @@ class Command(BaseCommand):
                         especialidad = Especialidad.objects.filter(id=int(cod_especialidad)).first()
 
                     user = User(
+                        old_cod_med=parse_value(row['codi_med']),
                         email=email,
                         tipo_doc='DNI',
                         num_doc=dni,
@@ -254,6 +301,10 @@ class Command(BaseCommand):
                         continue
 
                     if User.objects.filter(num_doc=dni).exists():
+                        user = User.objects.filter(num_doc=dni).first()
+                        if user.old_cod_med != parse_value(row['codi_med']):
+                            user.old_cod_med = parse_value(row['codi_med'])
+                            user.save()
                         continue
 
                     especialidad = None
@@ -262,6 +313,7 @@ class Command(BaseCommand):
                         especialidad = Especialidad.objects.filter(id=int(cod_especialidad)).first()
 
                     user = User(
+                        old_cod_med=parse_value(row['codi_med']),
                         email=email,
                         tipo_doc='DNI',
                         num_doc=dni,
@@ -282,9 +334,134 @@ class Command(BaseCommand):
         except KeyError as e:
             self.stderr.write(self.style.ERROR(f"Columna faltante en médicos: {e}"))
 
+        # ✅ --- IMPORT CITAS ---
+        citas_iquitos_file_path = os.path.join('core', 'management', 'commands', 'citas_iquitos.csv')
+        citas_yurimaguas_file_path = os.path.join('core', 'management', 'commands', 'citas_yurimaguas.csv')
+        citas_count = 0
+
+        try:
+            with open(citas_iquitos_file_path, newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+
+                for row in reader:
+                    old_cod_cit = parse_value(row["codi_cit"])
+
+                    # skip if already exists
+                    cita = Cita.objects.filter(old_cod_cit=old_cod_cit).first()
+                    if cita:
+                        continue
+
+                    # find medico by old_cod_med
+                    medico = None
+                    if parse_value(row["codi_med"]).isdigit():
+                        medico = User.objects.filter(old_cod_med=int(row["codi_med"])).first()
+
+                    # find paciente by old_cod_pac
+                    paciente = None
+                    if parse_value(row["codi_pac"]).isdigit():
+                        paciente = Paciente.objects.filter(old_cod_pac=int(row["codi_pac"])).first()
+
+                    # parse fecha & hora
+                    fecha_str = parse_value(row["fech_cit"])
+                    fecha = None
+                    hora = None
+                    if fecha_str:
+                        try:
+                            dt = datetime.strptime(fecha_str, "%Y-%m-%d %H:%M:%S")
+                            fecha = dt.date()
+                            hora = dt.time()
+                        except ValueError:
+                            self.stdout.write(self.style.ERROR(f"❌ Fecha inválida: {fecha_str}"))
+                            continue
+
+                    # estado → cancelado/reprogramado
+                    estado = parse_value(row["esta_cit"])
+                    cancelado = (estado == "0")  # o depende de tu lógica real
+                    reprogramado = (estado == "2")  # ejemplo
+
+                    cita = Cita(
+                        old_cod_cit=old_cod_cit,
+                        medico=medico,
+                        paciente=paciente,
+                        fecha=fecha,
+                        hora=hora,
+                        cancelado=cancelado,
+                        reprogramado=reprogramado,
+                    )
+                    cita._skip_signal = True
+                    cita.save()
+                    citas_count += 1
+
+            self.stdout.write(self.style.SUCCESS(f"✅ {citas_count} citas insertadas."))
+
+        except FileNotFoundError:
+            self.stderr.write(self.style.ERROR(f"Archivo no encontrado: {citas_iquitos_file_path}"))
+        except KeyError as e:
+            self.stderr.write(self.style.ERROR(f"Columna faltante en citas: {e}"))
+
+        try:
+            with open(citas_yurimaguas_file_path, newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+
+                for row in reader:
+                    old_cod_cit = parse_value(row["codi_cit"])
+
+                    # skip if already exists
+                    cita = Cita.objects.filter(old_cod_cit=old_cod_cit).first()
+                    if cita:
+                        continue
+
+                    # find medico by old_cod_med
+                    medico = None
+                    if parse_value(row["codi_med"]).isdigit():
+                        medico = User.objects.filter(old_cod_med=int(row["codi_med"])).first()
+
+                    # find paciente by old_cod_pac
+                    paciente = None
+                    if parse_value(row["codi_pac"]).isdigit():
+                        paciente = Paciente.objects.filter(old_cod_pac=int(row["codi_pac"])).first()
+
+                    # parse fecha & hora
+                    fecha_str = parse_value(row["fech_cit"])
+                    fecha = None
+                    hora = None
+                    if fecha_str:
+                        try:
+                            dt = datetime.strptime(fecha_str, "%Y-%m-%d %H:%M:%S")
+                            fecha = dt.date()
+                            hora = dt.time()
+                        except ValueError:
+                            self.stdout.write(self.style.ERROR(f"❌ Fecha inválida: {fecha_str}"))
+                            continue
+
+                    # estado → cancelado/reprogramado
+                    estado = parse_value(row["esta_cit"])
+                    cancelado = (estado == "0")  # o depende de tu lógica real
+                    reprogramado = (estado == "2")  # ejemplo
+
+                    cita = Cita(
+                        old_cod_cit=old_cod_cit,
+                        medico=medico,
+                        paciente=paciente,
+                        fecha=fecha,
+                        hora=hora,
+                        cancelado=cancelado,
+                        reprogramado=reprogramado,
+                    )
+                    cita._skip_signal = True
+                    cita.save()
+                    citas_count += 1
+
+            self.stdout.write(self.style.SUCCESS(f"✅ {citas_count} citas insertadas."))
+
+        except FileNotFoundError:
+            self.stderr.write(self.style.ERROR(f"Archivo no encontrado: {citas_yurimaguas_file_path}"))
+        except KeyError as e:
+            self.stderr.write(self.style.ERROR(f"Columna faltante en citas: {e}"))
         
 
         # ✅ --- FINAL MESSAGE ---
         self.stdout.write(self.style.SUCCESS(f"✅ {pacientes_count} pacientes importados correctamente"))
         self.stdout.write(self.style.SUCCESS(f"✅ {especialidades_count} especialidades importadas correctamente"))
         self.stdout.write(self.style.SUCCESS(f"✅ {medicos_count} médicos importados correctamente"))
+        self.stdout.write(self.style.SUCCESS(f"✅ {enfermedades_count} enfermedades importadas correctamente"))

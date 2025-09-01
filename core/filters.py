@@ -158,12 +158,13 @@ class CitaFilter(filters.FilterSet):
 
 
 class EnfermedadFilter(django_filters.FilterSet):
+    codigo = django_filters.CharFilter(lookup_expr='icontains')
     descripcion = django_filters.CharFilter(lookup_expr='icontains')
     estado = django_filters.CharFilter()
 
     class Meta:
         model = Enfermedad
-        fields = ['descripcion', 'estado']
+        fields = ['codigo','descripcion', 'estado']
 
 
 class PacienteEvolucionFilter(django_filters.FilterSet):

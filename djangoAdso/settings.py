@@ -41,7 +41,7 @@ evo_key = env('evo_key')
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-v!7-3=4noomy@+u1txc@@0t6jly9pex^#%&zqm5fl77!k4!b6j'
+SECRET_KEY = env('DJANDO_SECRET')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('debug', default=True)
@@ -205,8 +205,8 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),  # default: 5 minutes
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),      # default: 1 day
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1), 
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

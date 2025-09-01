@@ -62,6 +62,7 @@ class User(AbstractUser):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
+    old_cod_med = models.IntegerField(null=True, blank=True) #this field is to store the old id of the previous db
 
     email       = models.EmailField(_('email address'), unique=True)
     tipo_doc    = models.CharField("Tipo de documento", max_length=50)
@@ -90,6 +91,7 @@ class User(AbstractUser):
     
 
 class Paciente(models.Model):
+    old_cod_pac = models.IntegerField(null=True, blank=True)
     nomb_pac              = models.CharField("Nombres", max_length=20,blank=True, null=True)
     apel_pac              = models.CharField("Apellidos", max_length=20, blank=True, null=True)
     edad_pac              = models.CharField("Edad", max_length=3,blank=True, null=True)
@@ -210,6 +212,7 @@ class Consultorio(models.Model):
 
 
 class Cita(models.Model):
+    old_cod_cit = models.IntegerField(null=True, blank=True)
     medico = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     paciente = models.ForeignKey(Paciente, on_delete=models.SET_NULL, null=True)
     consultorio = models.ForeignKey(Consultorio, on_delete=models.CASCADE, null=True, blank=True)
@@ -232,6 +235,7 @@ class Cita(models.Model):
     
 
 class Enfermedad(models.Model):
+    codigo = models.CharField(max_length=20, null=True, blank=True)
     descripcion = models.CharField("Descripción", max_length=200, blank=True, null=True)
     estado = models.CharField("Estado", max_length=1, default='S')
 

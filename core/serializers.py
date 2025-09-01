@@ -26,7 +26,7 @@ class UserSerializer(serializers.ModelSerializer):
     class  Meta:
         model = User
         # excluimos campos sensibles o de sistema
-        exclude = ['groups', 'user_permissions']
+        exclude = ['groups', 'user_permissions', 'old_cod_med']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
     
@@ -72,9 +72,9 @@ class PacienteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Paciente
         # excluimos campos sensibles o de sistema
-        fields = '__all__'
+        exclude = ['old_cod_pac']
         read_only_fields = ['id', 'created_at', 'updated_at']
-
+        
 
 class TratamientoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -89,7 +89,7 @@ class EspecialidadSerializer(serializers.ModelSerializer):
 class CitaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cita
-        exclude = ['reminder_sent', 'cancelado', 'reprogramado']
+        exclude = ['reminder_sent', 'cancelado', 'reprogramado', 'old_cod_cit']
 
     def validate_medico(self, value):
         if not value.rol == 'medico':

@@ -26,6 +26,8 @@ def notify_appointment_created_updated(sender, instance: Cita, created: bool, **
     """
     Notify medics and patients when an appointment is created or updated
     """
+    if getattr(instance, "_skip_signal", False):
+        return  # 👈 Don’t run if flagged
     if not instance.medico or not instance.paciente:
         logger.warning(f"Appointment {instance.id} missing doctor or patient information")
         return
@@ -84,6 +86,8 @@ def notify_appointment_deleted(sender, instance: Cita, **kwargs):
     """
     Notify medics and patients when an appointment is deleted
     """
+    if getattr(instance, "_skip_signal", False):
+        return  # 👈 Don’t run if flagged
     if not instance.medico or not instance.paciente:
         logger.warning(f"Deleted appointment missing doctor or patient information")
         return
