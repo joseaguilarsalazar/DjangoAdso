@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
+from core.models import Clinica
 
 User = get_user_model()
 
@@ -13,7 +14,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'email', 'password', 'password_confirmation',
             'name', 'tipo_doc', 'num_doc', 'rol', 'estado',
-            'telefono', 'foto', 'direccion', 'especialidad'
+            'telefono', 'foto', 'direccion', 'especialidad', 'clinica'
         ]
         read_only_fields = ['id']
 
@@ -33,6 +34,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        
         user = User.objects.create_user(
             email=validated_data['email'],
             password=validated_data['password'],
@@ -44,7 +46,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             telefono=validated_data.get('telefono'),
             foto=validated_data.get('foto'),
             direccion=validated_data['direccion'],
-            especialidad=validated_data.get('especialidad')
+            especialidad=validated_data.get('especialidad'),
+            clinica=validated_data.get('clinica'),
         )
         return user
 

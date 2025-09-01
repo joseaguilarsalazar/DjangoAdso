@@ -2,7 +2,7 @@ from rest_framework import viewsets, views
 from django.contrib.auth import get_user_model
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
 from ..models import (
     Paciente,
     Tratamiento, 
@@ -33,7 +33,7 @@ from ..serializers import (
     PacienteEnfermedadSerializer,
     PacienteDiagnosticoSerializer,
     PacientePlacaSerializer,
-)
+    )
 from ..filters import (
     TratamientoFilter, EspecialidadFilter,
      CitaFilter, PacienteFilter,
@@ -142,12 +142,21 @@ class UserViewset(viewsets.ModelViewSet):
         return super().partial_update(request, *args, **kwargs)
 
 class PacienteViewSet(viewsets.ModelViewSet):
-    queryset = Paciente.objects.all()
     serializer_class = PacienteSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = PacienteFilter
     ordering_fields = '__all__'
     permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Paciente.objects.all()
+
+        # Example: filter by medico assigned to the paciente
+        if user.is_authenticated:
+            queryset = queryset.filter(clinica=user.clinica)
+
+        return queryset
 
 class TratamientoViewSet(viewsets.ModelViewSet):
     queryset = Tratamiento.objects.all()
@@ -166,12 +175,23 @@ class EspecialidadViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
 class CitaViewSet(viewsets.ModelViewSet):
-    queryset = Cita.objects.all()
     serializer_class = CitaSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = CitaFilter
     ordering_fields = '__all__'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        # Start with all citas
+        qs = Cita.objects.all()
+
+        # Restrict by clinica if authenticated
+        if user.is_authenticated and hasattr(user, "clinica"):
+            qs = qs.filter(paciente__clinica=user.clinica)
+
+        return qs
 
 class ClinicaViewSet(viewsets.ModelViewSet):
     queryset = Clinica.objects.all()

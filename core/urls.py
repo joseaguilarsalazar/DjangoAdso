@@ -3,10 +3,10 @@ from rest_framework.routers import DefaultRouter
 from .views import *
 
 router = DefaultRouter()
-router.register(r'pacientes', PacienteViewSet)
+router.register(r'pacientes', PacienteViewSet, basename='paciente')
 router.register(r'tratamientos', TratamientoViewSet)
 router.register(r'especialidades', EspecialidadViewSet)
-router.register(r'citas', CitaViewSet)
+router.register(r'citas', CitaViewSet, basename='cita')
 router.register(r'clinicas', ClinicaViewSet)
 router.register(r'alergias', AlergiaViewSet)
 router.register(r'paciente_alergias', PacienteAlergiaViewSet)

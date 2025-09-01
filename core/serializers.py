@@ -26,7 +26,7 @@ class UserSerializer(serializers.ModelSerializer):
     class  Meta:
         model = User
         # excluimos campos sensibles o de sistema
-        exclude = ['groups', 'user_permissions']
+        exclude = ['groups', 'user_permissions', 'old_cod_med']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
     
@@ -72,9 +72,9 @@ class PacienteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Paciente
         # excluimos campos sensibles o de sistema
-        fields = '__all__'
+        exclude = ['old_cod_pac']
         read_only_fields = ['id', 'created_at', 'updated_at']
-
+        
 
 class TratamientoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -89,7 +89,7 @@ class EspecialidadSerializer(serializers.ModelSerializer):
 class CitaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cita
-        fields = '__all__'
+        exclude = ['reminder_sent', 'cancelado', 'reprogramado', 'old_cod_cit']
 
     def validate_medico(self, value):
         if not value.rol == 'medico':
@@ -97,10 +97,10 @@ class CitaSerializer(serializers.ModelSerializer):
         return value
 
     def validate_hora(self, value):
-        """Ensure time is only in 15-minute intervals."""
-        if value.minute % 15 != 0 or value.second != 0 or value.microsecond != 0:
+        """Ensure time is only in 30-minute intervals."""
+        if value.minute % 30 != 0 or value.second != 0 or value.microsecond != 0:
             raise serializers.ValidationError(
-                "La hora debe estar en intervalos de 15 minutos (ej. 7:00, 7:15, 7:30, 7:45)."
+                "La hora debe estar en intervalos de 30 minutos (ej. 7:00, 7:30, 8:00, 8:30)."
             )
         return value
     

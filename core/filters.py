@@ -1,4 +1,5 @@
 import django_filters
+import django_filters as filters
 from .models import (
     Tratamiento, 
     Especialidad, 
@@ -14,6 +15,7 @@ from .models import (
     PacienteEnfermedad,
     PacienteDiagnostico,
     PacientePlaca,
+    Consultorio,
     )
 from django.contrib.auth import get_user_model
 
@@ -108,24 +110,61 @@ class EspecialidadFilter(django_filters.FilterSet):
         }
 
 
-class CitaFilter(django_filters.FilterSet):
+import django_filters as filters
+from .models import Cita, User, Paciente, Consultorio
+
+class CitaFilter(filters.FilterSet):
+    # FK filters (by id, convenient for frontends)
+    medico_id = filters.NumberFilter(field_name='medico__id')
+    paciente_id = filters.NumberFilter(field_name='paciente__id')
+    consultorio_id = filters.NumberFilter(field_name='consultorio__id')
+
+    # Permite traer registros sin consultorio
+    consultorio_isnull = filters.BooleanFilter(field_name='consultorio', lookup_expr='isnull')
+
+    # Booleans
+    cancelado = filters.BooleanFilter()
+    reprogramado = filters.BooleanFilter()
+    reminder_sent = filters.BooleanFilter()
+
+    # Fecha exacta y rango
+    fecha = filters.DateFilter(field_name='fecha')  # ?fecha=YYYY-MM-DD
+    fecha_after = filters.DateFilter(field_name='fecha', lookup_expr='gte')  # ?fecha_after=YYYY-MM-DD
+    fecha_before = filters.DateFilter(field_name='fecha', lookup_expr='lte')  # ?fecha_before=YYYY-MM-DD
+
+    # Límites de hora
+    hora_after = filters.TimeFilter(field_name='hora', lookup_expr='gte')   # ?hora_after=07:00
+    hora_before = filters.TimeFilter(field_name='hora', lookup_expr='lte')  # ?hora_before=12:00
+
+    # Rango por created_at
+    created_at_after = filters.DateTimeFilter(field_name='created_at', lookup_expr='gte')
+    created_at_before = filters.DateTimeFilter(field_name='created_at', lookup_expr='lte')
+
     class Meta:
         model = Cita
-        fields = {
-            'medico': ['exact'],
-            'paciente': ['exact'],
-            'fecha': ['gte', 'lte'],
-            'estadoCita': ['exact'],
-        }
+        fields = [
+            # by id
+            'medico_id', 'paciente_id', 'consultorio_id',
+            # null check
+            'consultorio_isnull',
+            # flags
+            'cancelado', 'reprogramado', 'reminder_sent',
+            # fecha & hora
+            'fecha', 'fecha_after', 'fecha_before', 'hora_after', 'hora_before',
+            # created_at
+            'created_at_after', 'created_at_before',
+        ]
+
 
 
 class EnfermedadFilter(django_filters.FilterSet):
+    codigo = django_filters.CharFilter(lookup_expr='icontains')
     descripcion = django_filters.CharFilter(lookup_expr='icontains')
     estado = django_filters.CharFilter()
 
     class Meta:
         model = Enfermedad
-        fields = ['descripcion', 'estado']
+        fields = ['codigo','descripcion', 'estado']
 
 
 class PacienteEvolucionFilter(django_filters.FilterSet):

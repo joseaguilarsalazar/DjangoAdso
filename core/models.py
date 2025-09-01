@@ -47,11 +47,7 @@ class Clinica(models.Model):
     direc_clin = models.CharField("Dirección", max_length=100)
     telf_clin = models.BigIntegerField("Teléfono")  # int(11) puede exceder IntegerField
     email_clin = models.EmailField("Correo electrónico", max_length=100)
-    ruc_clin = models.CharField("RUC", max_length=15, blank=True, null=True)
-    fecha_clin = models.DateField("Fecha", blank=True, null=True)
     photo = models.CharField("Foto (ruta)", max_length=300, blank=True, null=True)
-    cod_plan = models.IntegerField("Código de plan")
-    esta_clin = models.CharField("Estado", max_length=1, blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -66,6 +62,7 @@ class User(AbstractUser):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
+    old_cod_med = models.IntegerField(null=True, blank=True) #this field is to store the old id of the previous db
 
     email       = models.EmailField(_('email address'), unique=True)
     tipo_doc    = models.CharField("Tipo de documento", max_length=50)
@@ -76,7 +73,7 @@ class User(AbstractUser):
     foto        = models.ImageField("Foto de perfil", upload_to='user_photos/', null=True, blank=True)
 
     especialidad = models.ForeignKey(Especialidad, on_delete=models.SET_NULL, null=True)
-
+    clinica = models.ForeignKey(Clinica, on_delete=models.CASCADE)
     estado      = models.CharField("Estado", max_length=50)
     ROL_CHOICES = [
         ('medico', 'Médico'),
@@ -94,6 +91,7 @@ class User(AbstractUser):
     
 
 class Paciente(models.Model):
+    old_cod_pac = models.IntegerField(null=True, blank=True)
     nomb_pac              = models.CharField("Nombres", max_length=20,blank=True, null=True)
     apel_pac              = models.CharField("Apellidos", max_length=20, blank=True, null=True)
     edad_pac              = models.CharField("Edad", max_length=3,blank=True, null=True)
@@ -116,6 +114,7 @@ class Paciente(models.Model):
     provincia_id          = models.IntegerField("ID provincia", blank=True, null=True)
     distrito_id           = models.IntegerField("ID distrito", blank=True, null=True)
     observacion           = models.CharField("Observaciones", max_length=100, blank=True, null=True)
+    clinica = models.ForeignKey(Clinica, on_delete=models.CASCADE)
     
     registro_pac          = models.DateTimeField("Registro paciente", auto_now_add=True, blank=True, null=True)
     
@@ -199,31 +198,32 @@ class Tratamiento(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.tratamiento
+        return self.asunto
+
+
     
+class Consultorio(models.Model):
+    clinica = models.ForeignKey(Clinica, on_delete=models.CASCADE)
+    nombreConsultorio = models.CharField(max_length=100, default='')
+
+    def __str__(self):
+        return self.nombreConsultorio if self.nombreConsultorio else self.id
+    
+
+
 class Cita(models.Model):
-    class EstadoCita(models.TextChoices):
-        PENDIENTE = 'PENDIENTE', 'Pendiente'
-        CONFIRMADA = 'CONFIRMADA', 'Confirmada'
-        CANCELADA = 'CANCELADA', 'Cancelada'
-        COMPLETADA = 'COMPLETADA', 'Completada'
-
-   # class EstadoPago(models.TextChoices):
-      #  NO_PAGADO = 'NO_PAGADO', 'No Pagado'
-      #  PARCIAL = 'PARCIAL', 'Parcial'
-      #  PAGADO = 'PAGADO', 'Pagado'
-
+    old_cod_cit = models.IntegerField(null=True, blank=True)
     medico = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     paciente = models.ForeignKey(Paciente, on_delete=models.SET_NULL, null=True)
+    consultorio = models.ForeignKey(Consultorio, on_delete=models.CASCADE, null=True, blank=True)
+
+    cancelado = models.BooleanField(default=False)
+    reprogramado = models.BooleanField(default=False)
+
     fecha = models.DateField()
     hora = models.TimeField()
-    enfermedad = models.CharField(max_length=100)
 
-    estadoCita = models.CharField(max_length=15, choices=EstadoCita.choices, default=EstadoCita.PENDIENTE)
-    #estadoPago = models.CharField(max_length=15, choices=EstadoPago.choices, default=EstadoPago.NO_PAGADO)
-
-    observaciones = models.TextField(max_length=1000, null=True, blank=True)
-    motivo = models.TextField(max_length=1000, null=True, blank=True)
+    reminder_sent = models.BooleanField(default=False, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -233,6 +233,7 @@ class Cita(models.Model):
     
 
 class Enfermedad(models.Model):
+    codigo = models.CharField(max_length=20, null=True, blank=True)
     descripcion = models.CharField("Descripción", max_length=200, blank=True, null=True)
     estado = models.CharField("Estado", max_length=1, default='S')
 
@@ -283,3 +284,6 @@ class PacientePlaca(models.Model):
     activo = models.BooleanField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+    

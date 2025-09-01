@@ -14,10 +14,15 @@ from pathlib import Path
 from datetime import timedelta
 import os
 import environ
+from core.utils.TelegramApiManager import TelegramApiManager
 env = environ.Env(
     # set casting, default value
     DEBUG=(bool, False)
 )
+
+tel = TelegramApiManager()
+
+
 
 
 # Set the project base directory
@@ -36,10 +41,15 @@ evo_key = env('evo_key')
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-v!7-3=4noomy@+u1txc@@0t6jly9pex^#%&zqm5fl77!k4!b6j'
+SECRET_KEY = env('DJANDO_SECRET')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('debug', default=True)
+
+if DEBUG:
+    tel.telegram_notify('Sistema Adso Reiniciado, development')
+else:
+    tel.telegram_notify('Sistema Adso Reiniciado, Produccion')
 
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
@@ -145,10 +155,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
-
+TIME_ZONE = "America/Lima"
 USE_I18N = True
-
 USE_TZ = True
 
 STATIC_URL = '/static/'
@@ -197,13 +205,14 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),  # default: 5 minutes
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),      # default: 1 day
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1), 
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
+#------------------this part is not being used right now (21/08/2025) update in the future-------#
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
@@ -225,3 +234,29 @@ AWS_S3_SIGNATURE_VERSION = 's3v4'
 AWS_QUERYSTRING_EXPIRE = 36000  # 1 hour
 PRESIGNED_URL_EXPIRATION = 36000
 AWS_S3_CUSTOM_DOMAIN = None
+
+
+#-----------------------------------------------------------------------------------------------#
+
+# Celery/Redis
+# Define variables from environment (or defaults)
+REDIS_HOST = env("REDIS_HOST", default="127.0.0.1")
+REDIS_PORT = env("REDIS_PORT", default="6379")
+REDIS_PASSWORD = env("REDIS_PASSWORD", default="")
+
+# Build Redis URL dynamically
+if REDIS_PASSWORD:
+    REDIS_URL = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
+else:
+    REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}"
+
+# Celery configs
+CELERY_BROKER_URL = f"{REDIS_URL}/0"
+CELERY_RESULT_BACKEND = f"{REDIS_URL}/1"
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+# optional: small reliability knobs
+CELERY_TASK_ALWAYS_EAGER = False
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
