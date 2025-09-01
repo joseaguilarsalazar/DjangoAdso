@@ -183,13 +183,15 @@ class CitaViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Cita.objects.all()
 
-        # Example: filter by medico assigned to the paciente
-        if user.is_authenticated:
-            queryset = queryset.filter(paciente__clinica=user.clinica)
+        # Start with all citas
+        qs = Cita.objects.all()
 
-        return queryset
+        # Restrict by clinica if authenticated
+        if user.is_authenticated and hasattr(user, "clinica"):
+            qs = qs.filter(paciente__clinica=user.clinica)
+
+        return qs
 
 class ClinicaViewSet(viewsets.ModelViewSet):
     queryset = Clinica.objects.all()
