@@ -27,6 +27,7 @@ from .predoneViews import (
 from .EnvioMensajeAPIView import EnvioMensajeAPIView
 from .MedicosListView import MedicoListAPIView
 from .HistorialApiView import HistorialApiView
+from .todayScheduleApi import TodayScheduleApi
 
 __all__ = [
     # coreViewsets
@@ -59,4 +60,5 @@ __all__ = [
     "EnvioMensajeAPIView",
     'MedicoListAPIView',
     "HistorialApiView",
+    "TodayScheduleApi",
 ]
