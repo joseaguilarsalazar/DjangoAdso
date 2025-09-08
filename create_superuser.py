@@ -9,16 +9,28 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+DEFAULT_EMAIL = "admin@gmail.com"
+DEFAULT_PASSWORD = "adso_dental_2025"
 
-if not User.objects.filter(email='admin@gmail.com').exists():
+try:
+    user = User.objects.get(email=DEFAULT_EMAIL)
+    # Check if password matches
+    if not user.check_password(DEFAULT_PASSWORD):
+        user.set_password(DEFAULT_PASSWORD)
+        user.save()
+        print("✅ Password for admin reset to default.")
+    else:
+        print("ℹ️ Admin user already exists with correct password.")
+
+except User.DoesNotExist:
     User.objects.create_superuser(
-        email='admin@gmail.com',
-        password='adso_dental_2025',
-        tipo_doc='DNI',
-        num_doc='00000001',
-        name='Administrador General',
-        rol='admin',
-        estado='activo',
-        clinica_id = 1,
+        email=DEFAULT_EMAIL,
+        password=DEFAULT_PASSWORD,
+        tipo_doc="DNI",
+        num_doc="00000001",
+        name="Administrador General",
+        rol="admin",
+        estado="activo",
+        clinica_id=1,
     )
-
+    print("✅ Admin user created with default password.")
