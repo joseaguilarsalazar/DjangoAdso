@@ -72,7 +72,7 @@ class User(AbstractUser):
     telefono    = models.CharField("Teléfono", max_length=20, null=True, blank=True)
     foto        = models.ImageField("Foto de perfil", upload_to='user_photos/', null=True, blank=True)
 
-    especialidad = models.ForeignKey(Especialidad, on_delete=models.SET_NULL, null=True)
+    especialidad = models.ForeignKey(Especialidad, on_delete=models.SET_NULL, null=True, blank=True)
     clinica = models.ForeignKey(Clinica, on_delete=models.CASCADE)
     estado      = models.CharField("Estado", max_length=50)
     ROL_CHOICES = [

@@ -1,6 +1,8 @@
 # your_app/serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from rest_framework.response import Response
+from rest_framework.status import HTTP_406_NOT_ACCEPTABLE
 from .models import ( 
     Tratamiento, 
     Especialidad, 
@@ -103,6 +105,17 @@ class CitaSerializer(serializers.ModelSerializer):
                 "La hora debe estar en intervalos de 30 minutos (ej. 7:00, 7:30, 8:00, 8:30)."
             )
         return value
+    
+    def validate(self, attrs):
+        if Cita.objects.filter(
+            fecha=attrs.get("fecha"),
+            hora=attrs.get("hora"),
+            consultorio=attrs.get("consultorio"),
+        ).exists():
+            raise serializers.ValidationError(
+                {"non_field_errors": ["Ya existe una cita en este horario y consultorio."]}
+            )
+        return attrs
     
 class ClinicaSerializer(serializers.ModelSerializer):
     class Meta:
