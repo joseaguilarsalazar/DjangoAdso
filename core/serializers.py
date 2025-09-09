@@ -117,6 +117,17 @@ class CitaSerializer(serializers.ModelSerializer):
             )
         return attrs
     
+    def get_fields(self):
+        fields = super().get_fields()
+        request = self.context.get("request")
+
+        if request and request.method == "GET":
+            # enable nested expansion
+            for name, field in fields.items():
+                if hasattr(field, "depth"):
+                    field.depth = 2
+        return fields
+    
 class ClinicaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Clinica
