@@ -87,6 +87,6 @@ class HistorialApiView(views.APIView):
 
 
         citas = Cita.objects.filter(paciente__id = paciente.id)
-        historic_data['citas'] = CitaSerializer(citas, many=True).data if citas.exists() else None
+        historic_data['citas'] = CitaSerializer(citas, many=True, context={'request': self.request}).data if citas.exists() else None
 
         return Response(historic_data, status=status.HTTP_200_OK) 
