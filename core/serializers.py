@@ -126,11 +126,15 @@ class CitaSerializer(serializers.ModelSerializer):
             # Manually expand nested fields (depth=2 equivalent)
             representation["paciente"] = {
                 'id' : instance.paciente.id,
-                'name' : instance.paciente.__str__()        
+                'name' : instance.paciente.__str__(),
+                'dni' : instance.paciente.dni_pac,
+                'age' : instance.paciente.edad_pac,
+                'state' : instance.paciente.esta_pac,        
             } if instance.paciente else None
             representation["medico"] = {
                 'id' : instance.medico.id,
-                'name' : instance.medico.__str__()
+                'name' : instance.medico.__str__(),
+                'dni' : instance.medico.num_doc
             } if instance.medico else None
             representation["consultorio"] = ConsultorioSerializer(instance.consultorio).data if instance.consultorio else None
 
@@ -151,10 +155,44 @@ class PacienteAlergiaSerializer(serializers.ModelSerializer):
         model = PacienteAlergia
         fields = '__all__'
 
+    def to_representation(self, instance: PacienteAlergia):
+        """Customize representation depending on request method."""
+        representation = super().to_representation(instance)
+        request = self.context.get("request")
+
+        if request and request.method == "GET":
+            # Manually expand nested fields (depth=2 equivalent)
+            representation["paciente"] = {
+                'id' : instance.paciente.id,
+                'name' : instance.paciente.__str__(),
+                'dni' : instance.paciente.dni_pac,
+                'age' : instance.paciente.edad_pac,
+                'state' : instance.paciente.esta_pac,        
+            } if instance.paciente else None
+
+        return representation
+
 class PacienteEnfermedadSerializer(serializers.ModelSerializer):
     class Meta:
         model = PacienteEnfermedad
         fields = '__all__'
+
+    def to_representation(self, instance: PacienteEnfermedad):
+        """Customize representation depending on request method."""
+        representation = super().to_representation(instance)
+        request = self.context.get("request")
+
+        if request and request.method == "GET":
+            # Manually expand nested fields (depth=2 equivalent)
+            representation["paciente"] = {
+                'id' : instance.paciente.id,
+                'name' : instance.paciente.__str__(),
+                'dni' : instance.paciente.dni_pac,
+                'age' : instance.paciente.edad_pac,
+                'state' : instance.paciente.esta_pac,        
+            } if instance.paciente else None
+
+        return representation
 
 class BancoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -175,17 +213,68 @@ class PacienteEvolucionSerializer(serializers.ModelSerializer):
     class Meta:
         model = PacienteEvolucion
         fields = '__all__'
+    
+    def to_representation(self, instance: PacienteEvolucion):
+        """Customize representation depending on request method."""
+        representation = super().to_representation(instance)
+        request = self.context.get("request")
+
+        if request and request.method == "GET":
+            # Manually expand nested fields (depth=2 equivalent)
+            representation["paciente"] = {
+                'id' : instance.paciente.id,
+                'name' : instance.paciente.__str__(),
+                'dni' : instance.paciente.dni_pac,
+                'age' : instance.paciente.edad_pac,
+                'state' : instance.paciente.esta_pac,        
+            } if instance.paciente else None
+
+        return representation
 
 
 class PacienteDiagnosticoSerializer(serializers.ModelSerializer):
     class Meta:
         model = PacienteDiagnostico
         fields = '__all__'
+    
+    def to_representation(self, instance: PacienteDiagnostico):
+        """Customize representation depending on request method."""
+        representation = super().to_representation(instance)
+        request = self.context.get("request")
+
+        if request and request.method == "GET":
+            # Manually expand nested fields (depth=2 equivalent)
+            representation["paciente"] = {
+                'id' : instance.paciente.id,
+                'name' : instance.paciente.__str__(),
+                'dni' : instance.paciente.dni_pac,
+                'age' : instance.paciente.edad_pac,
+                'state' : instance.paciente.esta_pac,        
+            } if instance.paciente else None
+
+        return representation
 
 class PacientePlacaSerializer(serializers.ModelSerializer):
     class Meta:
         model = PacientePlaca
         fields = '__all__'
+
+    def to_representation(self, instance: PacientePlaca):
+        """Customize representation depending on request method."""
+        representation = super().to_representation(instance)
+        request = self.context.get("request")
+
+        if request and request.method == "GET":
+            # Manually expand nested fields (depth=2 equivalent)
+            representation["paciente"] = {
+                'id' : instance.paciente.id,
+                'name' : instance.paciente.__str__(),
+                'dni' : instance.paciente.dni_pac,
+                'age' : instance.paciente.edad_pac,
+                'state' : instance.paciente.esta_pac,        
+            } if instance.paciente else None
+
+        return representation
 
 class ConsultorioSerializer(serializers.ModelSerializer):
     class Meta:
