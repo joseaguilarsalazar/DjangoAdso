@@ -133,8 +133,9 @@ class CitaSerializer(serializers.ModelSerializer):
             } if instance.paciente else None
             representation["medico"] = {
                 'id' : instance.medico.id,
-                'name' : instance.medico.__str__(),
-                'dni' : instance.medico.num_doc
+                'name' : instance.medico.name,
+                'dni' : instance.medico.num_doc,
+                'email' : instance.medico.email,
             } if instance.medico else None
             representation["consultorio"] = ConsultorioSerializer(instance.consultorio).data if instance.consultorio else None
 
