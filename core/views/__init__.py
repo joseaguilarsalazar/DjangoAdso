@@ -13,7 +13,7 @@ from .coreViewsets import (
     PacienteEnfermedadViewSet,
     BancoViewSet,
     PacienteDiagnosticoViewSet,
-    PacientePlacaViewSet,
+    PacientePlacaViewSet, ConsultorioViewSet
 )
 from .predoneViews import (
     validar_dni,
@@ -40,12 +40,14 @@ __all__ = [
     "CategoriaViewSet",
     "EnfermedadViewSet",
     "TratamientoViewSet",
+    "ConsultorioViewSet",
     "EspecialidadViewSet",
     "PacientePlacaViewSet",
     "PacienteAlergiaViewSet",
     "PacienteEvolucionViewSet",
     "PacienteEnfermedadViewSet",
     "PacienteDiagnosticoViewSet",
+    
 
     # predoneViews
     "validar_dni",

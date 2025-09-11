@@ -17,7 +17,7 @@ from .models import (
     PacienteEvolucion,
     PacienteEnfermedad,
     PacienteDiagnostico,
-    PacientePlaca,
+    PacientePlaca, Consultorio
     )
 
 User = get_user_model()
@@ -117,16 +117,24 @@ class CitaSerializer(serializers.ModelSerializer):
             )
         return attrs
     
-    def get_fields(self):
-        fields = super().get_fields()
+    def to_representation(self, instance: Cita):
+        """Customize representation depending on request method."""
+        representation = super().to_representation(instance)
         request = self.context.get("request")
 
         if request and request.method == "GET":
-            # enable nested expansion
-            for name, field in fields.items():
-                if hasattr(field, "depth"):
-                    field.depth = 2
-        return fields
+            # Manually expand nested fields (depth=2 equivalent)
+            representation["paciente"] = {
+                'id' : instance.paciente.id,
+                'name' : instance.paciente.__str__()        
+            } if instance.paciente else None
+            representation["medico"] = {
+                'id' : instance.medico.id,
+                'name' : instance.medico.__str__()
+            } if instance.medico else None
+            representation["consultorio"] = ConsultorioSerializer(instance.consultorio).data if instance.consultorio else None
+
+        return representation
     
 class ClinicaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -178,3 +186,9 @@ class PacientePlacaSerializer(serializers.ModelSerializer):
     class Meta:
         model = PacientePlaca
         fields = '__all__'
+
+class ConsultorioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Consultorio
+        fields = '__all__'
+

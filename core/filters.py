@@ -267,3 +267,10 @@ class PacientePlacaFilter(django_filters.FilterSet):
             'nombre': ['exact'],      # exact match (we also added icontains above)
             'created_at': ['exact', 'date__gte', 'date__lte'],
         }
+
+class ConsultorioFilter(django_filters.FilterSet):
+    class Meta:
+       model = Consultorio
+       fields = {
+           'clinica': ['exact'],
+       }
