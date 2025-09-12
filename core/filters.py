@@ -90,15 +90,10 @@ class PacienteFilter(django_filters.FilterSet):
 
 class TratamientoFilter(django_filters.FilterSet):
     created_at = django_filters.DateFromToRangeFilter()  # ?created_at_after=YYYY-MM-DD&created_at_before=YYYY-MM-DD
-    asunto = django_filters.CharFilter(lookup_expr='icontains')  # partial match search
-    observacion = django_filters.CharFilter(lookup_expr='icontains', required=False)  # partial match search
 
     class Meta:
         model = Tratamiento
         fields = {
-            'paciente': ['exact'],  # filter by patient ID
-            'medico': ['exact'],    # filter by doctor ID
-            'asunto': ['exact'],    # exact match (icontains already covers partial)
             'created_at': ['exact', 'date__gte', 'date__lte'],
         }
 
