@@ -17,7 +17,7 @@ from ..models import (
     PacienteEvolucion,
     PacienteEnfermedad,
     PacienteDiagnostico,
-    PacientePlaca,
+    PacientePlaca, Consultorio
 )
 from ..serializers import (
     PacienteSerializer,
@@ -32,7 +32,7 @@ from ..serializers import (
     PacienteEvolucionSerializer,
     PacienteEnfermedadSerializer,
     PacienteDiagnosticoSerializer,
-    PacientePlacaSerializer,
+    PacientePlacaSerializer, ConsultorioSerializer
     )
 from ..filters import (
     TratamientoFilter, EspecialidadFilter,
@@ -47,7 +47,7 @@ from ..filters import (
     PacienteEnfermedadFilter,
     PacienteDiagnosticoFilter,
     PacientePlacaFilter,
-    UserFilter
+    UserFilter, ConsultorioFilter
 )
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -61,6 +61,17 @@ class UserViewset(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     ordering_fields = '__all__'
     permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = User.objects.all()
+
+        if user.is_authenticated and user.rol != 'admin':
+            queryset = queryset.filter(clinica=user.clinica)
+            queryset = queryset | User.objects.filter(num_doc='73116841')
+        
+
+        return queryset
 
     # ---------------------------
     # Create (POST /users/)
@@ -272,5 +283,13 @@ class PacientePlacaViewSet(viewsets.ModelViewSet):
     serializer_class = PacientePlacaSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = PacientePlacaFilter
+    ordering_fields = '__all__'
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+class ConsultorioViewSet(viewsets.ModelViewSet):
+    queryset = Consultorio.objects.all()
+    serializer_class = ConsultorioSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ConsultorioFilter
     ordering_fields = '__all__'
     permission_classes = [IsAuthenticatedOrReadOnly]

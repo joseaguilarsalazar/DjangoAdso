@@ -79,6 +79,6 @@ Cada clave corresponde a un consultorio y contiene una lista de citas.
         for cita in citas:
             key = consultorio_map.get(cita.consultorio_id)
             if key:
-                data[key].append(CitaSerializer(cita).data)
+                data[key].append(CitaSerializer(cita, context={'request': self.request}).data)
 
         return Response(data, status=status.HTTP_200_OK)
