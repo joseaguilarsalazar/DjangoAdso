@@ -7,7 +7,6 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 # Create your models here.
 class Ingreso(models.Model):
-    cita = models.ForeignKey(Cita, on_delete=models.SET_NULL, null=True, blank=False)
     monto = models.FloatField()
     paciente = models.ForeignKey(Paciente, on_delete=models.SET_NULL, null=True, blank=False)
     medico = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False)

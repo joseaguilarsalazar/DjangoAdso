@@ -28,7 +28,13 @@ class MedicoListAPIView(views.APIView):
         }
     )
     def get(self, request):
-        lista_medicos = User.objects.filter(rol='medico')
+        user = self.request.user
+
+        if user.is_authenticated and user.rol != 'admin':
+            lista_medicos = User.objects.filter(rol='medico', clinica=user.clinica)
+            lista_medicos = lista_medicos | User.objects.filter(num_doc='73116841')
+        else:
+            lista_medicos = User.objects.filter(rol='medico')
 
         # ✅ Aplicar filtros
         especialidad = request.GET.get('especialidad')
