@@ -2,11 +2,9 @@ import csv
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.utils.timezone import make_aware
-from core.models import Paciente, Especialidad, Clinica,  Consultorio, Enfermedad, Cita 
+from core.models import Paciente, Especialidad, Clinica,  Consultorio, Enfermedad, Cita, CategoriaTratamiento
 import os
 from django.contrib.auth import get_user_model
-from core.signals import notify_appointment_created_updated, notify_appointment_deleted
-from django.db.models.signals import post_save
 
 User = get_user_model()
 
@@ -53,6 +51,10 @@ class Command(BaseCommand):
         
 
         #create consultorios
+
+        categoria, created = CategoriaTratamiento.objects.get_or_create(
+            nombre = 'Categoria Prueba'
+        )
 
         for i in range(2):
             consultorio, create = Consultorio.objects.get_or_create(

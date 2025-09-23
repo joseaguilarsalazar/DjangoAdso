@@ -17,7 +17,8 @@ from ..models import (
     PacienteEvolucion,
     PacienteEnfermedad,
     PacienteDiagnostico,
-    PacientePlaca, Consultorio
+    PacientePlaca, Consultorio, CategoriaTratamiento,
+    TratamientoPaciente,
 )
 from ..serializers import (
     PacienteSerializer,
@@ -32,7 +33,8 @@ from ..serializers import (
     PacienteEvolucionSerializer,
     PacienteEnfermedadSerializer,
     PacienteDiagnosticoSerializer,
-    PacientePlacaSerializer, ConsultorioSerializer
+    PacientePlacaSerializer, ConsultorioSerializer, CategoriaTratamientoSerializer,
+    TratamientoPacienteSerializer,
     )
 from ..filters import (
     TratamientoFilter, EspecialidadFilter,
@@ -47,7 +49,8 @@ from ..filters import (
     PacienteEnfermedadFilter,
     PacienteDiagnosticoFilter,
     PacientePlacaFilter,
-    UserFilter, ConsultorioFilter
+    UserFilter, ConsultorioFilter, CategoriaTratamientoFilter,
+    TratamientoPacienteFilter,
 )
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -291,5 +294,22 @@ class ConsultorioViewSet(viewsets.ModelViewSet):
     serializer_class = ConsultorioSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = ConsultorioFilter
+    ordering_fields = '__all__'
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+
+class CategoriaTratamientoViewSet(viewsets.ModelViewSet):
+    queryset = CategoriaTratamiento.objects.all()
+    serializer_class = CategoriaTratamientoSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = CategoriaTratamientoFilter
+    ordering_fields = '__all__'
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+class TratamientoPacienteViewSet(viewsets.ModelViewSet):
+    queryset = TratamientoPaciente.objects.all()
+    serializer_class = TratamientoPacienteSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = TratamientoPacienteFilter
     ordering_fields = '__all__'
     permission_classes = [IsAuthenticatedOrReadOnly]

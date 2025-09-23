@@ -19,6 +19,8 @@ router.register(r'paciente_diagnosticos', PacienteDiagnosticoViewSet)
 router.register(r'paciente_placas', PacientePlacaViewSet)
 router.register(r'users', UserViewset)
 router.register(r'consultorios', ConsultorioViewSet)
+router.register(r'categoria_tratamiento', CategoriaTratamientoViewSet)
+router.register(r'tratamiento_paciente', TratamientoPacienteViewSet)
 
 
 urlpatterns = [

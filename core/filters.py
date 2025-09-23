@@ -16,8 +16,11 @@ from .models import (
     PacienteDiagnostico,
     PacientePlaca,
     Consultorio,
+    CategoriaTratamiento,
+    TratamientoPaciente,
     )
 from django.contrib.auth import get_user_model
+from django.db.models.functions import TruncDate
 
 User = get_user_model()
 
@@ -269,3 +272,44 @@ class ConsultorioFilter(django_filters.FilterSet):
        fields = {
            'clinica': ['exact'],
        }
+
+class CategoriaTratamientoFilter(django_filters.FilterSet):
+    class Meta:
+        model = CategoriaTratamiento
+        fields = {
+            'nombre' : ['icontains']
+        }
+
+class TratamientoPacienteFilter(django_filters.FilterSet):
+    paciente = django_filters.NumberFilter(
+        field_name='paciente_id',
+        lookup_expr='exact'
+    )
+
+    tratamiento = django_filters.NumberFilter(
+        field_name='tratamiento_id',
+        lookup_expr='exact'
+    )
+
+    descuento_min = django_filters.NumberFilter(field_name='descuento', lookup_expr='gte')
+    descuento_max = django_filters.NumberFilter(field_name='descuento', lookup_expr='lte')
+
+    created_date_after = django_filters.DateFilter(method='filter_created_after')
+    created_date_before = django_filters.DateFilter(method='filter_created_before')
+
+    class Meta:
+        model = TratamientoPaciente
+        fields = [
+            'paciente',
+            'tratamiento',
+            'descuento_min',
+            'descuento_max',
+            'created_date_after',
+            'created_date_before',
+        ]
+
+    def filter_created_after(self, queryset, name, value):
+        return queryset.annotate(cdate=TruncDate('created_at')).filter(cdate__gte=value)
+
+    def filter_created_before(self, queryset, name, value):
+        return queryset.annotate(cdate=TruncDate('created_at')).filter(cdate__lte=value)

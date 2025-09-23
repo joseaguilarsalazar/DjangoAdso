@@ -186,10 +186,17 @@ class Categoria(models.Model):
 
     def __str__(self):
         return self.nomb_cat or f"Categoría #{self.codi_cat}"
-    
+
+class CategoriaTratamiento(models.Model):
+    nombre = models.CharField(max_length=100)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
 class Tratamiento(models.Model):
     nombre = models.CharField(max_length=2000)
     precioBase = models.FloatField()
+    categoria = models.ForeignKey(CategoriaTratamiento, on_delete=models.SET_NULL, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
