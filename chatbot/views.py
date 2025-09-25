@@ -32,9 +32,9 @@ class WhatsAppWebhookView(APIView):
         print(payload)
 
         # Extract incoming message info
-        sender: str = payload.get("sender")  
+        sender: str = payload.get("data", {}).get("key",{}).get('remoteJid') 
         sender = sender.split('@')[0] # WhatsApp number
-        text   = payload.get("data", {}).get("message").get('body')
+        text   = payload.get("data", {}).get("message",{}).get('body')
 
         print(f'sender: {sender}')
         print(f'text: {text}')
