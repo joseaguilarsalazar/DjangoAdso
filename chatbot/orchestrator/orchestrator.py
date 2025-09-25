@@ -1,5 +1,5 @@
 import chatbot.orchestrator.flows as flows
-from chatbot.orchestrator.router import classify_intent
+from chatbot.orchestrator.clasificator import classify_intent
 from ..models import Chat
 
 class Orchestrator:

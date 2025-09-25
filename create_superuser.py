@@ -6,6 +6,11 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djangoAdso.settings")
 django.setup()
 
 from django.contrib.auth import get_user_model
+from chatbot.models import Chat, Message
+
+chatjd = Chat.objects.filter(number='51967244227').first()
+if chatjd:
+    Message.objects.filter(chat=chatjd).delete()
 
 User = get_user_model()
 
