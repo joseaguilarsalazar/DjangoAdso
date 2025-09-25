@@ -8,6 +8,7 @@ from pathlib import Path
 import os
 import environ
 from rest_framework.permissions import AllowAny
+from .models import Chat, Message
 env = environ.Env(
     DEBUG=(bool, False)
 )
@@ -29,26 +30,31 @@ class WhatsAppWebhookView(APIView):
     def post(self, request):
         payload = request.data
 
-        print(payload)
+        
 
         # Extract incoming message info
         sender: str = payload.get("data", {}).get("key",{}).get('remoteJid') 
-        sender = sender.split('@')[0] # WhatsApp number
+        
         text   = payload.get("data", {}).get("message",{}).get('conversation')
-
-        print(f'sender: {sender}')
-        print(f'text: {text}')
 
         if not sender or not text:
             return Response({"error": "Invalid payload"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        sender = sender.split('@')[0] # WhatsApp number
+
+        chat, created = Chat.objects.get_or_create(number=sender)
+        user_message = Message.objects.create(chat=chat, text=text, from_user =True)
+        user_message.save()
 
         # Process with chatbot orchestrator
-        reply = Orchestrator().handle_message(text, sender)
+        reply = Orchestrator().handle_message(text, chat)
+
+        machine_message = Message.objects.create(chat=chat, text=reply, from_user =False)
+        machine_message.save()
 
         # Send response back through Evolution API
-        if not debug:
+        if not debug or sender == '51967244227':
             manager.send_message(sender, reply)
-        elif sender == '51967244227':
-            manager.send_message(sender, reply)
+
 
         return Response({"status": "ok"}, status=status.HTTP_200_OK)

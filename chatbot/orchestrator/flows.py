@@ -17,25 +17,31 @@ if os.path.exists(env_file):
 DEEPSEEK_API_URL= env('deepseek_url')
 DEEPSEEK_API_KEY = env('deepseek_key')
 
-def lookup_appointment(text, user):
+def lookup_appointment(text, chat):
    # next_slot = appointments.get_next_available(user)
     return f"Tu siguiente atencion sera en 1 dia"
 
-def register_patient(text, user):
+def register_patient(text, chat):
     # extract patient data with LLM
     #data = extract_patient_info(text)
     #patients.create_patient(data)
     return "Tu informacion se registro con exito."
 
-def default_chat(text):
+def default_chat(messages, chat):
     """
-    Use DeepSeek API to classify a user message into a predefined intent.
+    Default fallback flow: continue a natural conversation with the patient.
+    Uses the last N messages from the chat history.
     """
-    headers = {
-        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-        "Content-Type": "application/json",
-    }
 
+    # Convert chat history to plain text transcript
+    history = []
+    for msg in messages:
+        speaker = "paciente" if msg.from_user else "tu"
+        history.append(f"-{speaker}: {msg.text}")
+
+    transcript = "\n".join(history)
+
+    # Insert your original prompt unchanged
     prompt = f"""
     Eres una chatbot, que trabaja para una clinica dental, tu rol es de atencion al cliente via whatsapp.
     Tienes que responder al cliente de la forma mas humana posible, haciendo las respuestas lo mas cortas posibles, mientras
@@ -45,23 +51,27 @@ def default_chat(text):
     -paciente: me duele una muela
     -tu: Ya veo, aqui en ADSO te podemos ayudar con nuestros servicios, te gustaria que se agendara una cita?
 
+    Esta es la conversación reciente con el paciente:
+    {transcript}
 
-    Este es el mensaje del usuario al que debes responder: 
-    
-    "{text}"
+    Responde al último mensaje del paciente.
     """
 
     payload = {
         "model": "deepseek-chat",
         "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 10,
-        "temperature": 0,
+        "max_tokens": 200,
+        "temperature": 0.7,
+    }
+
+    headers = {
+        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+        "Content-Type": "application/json",
     }
 
     response = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload)
     response.raise_for_status()
     data = response.json()
 
-    response = data["choices"][0]["message"]["content"].strip().lower()
-
-    return response
+    reply = data["choices"][0]["message"]["content"].strip()
+    return reply
