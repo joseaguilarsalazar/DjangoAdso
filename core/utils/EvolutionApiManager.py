@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 class EvolutionApiManager:
     instance = env('evo_instance')
     key = evo_key
-    base_url = 'https://evolution-api-evolution-api.4oghcf.easypanel.host/'  # considerar cargar desde .env
+    base_url = env('evol_api_url')  # considerar cargar desde .env
     headers = {"Content-Type": "application/json", "apikey": key}
 
     def __init__(self, instance: str = None, key: str = None, base_url: str = None):
