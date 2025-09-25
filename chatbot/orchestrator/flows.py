@@ -48,6 +48,9 @@ def default_chat(messages, chat):
 
     transcript = "\n".join(history)
 
+    print(history[0])
+    print(history[-1])
+
     # Insert your original prompt unchanged
     prompt = f"""
     Eres una chatbot, que trabaja para una clinica dental, tu rol es de atencion al cliente via whatsapp.
