@@ -7,7 +7,7 @@ from core.utils.EvolutionApiManager import EvolutionApiManager
 from pathlib import Path
 import os
 import environ
-
+from rest_framework.permissions import AllowAny
 env = environ.Env(
     DEBUG=(bool, False)
 )
@@ -25,6 +25,7 @@ manager = EvolutionApiManager()
 debug = env.bool('true_msg', default=False) 
 
 class WhatsAppWebhookView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         payload = request.data
 
