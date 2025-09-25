@@ -46,8 +46,7 @@ def default_chat(messages, chat):
         speaker = "paciente" if msg.from_user else "tu"
         history.append(f"-{speaker}: {msg.text}")
 
-    if len(history)>1:
-        history = history.reverse()
+    history = history[::-1]
 
     transcript = "\n".join(history)
 
