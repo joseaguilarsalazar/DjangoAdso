@@ -29,6 +29,8 @@ class WhatsAppWebhookView(APIView):
     def post(self, request):
         payload = request.data
 
+        print(payload)
+
         # Extract incoming message info
         sender = payload.get("from")   # WhatsApp number
         text   = payload.get("text", {}).get("body")
