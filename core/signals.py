@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
-from .models import Cita
+from .models import Cita, Paciente
 from .utils.EvolutionApiManager import EvolutionApiManager
 import logging
 from .tasks import send_cita_reminder
@@ -112,7 +112,7 @@ def notify_appointment_deleted(sender, instance: Cita, **kwargs):
     # Send messages
     _send_notifications(doctor, paciente, mssg_dtr, mssg_pct, instance.id, "deleted")
 
-def _send_notifications(doctor, paciente, mssg_dtr: str, mssg_pct: str, appointment_id: int, action: str):
+def _send_notifications(doctor, paciente: Paciente, mssg_dtr: str, mssg_pct: str, appointment_id: int, action: str):
     """
     Helper function to send notifications to doctor and patient
     """
@@ -121,7 +121,10 @@ def _send_notifications(doctor, paciente, mssg_dtr: str, mssg_pct: str, appointm
     # Send message to doctor
     if hasattr(doctor, 'telefono') and doctor.telefono:
         try:
-            response = evolMngr.send_message(doctor.telefono, mssg_dtr)
+            if paciente.clinica.nomb_clin == 'Clinica Dental Filial Yurimaguas':
+                response = evolMngr.send_message(doctor.telefono, mssg_dtr, message_instance='adso_instance')
+            else:
+                response = evolMngr.send_message(doctor.telefono, mssg_dtr, message_instance='adso_iquitos_instance')
             if not response['ok']:
                 logger.error(response['error'])
             logger.info(f"Successfully sent {action} notification to doctor {doctor.id} for appointment {appointment_id}")
