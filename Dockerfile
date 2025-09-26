@@ -19,7 +19,7 @@ COPY . /app/
 EXPOSE 7000
 
 # Run migrations and create superuser, then start the server
-CMD ["sh", "-c", "python manage.py migrate && python manage.py import_data && python manage.py collectstatic --noinput && python create_superuser.py && python manage.py runserver 0.0.0.0:7000"]
+CMD ["sh", "-c", "python manage.py migrate&& python manage.py collectstatic --noinput && python create_superuser.py && python manage.py runserver 0.0.0.0:7000"]
 
 
 
