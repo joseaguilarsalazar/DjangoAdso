@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 class EvolutionApiManager:
     instance = env('evo_instance')
     key = evo_key
-    base_url = 'https://evolution-api-evolution-api.4oghcf.easypanel.host/'  # considerar cargar desde .env
+    base_url = env('evol_api_url')  # considerar cargar desde .env
     headers = {"Content-Type": "application/json", "apikey": key}
 
     def __init__(self, instance: str = None, key: str = None, base_url: str = None):
@@ -50,7 +50,7 @@ class EvolutionApiManager:
         s = str(number).strip()
         return s.isdigit() and len(s) >= 8
 
-    def send_message(self, number: str, message: str, timeout: float = 10.0, max_retries: int = 3):
+    def send_message(self, number: str, message: str, timeout: float = 10.0, max_retries: int = 3, message_instance=env('evo_instance')):
         """
         Envía un mensaje y gestiona errores.
 
@@ -62,7 +62,7 @@ class EvolutionApiManager:
             "error": str | None
         }
         """
-        url = f"{self.base_url.rstrip('/')}/message/sendText/{self.instance}"
+        url = f"{self.base_url.rstrip('/')}/message/sendText/{message_instance}"
 
         # Validación básica del número
         if not self._validate_number(number):

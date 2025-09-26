@@ -17,7 +17,8 @@ from .models import (
     PacienteEvolucion,
     PacienteEnfermedad,
     PacienteDiagnostico,
-    PacientePlaca, Consultorio
+    PacientePlaca, Consultorio, CategoriaTratamiento,
+    TratamientoPaciente,
     )
 
 User = get_user_model()
@@ -282,3 +283,12 @@ class ConsultorioSerializer(serializers.ModelSerializer):
         model = Consultorio
         fields = '__all__'
 
+class CategoriaTratamientoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CategoriaTratamiento
+        fields = '__all__'
+
+class TratamientoPacienteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TratamientoPaciente
+        fields = '__all__'

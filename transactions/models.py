@@ -1,14 +1,13 @@
 from django.db import models
 from core.models import (
-    Paciente,
-    Cita,
+    TratamientoPaciente,
 )
 from django.contrib.auth import get_user_model
 User = get_user_model()
 # Create your models here.
 class Ingreso(models.Model):
     monto = models.FloatField()
-    paciente = models.ForeignKey(Paciente, on_delete=models.SET_NULL, null=True, blank=False)
+    tratamientoPaciente = models.ForeignKey(TratamientoPaciente, on_delete=models.SET_NULL, null=True, blank=False)
     medico = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False)
     metodo = models.CharField(max_length=50, default='Efectivo')
     created_at = models.DateTimeField(auto_now_add=True)
