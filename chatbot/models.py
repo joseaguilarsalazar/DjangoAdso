@@ -9,7 +9,7 @@ class Chat(models.Model):
         ("appointment_lookup", "Appointment Lookup"),
         ("patient_registration", "Patient Registration"),
     ]
-    number = models.CharField(unique=True, max_length=15)
+    number = models.CharField(unique=True, max_length=20)
     current_state = models.CharField(max_length=100, choices=STATE_CHOICES, default="default")
     patient = models.ForeignKey(Paciente, on_delete=models.SET_NULL, null=True, blank=True)
 
