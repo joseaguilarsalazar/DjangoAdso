@@ -13,7 +13,8 @@ from .models import (
     PacienteEvolucion,
     PacienteEnfermedad,
     PacienteDiagnostico,
-    PacientePlaca,
+    PacientePlaca, Consultorio, CategoriaTratamiento,
+    TratamientoPaciente,
     )
 
 # Register your models here.
@@ -31,3 +32,6 @@ admin.site.register(PacienteEvolucion)
 admin.site.register(PacienteEnfermedad)
 admin.site.register(PacienteDiagnostico)
 admin.site.register(PacientePlaca)
+admin.site.register(Consultorio)
+admin.site.register(CategoriaTratamiento)
+admin.site.register(TratamientoPaciente)
