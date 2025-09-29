@@ -35,6 +35,9 @@ def process_user_buffer(sender: str):
     full_text = messages.decode("utf-8")
     r.delete(key)  # clear buffer
 
+    a = r.get(key)
+    print(a)
+
     chat, _ = Chat.objects.get_or_create(number=sender)
 
     # Save fused message
