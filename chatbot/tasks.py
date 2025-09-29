@@ -27,6 +27,7 @@ debug = env.bool('true_msg', default=False)
 
 @shared_task
 def process_user_buffer(sender: str):
+    print('a')
     key = f"chat:{sender}:buffer"
     messages = r.get(key)
     if not messages:
