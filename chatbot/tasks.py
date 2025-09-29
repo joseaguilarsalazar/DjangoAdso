@@ -7,8 +7,8 @@ import redis
 from pathlib import Path
 import os
 import environ
+from djangoAdso.settings import REDIS_URL
 
-r = redis.Redis.from_url(settings.REDIS_URL)
 manager = EvolutionApiManager()
 
 env = environ.Env(
@@ -22,6 +22,8 @@ env_file = os.path.join(BASE_DIR, '.env')
 
 if os.path.exists(env_file):
     environ.Env.read_env(env_file)
+
+r = redis.Redis.from_url(REDIS_URL)
 
 debug = env.bool('true_msg', default=False) 
 
