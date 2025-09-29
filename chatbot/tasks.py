@@ -31,12 +31,12 @@ def process_user_buffer(sender: str):
     messages = r.get(key)
     if not messages:
         return
-    
+
+    print(messages)
     full_text = messages.decode("utf-8")
     r.delete(key)  # clear buffer
 
-    a = r.get(key)
-    print(a)
+    
 
     chat, _ = Chat.objects.get_or_create(number=sender)
 
