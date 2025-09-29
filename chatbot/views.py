@@ -82,6 +82,6 @@ class WhatsAppWebhookView(APIView):
         print(r.get(key))
 
         # Schedule Celery task
-        process_user_buffer.apply_async((sender,), countdown=1)
+        process_user_buffer.apply_async((sender,), countdown=10)
 
         return Response({"status": "buffered"}, status=status.HTTP_200_OK)

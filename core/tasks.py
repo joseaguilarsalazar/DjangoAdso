@@ -57,7 +57,7 @@ def check_evolution_and_notify(self):
     ok_states = {"open", "connected", "online"}  # include your API's "healthy" value(s)
 
     if state not in ok_states:
-        tele._telegram_notify(
+        tele.telegram_notify(
             f"⚠️ Evolution API instance adso_iquitos_instance is *{state or 'unknown'}*."
         )
     return {"state": state}
