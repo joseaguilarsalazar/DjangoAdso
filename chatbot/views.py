@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
-from django.conf import settings
+from djangoAdso.settings import REDIS_URL
 import redis
 import requests
 from chatbot.tasks import process_user_buffer
@@ -23,7 +23,7 @@ env_file = os.path.join(BASE_DIR, '.env')
 if os.path.exists(env_file):
     environ.Env.read_env(env_file)
 
-r = redis.Redis.from_url(settings.REDIS_URL)
+r = redis.Redis.from_url(REDIS_URL)
 
 class WhatsAppWebhookView(APIView):
     permission_classes = [AllowAny]
