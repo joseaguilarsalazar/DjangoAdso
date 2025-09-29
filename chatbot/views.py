@@ -32,8 +32,6 @@ class WhatsAppWebhookView(APIView):
         payload = request.data
         sender: str = payload.get("data", {}).get("key", {}).get("remoteJid")
 
-        print(payload)
-
         # WhatsApp text
         text = payload.get("data", {}).get("message", {}).get("conversation")
 
@@ -80,6 +78,8 @@ class WhatsAppWebhookView(APIView):
         pipe.append(key, f" {text}")
         pipe.expire(key, 30)  # reset timer
         pipe.execute()
+
+        print(r.get(key))
 
         # Schedule Celery task
         process_user_buffer.apply_async((sender,), countdown=30)
