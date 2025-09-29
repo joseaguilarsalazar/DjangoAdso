@@ -21,3 +21,4 @@ celery[redis]==5.4.0
 redis>=5.0
 pytz
 deepgram-sdk
+django-celery-beat
