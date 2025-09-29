@@ -7,7 +7,21 @@ from django.conf import settings
 import redis
 import requests
 from chatbot.tasks import process_user_buffer
+from pathlib import Path
 import os
+import environ
+
+env = environ.Env(
+    DEBUG=(bool, False)
+)
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+env_file = os.path.join(BASE_DIR, '.env')
+
+
+if os.path.exists(env_file):
+    environ.Env.read_env(env_file)
 
 r = redis.Redis.from_url(settings.REDIS_URL)
 
@@ -45,7 +59,7 @@ class WhatsAppWebhookView(APIView):
             # Send to Deepgram API
             dg_url = "https://api.deepgram.com/v1/listen?model=nova-3&smart_format=true"
             headers = {
-                "Authorization": f"Token {os.getenv('DEEPGRAM_API_KEY')}",
+                "Authorization": f"Token {env('deepgram_key')}",
                 "Content-Type": "audio/ogg"  # or "audio/wav" / "audio/mp4" depending on WhatsApp media
             }
             resp = requests.post(dg_url, headers=headers, data=audio_bytes)
