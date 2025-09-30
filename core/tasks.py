@@ -20,6 +20,7 @@ def send_cita_reminder(self, cita_id: int):
 
     evo = EvolutionApiManager()
     state = evo.check_instance_state()
+    print(state)
     if state.get("state") not in {"open", "connected"}:
         # Retry later if instance not ready
         raise self.retry(exc=RuntimeError("Instance not connected"))
