@@ -2,7 +2,7 @@ import csv
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.utils.timezone import make_aware
-from core.models import Paciente, Especialidad, Clinica,  Consultorio, Enfermedad, Cita, CategoriaTratamiento
+from core.models import Paciente, Especialidad, Clinica,  Consultorio, Enfermedad, Cita, CategoriaTratamiento, Tratamiento
 import os
 from django.contrib.auth import get_user_model
 
@@ -51,10 +51,6 @@ class Command(BaseCommand):
         
 
         #create consultorios
-
-        categoria, created = CategoriaTratamiento.objects.get_or_create(
-            nombre = 'Categoria Prueba'
-        )
 
         for i in range(2):
             consultorio, create = Consultorio.objects.get_or_create(
@@ -238,104 +234,6 @@ class Command(BaseCommand):
         except KeyError as e:
             self.stderr.write(self.style.ERROR(f"Columna faltante en enfermedades: {e}"))
 
-        # ✅ --- IMPORT MÉDICOS ---
-        medicos_iquitos_file_path = os.path.join('core', 'management', 'commands', 'medico_iquitos.csv')
-        medicos_yurimaguas_file_path = os.path.join('core', 'management', 'commands', 'medico_yurimaguas.csv')
-        medicos_count = 0
-
-        try:
-            with open(medicos_iquitos_file_path, newline='', encoding='utf-8') as csvfile:
-                reader = csv.DictReader(csvfile)
-
-                for row in reader:
-                    dni = parse_value(row["dni_med"])
-                    email = parse_value(row["emai_med"])
-
-                    if not dni or not email:
-                        self.stdout.write(self.style.WARNING("⚠️ Médico sin DNI o Email. Saltando..."))
-                        continue
-
-                    if User.objects.filter(num_doc=dni).exists():
-                        user = User.objects.filter(num_doc=dni).first()
-                        if user.old_cod_med != parse_value(row['codi_med']):
-                            user.old_cod_med = parse_value(row['codi_med'])
-                            user.save()
-                        continue
-
-                    especialidad = None
-                    cod_especialidad = parse_value(row["cod_especialidad"])
-                    if cod_especialidad and cod_especialidad.isdigit():
-                        especialidad = Especialidad.objects.filter(id=int(cod_especialidad)).first()
-
-                    user = User(
-                        old_cod_med=parse_value(row['codi_med']),
-                        email=email,
-                        tipo_doc='DNI',
-                        num_doc=dni,
-                        name=f"{parse_value(row['nomb_med'])} {parse_value(row['apel_med'])}",
-                        direccion=parse_value(row["dire_med"]),
-                        telefono=parse_value(row["cel_med"]) or parse_value(row["telf_med"]),
-                        especialidad=especialidad,
-                        estado=parse_value(row["esta_med"]) or "activo",
-                        rol='medico',
-                        clinica = clinicaIquitos,
-                    )
-                    user.set_password(dni)  # Default password (you can change this)
-                    user.save()
-                    medicos_count += 1
-
-        except FileNotFoundError:
-            self.stderr.write(self.style.ERROR(f"Archivo de médicos no encontrado: {medicos_iquitos_file_path}"))
-        except KeyError as e:
-            self.stderr.write(self.style.ERROR(f"Columna faltante en médicos: {e}"))
-
-        
-        try:
-            with open(medicos_yurimaguas_file_path, newline='', encoding='utf-8') as csvfile:
-                reader = csv.DictReader(csvfile)
-
-                for row in reader:
-                    dni = parse_value(row["dni_med"])
-                    email = parse_value(row["emai_med"])
-
-                    if not dni or not email:
-                        self.stdout.write(self.style.WARNING("⚠️ Médico sin DNI o Email. Saltando..."))
-                        continue
-
-                    if User.objects.filter(num_doc=dni).exists():
-                        user = User.objects.filter(num_doc=dni).first()
-                        if user.old_cod_med != parse_value(row['codi_med']):
-                            user.old_cod_med = parse_value(row['codi_med'])
-                            user.save()
-                        continue
-
-                    especialidad = None
-                    cod_especialidad = parse_value(row["cod_especialidad"])
-                    if cod_especialidad and cod_especialidad.isdigit():
-                        especialidad = Especialidad.objects.filter(id=int(cod_especialidad)).first()
-
-                    user = User(
-                        old_cod_med=parse_value(row['codi_med']),
-                        email=email,
-                        tipo_doc='DNI',
-                        num_doc=dni,
-                        name=f"{parse_value(row['nomb_med'])} {parse_value(row['apel_med'])}",
-                        direccion=parse_value(row["dire_med"]),
-                        telefono=parse_value(row["cel_med"]) or parse_value(row["telf_med"]),
-                        especialidad=especialidad,
-                        estado=parse_value(row["esta_med"]) or "activo",
-                        rol='medico',
-                        clinica = clinicaYurimaguas,
-                    )
-                    user.set_password(dni)  # Default password (you can change this)
-                    user.save()
-                    medicos_count += 1
-
-        except FileNotFoundError:
-            self.stderr.write(self.style.ERROR(f"Archivo de médicos no encontrado: {medicos_yurimaguas_file_path}"))
-        except KeyError as e:
-            self.stderr.write(self.style.ERROR(f"Columna faltante en médicos: {e}"))
-
         # ✅ --- IMPORT CITAS ---
         citas_iquitos_file_path = os.path.join('core', 'management', 'commands', 'citas_iquitos.csv')
         citas_yurimaguas_file_path = os.path.join('core', 'management', 'commands', 'citas_yurimaguas.csv')
@@ -460,10 +358,78 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f"Archivo no encontrado: {citas_yurimaguas_file_path}"))
         except KeyError as e:
             self.stderr.write(self.style.ERROR(f"Columna faltante en citas: {e}"))
+
+        categorias_file_path = os.path.join('core', 'management', 'commands', 'tratamientoCategoria.csv')
+        tratamientos_file_path = os.path.join('core', 'management', 'commands', 'tratamientos.csv')
+
+        categorias_count = 0
+        tratamientos_count = 0
+        
+        # ---- CATEGORIAS ----
+        try:
+            with open(categorias_file_path, newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+
+                for row in reader:
+                    nombre = parse_value(row.get("nombre"))
+
+                    if not nombre:
+                        continue
+
+                    # Check if already exists
+                    if CategoriaTratamiento.objects.filter(nombre=nombre).exists():
+                        continue
+
+                    categoria = CategoriaTratamiento(nombre=nombre)
+                    categoria.save()
+                    categorias_count += 1
+
+        except FileNotFoundError:
+            self.stderr.write(self.style.ERROR(f"Archivo de categorias no encontrado: {categorias_file_path}"))
+        except KeyError as e:
+            self.stderr.write(self.style.ERROR(f"Columna faltante en categorias: {e}"))
+
+        # ---- TRATAMIENTOS ----
+        try:
+            with open(tratamientos_file_path, newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+
+                for row in reader:
+                    nombre = parse_value(row.get("nombre"))
+                    precio_base = parse_value(row.get("precioBase"))
+                    precio_convenio = parse_value(row.get("precioConvenio"))
+                    categoria_nombre = parse_value(row.get("categoria"))
+
+                    if not nombre or not precio_base or not categoria_nombre:
+                        continue
+
+                    # Buscar categoria por nombre
+                    try:
+                        categoria = CategoriaTratamiento.objects.get(nombre=categoria_nombre)
+                    except CategoriaTratamiento.DoesNotExist:
+                        self.stderr.write(self.style.ERROR(f"Categoria no encontrada: {categoria_nombre}"))
+                        continue
+
+                    # Evitar duplicados por nombre
+                    if Tratamiento.objects.filter(nombre=nombre, categoria=categoria).exists():
+                        continue
+
+                    tratamiento = Tratamiento(
+                        nombre=nombre,
+                        precioBase=float(precio_base),
+                        precioConvenio=float(precio_convenio) if precio_convenio and float(precio_convenio) > 0 else None,
+                        categoria=categoria
+                    )
+                    tratamiento.save()
+                    tratamientos_count += 1
+
+        except FileNotFoundError:
+            self.stderr.write(self.style.ERROR(f"Archivo de tratamientos no encontrado: {tratamientos_file_path}"))
+        except KeyError as e:
+            self.stderr.write(self.style.ERROR(f"Columna faltante en tratamientos: {e}"))
         
 
         # ✅ --- FINAL MESSAGE ---
         self.stdout.write(self.style.SUCCESS(f"✅ {pacientes_count} pacientes importados correctamente"))
         self.stdout.write(self.style.SUCCESS(f"✅ {especialidades_count} especialidades importadas correctamente"))
-        self.stdout.write(self.style.SUCCESS(f"✅ {medicos_count} médicos importados correctamente"))
         self.stdout.write(self.style.SUCCESS(f"✅ {enfermedades_count} enfermedades importadas correctamente"))

@@ -1,5 +1,6 @@
 import django_filters
 import django_filters as filters
+from django.db.models import Q
 from .models import (
     Tratamiento, 
     Especialidad, 
@@ -280,16 +281,30 @@ class CategoriaTratamientoFilter(django_filters.FilterSet):
             'nombre' : ['icontains']
         }
 
+class TratamientoFilter(django_filters.FilterSet):
+    categoria_id = django_filters.NumberFilter(
+        field_name='categoria_id',
+        lookup_expr='exact'
+    )
+    class Meta:
+        model: Tratamiento
+        fields = [
+            'categoria_id'
+        ]
+
 class TratamientoPacienteFilter(django_filters.FilterSet):
     paciente = django_filters.NumberFilter(
         field_name='paciente_id',
         lookup_expr='exact'
     )
-
     tratamiento = django_filters.NumberFilter(
         field_name='tratamiento_id',
         lookup_expr='exact'
     )
+
+    # New text filters
+    paciente_nombre = django_filters.CharFilter(method='filter_paciente_nombre')
+    tratamiento_nombre = django_filters.CharFilter(field_name='tratamiento__nombre', lookup_expr='icontains')
 
     descuento_min = django_filters.NumberFilter(field_name='descuento', lookup_expr='gte')
     descuento_max = django_filters.NumberFilter(field_name='descuento', lookup_expr='lte')
@@ -302,6 +317,8 @@ class TratamientoPacienteFilter(django_filters.FilterSet):
         fields = [
             'paciente',
             'tratamiento',
+            'paciente_nombre',
+            'tratamiento_nombre',
             'descuento_min',
             'descuento_max',
             'created_date_after',
@@ -313,3 +330,9 @@ class TratamientoPacienteFilter(django_filters.FilterSet):
 
     def filter_created_before(self, queryset, name, value):
         return queryset.annotate(cdate=TruncDate('created_at')).filter(cdate__lte=value)
+
+    def filter_paciente_nombre(self, queryset, name, value):
+        return queryset.filter(
+            Q(paciente__nomb_pac__icontains=value) |
+            Q(paciente__apel_pac__icontains=value)
+        )

@@ -137,7 +137,10 @@ def _send_notifications(doctor, paciente: Paciente, mssg_dtr: str, mssg_pct: str
     patient_phone = getattr(paciente, 'telf_pac', None) or getattr(paciente, 'telefono', None)
     if patient_phone:
         try:
-            response = evolMngr.send_message(patient_phone, mssg_pct)
+            if paciente.clinica.nomb_clin == 'Clinica Dental Filial Yurimaguas':
+                response = evolMngr.send_message(patient_phone, mssg_pct, message_instance='adso_instance')
+            else:
+                response = evolMngr.send_message(patient_phone, mssg_pct, message_instance='adso_iquitos_instance')
             if not response['ok']:
                 logger.error(response['error'])
             logger.info(f"Successfully sent {action} notification to patient {paciente.id} for appointment {appointment_id}")

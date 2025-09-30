@@ -82,6 +82,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'django_filters',
     'storages',
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
@@ -199,9 +200,9 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.AnonRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'verification': '6/min',
-        'user': '1000/day',
-        'anon': '100/day',
+        'verification': '100/min',
+        'user': '10000/day',
+        'anon': '1000/day',
     },
 }
 

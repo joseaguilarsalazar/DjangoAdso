@@ -196,6 +196,7 @@ class CategoriaTratamiento(models.Model):
 class Tratamiento(models.Model):
     nombre = models.CharField(max_length=2000)
     precioBase = models.FloatField()
+    precioConvenio = models.FloatField(null=True, blank=True)
     categoria = models.ForeignKey(CategoriaTratamiento, on_delete=models.SET_NULL, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -208,6 +209,7 @@ class Tratamiento(models.Model):
 class TratamientoPaciente(models.Model):
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
     tratamiento = models.ForeignKey(Tratamiento, on_delete=models.CASCADE)
+    convenio = models.BooleanField(default=False)
 
     asunto = models.CharField(max_length=200, default='tratamiento')
     observacion = models.TextField(max_length=1000, null=True, blank=True)

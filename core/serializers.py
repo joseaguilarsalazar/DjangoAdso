@@ -292,3 +292,24 @@ class TratamientoPacienteSerializer(serializers.ModelSerializer):
     class Meta:
         model = TratamientoPaciente
         fields = '__all__'
+
+    def to_representation(self, instance: TratamientoPaciente):
+        """Customize representation depending on request method."""
+        representation = super().to_representation(instance)
+        request = self.context.get("request")
+
+        if request and request.method == "GET":
+            # Manually expand nested fields (depth=2 equivalent)
+            representation["paciente"] = {
+                'id' : instance.paciente.id,
+                'name' : instance.paciente.__str__(),
+                'dni' : instance.paciente.dni_pac,
+                'age' : instance.paciente.edad_pac,
+                'state' : instance.paciente.esta_pac,        
+            } if instance.paciente else None
+            representation["tratamiento"] = {
+                'id' : instance.tratamiento.id,
+                'name' : instance.tratamiento.nombre,
+            } if instance.tratamiento else None
+
+        return representation
