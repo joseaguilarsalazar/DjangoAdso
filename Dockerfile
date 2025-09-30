@@ -19,6 +19,7 @@ COPY . /app/
 EXPOSE 7000
 
 # Run migrations and create superuser, then start the server
+
 CMD ["sh", "-c", "python manage.py migrate && \
                   python manage.py import_data && \
                   python manage.py collectstatic --noinput && \
@@ -26,5 +27,6 @@ CMD ["sh", "-c", "python manage.py migrate && \
                   celery -A djangoAdso worker -l info & \
                   celery -A djangoAdso beat -l info & \
                   python manage.py runserver 0.0.0.0:7000"]
+
 
 
