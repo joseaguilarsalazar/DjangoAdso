@@ -281,6 +281,17 @@ class CategoriaTratamientoFilter(django_filters.FilterSet):
             'nombre' : ['icontains']
         }
 
+class TratamientoFilter(django_filters.FilterSet):
+    categoria_id = django_filters.NumberFilter(
+        field_name='categoria_id',
+        lookup_expr='exact'
+    )
+    class Meta:
+        model: Tratamiento
+        fields = [
+            'categoria_id'
+        ]
+
 class TratamientoPacienteFilter(django_filters.FilterSet):
     paciente = django_filters.NumberFilter(
         field_name='paciente_id',

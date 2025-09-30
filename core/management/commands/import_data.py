@@ -2,7 +2,7 @@ import csv
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.utils.timezone import make_aware
-from core.models import Paciente, Especialidad, Clinica,  Consultorio, Enfermedad, Cita, CategoriaTratamiento
+from core.models import Paciente, Especialidad, Clinica,  Consultorio, Enfermedad, Cita, CategoriaTratamiento, Tratamiento
 import os
 from django.contrib.auth import get_user_model
 
@@ -51,10 +51,6 @@ class Command(BaseCommand):
         
 
         #create consultorios
-
-        categoria, created = CategoriaTratamiento.objects.get_or_create(
-            nombre = 'Categoria Prueba'
-        )
 
         for i in range(2):
             consultorio, create = Consultorio.objects.get_or_create(
@@ -460,6 +456,75 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f"Archivo no encontrado: {citas_yurimaguas_file_path}"))
         except KeyError as e:
             self.stderr.write(self.style.ERROR(f"Columna faltante en citas: {e}"))
+
+        categorias_file_path = os.path.join('core', 'management', 'commands', 'tratamientoCategoria.csv')
+        tratamientos_file_path = os.path.join('core', 'management', 'commands', 'tratamientos.csv')
+
+        categorias_count = 0
+        tratamientos_count = 0
+        
+        # ---- CATEGORIAS ----
+        try:
+            with open(categorias_file_path, newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+
+                for row in reader:
+                    nombre = parse_value(row.get("nombre"))
+
+                    if not nombre:
+                        continue
+
+                    # Check if already exists
+                    if CategoriaTratamiento.objects.filter(nombre=nombre).exists():
+                        continue
+
+                    categoria = CategoriaTratamiento(nombre=nombre)
+                    categoria.save()
+                    categorias_count += 1
+
+        except FileNotFoundError:
+            self.stderr.write(self.style.ERROR(f"Archivo de categorias no encontrado: {categorias_file_path}"))
+        except KeyError as e:
+            self.stderr.write(self.style.ERROR(f"Columna faltante en categorias: {e}"))
+
+        # ---- TRATAMIENTOS ----
+        try:
+            with open(tratamientos_file_path, newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+
+                for row in reader:
+                    nombre = parse_value(row.get("nombre"))
+                    precio_base = parse_value(row.get("precioBase"))
+                    precio_convenio = parse_value(row.get("precioConvenio"))
+                    categoria_nombre = parse_value(row.get("categoria"))
+
+                    if not nombre or not precio_base or not categoria_nombre:
+                        continue
+
+                    # Buscar categoria por nombre
+                    try:
+                        categoria = CategoriaTratamiento.objects.get(nombre=categoria_nombre)
+                    except CategoriaTratamiento.DoesNotExist:
+                        self.stderr.write(self.style.ERROR(f"Categoria no encontrada: {categoria_nombre}"))
+                        continue
+
+                    # Evitar duplicados por nombre
+                    if Tratamiento.objects.filter(nombre=nombre, categoria=categoria).exists():
+                        continue
+
+                    tratamiento = Tratamiento(
+                        nombre=nombre,
+                        precioBase=float(precio_base),
+                        precioConvenio=float(precio_convenio) if precio_convenio and float(precio_convenio) > 0 else None,
+                        categoria=categoria
+                    )
+                    tratamiento.save()
+                    tratamientos_count += 1
+
+        except FileNotFoundError:
+            self.stderr.write(self.style.ERROR(f"Archivo de tratamientos no encontrado: {tratamientos_file_path}"))
+        except KeyError as e:
+            self.stderr.write(self.style.ERROR(f"Columna faltante en tratamientos: {e}"))
         
 
         # ✅ --- FINAL MESSAGE ---
