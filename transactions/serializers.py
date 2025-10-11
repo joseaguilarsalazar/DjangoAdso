@@ -29,7 +29,6 @@ class IngresoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingreso
         fields = '__all__'
-        depth = 1  # Include related objects up to 1 levels deep
 
     def validate(self, attrs):
         """
