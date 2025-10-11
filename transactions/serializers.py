@@ -4,11 +4,12 @@ from core.models import TratamientoPaciente  # add import
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
 from django.db import transaction
-
+from django.contrib.auth import get_user_model
+User = get_user_model()
 class IngresoSerializer(serializers.ModelSerializer):
     # frontend can send paciente id instead of full tratamientoPaciente object
     paciente = serializers.IntegerField(write_only=True, required=False)
-
+    medico = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
     class Meta:
         model = Ingreso
         fields = '__all__'
