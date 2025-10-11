@@ -6,6 +6,7 @@ from django.db.models.functions import Coalesce
 from django.db import transaction
 from django.contrib.auth import get_user_model
 User = get_user_model()
+from rest_framework.response import Response
 class IngresoSerializer(serializers.ModelSerializer):
     # frontend can send paciente id instead of full tratamientoPaciente object
     # start with an empty queryset, populate per-request in __init__
@@ -172,3 +173,15 @@ class IngresoSerializer(serializers.ModelSerializer):
                 "paciente": "Reallocation on update is not supported. Create a new ingreso (POST) to allocate to tratamientos."
             })
         return super().update(instance, validated_data)
+
+
+    def list(self):
+        queryset: list[TratamientoPaciente] = self.get_queryset()
+        if queryset is None:
+            return Response([])
+        data = self.get_serializer(queryset, many=True).data
+
+        for value in data:
+            value['paciente'] = f'{Paciente.objects.get(id=value['tratamientoPaciente']['paciente']['id']).nomb_pac} {Paciente.objects.get(id=value['tratamientoPaciente']['paciente']['id']).apel_pac}'
+            value['medico'] = User.objects.get(id=value['medico']['id']).username
+        return Response(data, status=200)
