@@ -182,6 +182,6 @@ class IngresoSerializer(serializers.ModelSerializer):
         data = self.get_serializer(queryset, many=True).data
 
         for value in data:
-            value['paciente'] = f'{Paciente.objects.get(id=value['tratamientoPaciente']['paciente']['id']).nomb_pac} {Paciente.objects.get(id=value['tratamientoPaciente']['paciente']['id']).apel_pac}'
+            value['paciente'] = f"{Paciente.objects.get(id=value['tratamientoPaciente']['paciente']['id']).nomb_pac} {Paciente.objects.get(id=value['tratamientoPaciente']['paciente']['id']).apel_pac}"
             value['medico'] = User.objects.get(id=value['medico']['id']).username
         return Response(data, status=200)
