@@ -42,7 +42,7 @@ class IngresoSerializer(serializers.ModelSerializer):
         ordered by created_at (oldest first).
         """
         qs = TratamientoPaciente.objects.filter(paciente_id=paciente_id).annotate(
-            paid=Coalesce(Sum('ingreso__monto'), 0.0)
+            paid=Coalesce(Sum('ingresos__monto'), 0.0)
         ).order_by('created_at')
         return qs
 
