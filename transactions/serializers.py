@@ -186,4 +186,4 @@ class IngresoSerializer(serializers.ModelSerializer):
 
     def get_medico_username(self, obj):
         med = getattr(obj, 'medico', None)
-        return med.username if med else None
+        return med.name if med else None
