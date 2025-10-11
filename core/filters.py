@@ -1,6 +1,7 @@
 import django_filters
 import django_filters as filters
-from django.db.models import Q
+from django.db.models import Sum, F, FloatField, Q
+from django.db.models.functions import Coalesce
 from .models import (
     Tratamiento, 
     Especialidad, 
@@ -81,6 +82,8 @@ class PacienteFilter(django_filters.FilterSet):
     esta_pac = django_filters.ChoiceFilter(choices=Paciente.Estado.choices)
     estudios_pac = django_filters.ChoiceFilter(choices=Paciente.Estudios.choices)
 
+    has_debt = django_filters.BooleanFilter(method='filter_has_debt')
+
     class Meta:
         model = Paciente
         fields = [
@@ -91,6 +94,22 @@ class PacienteFilter(django_filters.FilterSet):
             'observacion', 'estudios_pac', 'detalleodontograma_pac', 'sexo', 'esta_pac'
         ]
 
+    def filter_has_debt(self, queryset, name, value):
+        """
+        value=True  -> pacientes con deuda
+        value=False -> todos los pacientes
+        """
+        # Anotar el total pagado y el total de tratamientos
+        queryset = queryset.annotate(
+            total_pagado=Coalesce(Sum('tratamientopaciente__ingresos__monto'), 0.0, output_field=FloatField()),
+            total_tratamiento=Coalesce(Sum('tratamientopaciente__tratamiento__precio'), 0.0, output_field=FloatField())
+        )
+
+        if value:
+            # Solo los pacientes con deuda
+            return queryset.filter(total_pagado__lt=F('total_tratamiento'))
+        else:
+            return queryset
 
 class TratamientoFilter(django_filters.FilterSet):
     created_at = django_filters.DateFromToRangeFilter()  # ?created_at_after=YYYY-MM-DD&created_at_before=YYYY-MM-DD

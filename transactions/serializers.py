@@ -5,12 +5,11 @@ from django.db.models import Sum
 from django.db.models.functions import Coalesce
 from django.db import transaction
 from django.contrib.auth import get_user_model
-User = get_user_model()
 from rest_framework.response import Response
+from core.serializers import UserSerializer
+
+User = get_user_model()
 class IngresoSerializer(serializers.ModelSerializer):
-    # frontend can send paciente id instead of full tratamientoPaciente object
-    # start with an empty queryset, populate per-request in __init__
-    paciente = serializers.PrimaryKeyRelatedField(write_only=True, required=False, queryset=Paciente.objects.none())
     medico = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
     
     paciente_nombre = serializers.SerializerMethodField(read_only=True)
@@ -23,27 +22,9 @@ class IngresoSerializer(serializers.ModelSerializer):
             return
         user = request.user
 
-        # build TratamientoPaciente queryset annotated with paid sum
-        tp_qs = TratamientoPaciente.objects.annotate(
-            paid=Coalesce(Sum('ingresos__monto'), 0.0)
-        )
-        # if TratamientoPaciente has a 'medico' field, filter by logged user
-        if 'medico' in [f.name for f in TratamientoPaciente._meta.get_fields()]:
-            tp_qs = tp_qs.filter(medico_id=user.id)
+        doctor_group = User.objects.filter(clinica=user.clinica)
 
-        paciente_ids = set()
-        # iterate to compute total per tratamiento using existing helper
-        for tp in tp_qs.select_related('tratamiento', 'paciente'):
-            try:
-                total = self._tratamiento_total_price(tp)
-            except Exception:
-                # skip if calculation fails for any tp
-                continue
-            paid = float(getattr(tp, 'paid', 0.0) or 0.0)
-            if total - paid > 0:
-                paciente_ids.add(tp.paciente_id)
-
-        self.fields['paciente'].queryset = Paciente.objects.filter(id__in=paciente_ids)
+        self.fields['medico'].queryset = doctor_group
 
     class Meta:
         model = Ingreso

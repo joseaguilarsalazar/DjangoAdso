@@ -15,7 +15,13 @@ class Ingreso(models.Model):
         related_name='ingresos' 
         )
     medico = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False)
-    metodo = models.CharField(max_length=50, default='Efectivo')
+
+    METODO_CHOICES = [
+        ('Efectivo', 'Efectivo'),
+        ('Tarjeta', 'Tarjeta'),
+        ('Transferencia', 'Transferencia'),
+    ]
+    metodo = models.CharField(max_length=50, choices=METODO_CHOICES, default='Efectivo')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
