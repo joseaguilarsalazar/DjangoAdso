@@ -13,6 +13,8 @@ class IngresoSerializer(serializers.ModelSerializer):
     paciente = serializers.PrimaryKeyRelatedField(write_only=True, required=False, queryset=Paciente.objects.none())
     medico = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
     
+    paciente_nombre = serializers.SerializerMethodField(read_only=True)
+    medico_username = serializers.SerializerMethodField(read_only=True)
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         request = self.context.get('request') if hasattr(self, 'context') else None
@@ -175,13 +177,13 @@ class IngresoSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-    def list(self):
-        queryset: list[TratamientoPaciente] = self.get_queryset()
-        if queryset is None:
-            return Response([])
-        data = self.get_serializer(queryset, many=True).data
+    def get_paciente_nombre(self, obj):
+        tp = getattr(obj, 'tratamientoPaciente', None)
+        pac = getattr(tp, 'paciente', None) if tp else None
+        if pac:
+            return f"{pac.nomb_pac} {pac.apel_pac}"
+        return None
 
-        for value in data:
-            value['paciente'] = f"{Paciente.objects.get(id=value['tratamientoPaciente']['paciente']['id']).nomb_pac} {Paciente.objects.get(id=value['tratamientoPaciente']['paciente']['id']).apel_pac}"
-            value['medico'] = User.objects.get(id=value['medico']['id']).username
-        return Response(data, status=200)
+    def get_medico_username(self, obj):
+        med = getattr(obj, 'medico', None)
+        return med.username if med else None
