@@ -215,6 +215,7 @@ class TratamientoPaciente(models.Model):
     observacion = models.TextField(max_length=1000, null=True, blank=True)
 
     descuento = models.FloatField()
+    descuento_porcentaje = models.BooleanField(default=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

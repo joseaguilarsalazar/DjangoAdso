@@ -7,7 +7,13 @@ User = get_user_model()
 # Create your models here.
 class Ingreso(models.Model):
     monto = models.FloatField()
-    tratamientoPaciente = models.ForeignKey(TratamientoPaciente, on_delete=models.SET_NULL, null=True, blank=False)
+    tratamientoPaciente = models.ForeignKey(
+        TratamientoPaciente, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=False,
+        related_name='ingresos' 
+        )
     medico = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False)
     metodo = models.CharField(max_length=50, default='Efectivo')
     created_at = models.DateTimeField(auto_now_add=True)
