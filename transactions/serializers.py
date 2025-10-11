@@ -6,7 +6,6 @@ from django.db.models.functions import Coalesce
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from rest_framework.response import Response
-from core.serializers import UserSerializer
 
 User = get_user_model()
 class IngresoSerializer(serializers.ModelSerializer):
@@ -14,6 +13,7 @@ class IngresoSerializer(serializers.ModelSerializer):
     
     paciente_nombre = serializers.SerializerMethodField(read_only=True)
     medico_username = serializers.SerializerMethodField(read_only=True)
+    pacienteTratamiento = serializers.SerializerMethodField(read_only=True)
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         request = self.context.get('request') if hasattr(self, 'context') else None
@@ -167,3 +167,10 @@ class IngresoSerializer(serializers.ModelSerializer):
     def get_medico_username(self, obj):
         med = getattr(obj, 'medico', None)
         return med.name if med else None
+    
+    def get_pacienteTratamiento(self, obj):
+        tp: TratamientoPaciente = getattr(obj, 'tratamientoPaciente', None)
+        pac: Paciente = getattr(tp, 'paciente', None) if tp else None
+
+        response = f'{pac.nomb_pac} {pac.apel_pac} - {tp.tratamiento.nombre} ' if tp and pac else None
+        return response
