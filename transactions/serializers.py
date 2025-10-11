@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from .models import Ingreso
-from ..core.models import Paciente
-from core.models import TratamientoPaciente  # add import
+from core.models import TratamientoPaciente, Paciente # add import
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
 from django.db import transaction
