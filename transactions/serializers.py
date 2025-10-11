@@ -68,13 +68,15 @@ class IngresoSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        paciente_id = validated_data.pop('paciente_id', None)
-        provided_tp = validated_data.get('tratamientoPaciente_id', None)
+        # remove the write-only 'paciente' field so it isn't passed to Ingreso.objects.create()
+        paciente = validated_data.pop('paciente', None)
+        paciente_id = paciente.id if paciente is not None else None
+        provided_tp = validated_data.get('tratamientoPaciente', None)
 
-        # If frontend gave a paciente id and didn't specify tratamientoPaciente,
+        # If frontend gave a paciente (id) and didn't specify tratamientoPaciente,
         # allocate the monto across oldest unpaid TratamientoPaciente objects.
         if paciente_id and not provided_tp:
-            monto_to_allocate = validated_data.pop('monto')
+            monto_to_allocate = validated_data.pop('monto', None)
             if monto_to_allocate is None:
                 raise serializers.ValidationError({"monto": "Monto is required to allocate payments."})
             try:
@@ -103,7 +105,7 @@ class IngresoSerializer(serializers.ModelSerializer):
                     'metodo': metodo,
                 }
                 # create ingreso for this tratamiento
-                ingreso_obj = Ingreso.objects.create(**{k: v for k, v in ingreso_data.items()})
+                ingreso_obj = Ingreso.objects.create(**ingreso_data)
                 created_ingresos.append(ingreso_obj)
                 monto_remaining -= allocate
                 if monto_remaining <= 0:
@@ -117,7 +119,7 @@ class IngresoSerializer(serializers.ModelSerializer):
                     'medico': validated_data.get('medico', None),
                     'metodo': validated_data.get('metodo', None),
                 }
-                ingreso_obj = Ingreso.objects.create(**{k: v for k, v in ingreso_data.items()})
+                ingreso_obj = Ingreso.objects.create(**ingreso_data)
                 created_ingresos.append(ingreso_obj)
                 monto_remaining = 0.0
 
