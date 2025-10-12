@@ -1,4 +1,5 @@
 from django.db import models
+from django.db import transaction
 from core.models import (
     TratamientoPaciente,
 )
@@ -25,8 +26,23 @@ class Ingreso(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        # Save the Ingreso first
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            if is_new:
+                # create corresponding Egreso for 40% payment to the medico
+                egreso_monto = float(self.monto) * 0.4 if self.monto is not None else 0.0
+                Egreso.objects.create(
+                    monto=egreso_monto,
+                    medico=self.medico,
+                    description='pago al medico'
+                )
+
     def __str__(self):
-        return f"{self.paciente} : {self.created_at}"
+        # previously referenced self.paciente which doesn't exist; show tratamientoPaciente instead
+        return f"{self.tratamientoPaciente} : {self.created_at}"
     
 class Egreso(models.Model):
     monto = models.FloatField()

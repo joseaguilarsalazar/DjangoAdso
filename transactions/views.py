@@ -1,8 +1,9 @@
 from rest_framework import filters, viewsets
+from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from .models import (
-    Ingreso,
+    Ingreso, Egreso
 )
 from .serializers import (
     IngresoSerializer,
@@ -10,6 +11,8 @@ from .serializers import (
 # Add drf_yasg imports for schema docs
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from rest_framework.response import Response
+from datetime import datetime
 
 # Add explicit request schemas for the serializer input (serializer accepts 'paciente' id write-only)
 INGRESO_CREATE_SCHEMA = openapi.Schema(
@@ -102,3 +105,157 @@ class IngresoViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
+class CierreDeCajaApiView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    @swagger_auto_schema(
+        operation_summary="Cierre de Caja (Close Cash Register)",
+        operation_description=(
+            "Retrieves the financial summary (Ingresos, Egresos, Balance) for a specific date or date range.\n\n"
+            "- If no `date`, `start_date`, or `end_date` are provided, it defaults to **today**.\n"
+            "- Optionally filter by `medico` or `paciente`.\n"
+            "- Returns all relevant transactions grouped by date."
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                'date',
+                openapi.IN_QUERY,
+                description="Specific date (YYYY-MM-DD). Overrides start_date/end_date if provided.",
+                type=openapi.TYPE_STRING,
+                format='date',
+                required=False,
+            ),
+            openapi.Parameter(
+                'start_date',
+                openapi.IN_QUERY,
+                description="Start date for range (YYYY-MM-DD).",
+                type=openapi.TYPE_STRING,
+                format='date',
+                required=False,
+            ),
+            openapi.Parameter(
+                'end_date',
+                openapi.IN_QUERY,
+                description="End date for range (YYYY-MM-DD).",
+                type=openapi.TYPE_STRING,
+                format='date',
+                required=False,
+            ),
+            openapi.Parameter(
+                'medico',
+                openapi.IN_QUERY,
+                description="Medico (doctor) ID to filter ingresos/egresos.",
+                type=openapi.TYPE_INTEGER,
+                required=False,
+            ),
+            openapi.Parameter(
+                'paciente',
+                openapi.IN_QUERY,
+                description="Paciente ID to filter ingresos.",
+                type=openapi.TYPE_INTEGER,
+                required=False,
+            ),
+        ],
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'ingresos': openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Items(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'paciente': openapi.Schema(type=openapi.TYPE_STRING),
+                                'monto': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                                'medico': openapi.Schema(type=openapi.TYPE_STRING),
+                                'metodo': openapi.Schema(type=openapi.TYPE_STRING),
+                            },
+                        ),
+                        description="List of ingresos (income transactions).",
+                    ),
+                    'egresos': openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Items(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'monto': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                                'medico': openapi.Schema(type=openapi.TYPE_STRING),
+                            },
+                        ),
+                        description="List of egresos (expenses).",
+                    ),
+                    'balance': openapi.Schema(type=openapi.TYPE_NUMBER, format='float', description="Net balance."),
+                },
+                description="Financial summary result for the given period.",
+            ),
+            400: "Invalid date format or parameters.",
+            500: "Internal server error.",
+        },
+    )
+    def get(self, request, *args, **kwargs):
+        try:
+            # --- Parse date parameters ---
+            date_str = request.query_params.get('date')
+            start_date_str = request.query_params.get('start_date')
+            end_date_str = request.query_params.get('end_date')
+            medico_id = request.query_params.get('medico')
+            paciente_id = request.query_params.get('paciente')
+
+            today = datetime.now().date()
+
+            if date_str:
+                # If 'date' provided, use it as both start and end
+                start_date = end_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            elif start_date_str and end_date_str:
+                start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+                end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+            else:
+                # Default to today
+                start_date = end_date = today
+
+            # --- Query ingresos ---
+            ingresos_qs = Ingreso.objects.filter(created_at__date__range=(start_date, end_date))
+            if medico_id:
+                ingresos_qs = ingresos_qs.filter(medico_id=medico_id)
+            if paciente_id:
+                ingresos_qs = ingresos_qs.filter(tratamientoPaciente__paciente_id=paciente_id)
+
+            total_ingresos = sum(ing.monto or 0.0 for ing in ingresos_qs)
+            ingresos_data = [
+                {
+                    'paciente': f"{i.tratamientoPaciente.paciente.nomb_pac} {i.tratamientoPaciente.paciente.apel_pac}"
+                    if i.tratamientoPaciente else "Unknown",
+                    'monto': i.monto,
+                    'medico': str(i.medico) if i.medico else "Unknown",
+                    'metodo': i.metodo,
+                }
+                for i in ingresos_qs
+            ]
+
+            # --- Query egresos ---
+            egresos_qs = Egreso.objects.filter(created_at__date__range=(start_date, end_date))
+            if medico_id:
+                egresos_qs = egresos_qs.filter(medico_id=medico_id)
+
+            total_egresos = sum(egr.monto or 0.0 for egr in egresos_qs)
+            egresos_data = [
+                {
+                    'monto': egr.monto,
+                    'medico': egr.medico.username if egr.medico else "Unknown",
+                }
+                for egr in egresos_qs
+            ]
+
+            # --- Final response ---
+            data = {
+                'ingresos': ingresos_data,
+                'egresos': egresos_data,
+                'balance': total_ingresos - total_egresos,
+            }
+
+            return Response(data, status=200)
+
+        except ValueError:
+            return Response({'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=400)
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
