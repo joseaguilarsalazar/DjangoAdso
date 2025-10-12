@@ -172,5 +172,5 @@ class IngresoSerializer(serializers.ModelSerializer):
         tp: TratamientoPaciente = getattr(obj, 'tratamientoPaciente', None)
         pac: Paciente = getattr(tp, 'paciente', None) if tp else None
 
-        response = f'{pac.nomb_pac} {pac.apel_pac} - {tp.tratamiento.nombre} ' if tp and pac else None
+        response = tp.tratamiento.nombre if tp  else None
         return response
