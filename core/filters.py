@@ -102,7 +102,7 @@ class PacienteFilter(django_filters.FilterSet):
         # Anotar el total pagado y el total de tratamientos
         queryset = queryset.annotate(
             total_pagado=Coalesce(Sum('tratamientopaciente__ingresos__monto'), 0.0, output_field=FloatField()),
-            total_tratamiento=Coalesce(Sum('tratamientopaciente__tratamiento__precio'), 0.0, output_field=FloatField())
+            total_tratamiento=Coalesce(Sum('tratamientopaciente__tratamiento__precioBase'), 0.0, output_field=FloatField())
         )
 
         if value:

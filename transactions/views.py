@@ -250,6 +250,8 @@ class CierreDeCajaApiView(APIView):
             data = {
                 'ingresos': ingresos_data,
                 'egresos': egresos_data,
+                'total_ingresos': total_ingresos,
+                'total_egresos': total_egresos,
                 'balance': total_ingresos - total_egresos,
             }
 
