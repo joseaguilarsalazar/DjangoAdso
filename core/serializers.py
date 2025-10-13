@@ -79,10 +79,29 @@ class PacienteSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
         
 
+class TratamientoListSerializer(serializers.ListSerializer):
+    """
+    When TratamientoSerializer is used with many=True, this ListSerializer will
+    ensure at most 1000 objects are serialized. This does not modify view-level
+    pagination metadata; it only limits the serialized list.
+    """
+    MAX_COUNT = 1000
+
+    def to_representation(self, data):
+        # `data` may be a queryset or iterable; slicing querysets is efficient.
+        try:
+            limited = data[:self.MAX_COUNT]
+        except TypeError:
+            # not sliceable (e.g. generator), fallback to islice
+            from itertools import islice
+            limited = list(islice(data, self.MAX_COUNT))
+        return super().to_representation(limited)
+
 class TratamientoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tratamiento
         fields = '__all__'
+        list_serializer_class = TratamientoListSerializer
 
 class EspecialidadSerializer(serializers.ModelSerializer):
     class Meta:
