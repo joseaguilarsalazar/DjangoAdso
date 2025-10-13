@@ -87,7 +87,7 @@ class User(AbstractUser):
     updated_at  = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.name} ({self.email})"
+        return f"{self.name} ({self.last_name})"
     
 
 class Paciente(models.Model):
@@ -215,6 +215,7 @@ class TratamientoPaciente(models.Model):
     observacion = models.TextField(max_length=1000, null=True, blank=True)
 
     descuento = models.FloatField()
+    descuento_porcentaje = models.BooleanField(default=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
