@@ -2,6 +2,8 @@ import requests
 from pathlib import Path
 import os
 import environ
+from chatbot.models import Chat
+from core.models import Paciente
 
 env = environ.Env(
     DEBUG=(bool, False)
@@ -17,18 +19,49 @@ if os.path.exists(env_file):
 DEEPSEEK_API_URL= env('deepseek_url')
 DEEPSEEK_API_KEY = env('deepseek_key')
 
-def lookup_appointment(text, chat):
-   # next_slot = appointments.get_next_available(user)
+def lookup_appointment(text, chat: Chat):
     return f"Tu siguiente atencion sera en 1 dia"
 
 
-def register_appointment(text, chat):
+def register_appointment(text, chat: Chat):
     return 'Cita registrada'
 
-def lookup_patient(text, chat):
-    return 'Has sido registrado'
+def lookup_patient(text, chat: Chat):
+    patient = chat.patient if chat.patient else None
+    there_patient = True if patient else False
+    if not patient:
+        number = chat.number.split('1')[1] if '1' in chat.number else chat.number
+        if len(number) != 9:
+             pass
+        else:
+            patient = Paciente.objects.filter(telf_pac=number).first()
+        if not patient:
+             pass
+        else:
+            chat.patient = patient
+            chat.save()
+            there_patient = True
 
-def register_patient(text, chat):
+    if not there_patient:
+        return f'''
+        Veo que este numero no esta registrado en nuestro sistema,
+        por favor envienos los siguientes datos para poder registrarlo:
+        Nombre:
+        Apellido:
+        DNI:
+        Fecha de Nacimiento:
+    ''', 'patient_registration'
+    else:
+        return f'''
+        Por favor confirme que estos sean sus datos antes de continuar:
+        Nombre: {patient.nomb_pac} {patient.apel_pac}
+        DNI: {patient.dni_pac}    
+        Fecha de Nacimiento: {patient.fena_pac}
+        Numero de Telefono: {patient.telf_pac}
+        Direccion: {patient.dire_pac}
+        ''', 'data_confirmation'
+
+def register_patient(text, chat: Chat):
     # extract patient data with LLM
     #data = extract_patient_info(text)
     #patients.create_patient(data)
@@ -49,9 +82,6 @@ def default_chat(messages, chat):
     history = history[::-1]
 
     transcript = "\n".join(history)
-
-    print(history[0])
-    print(history[-1])
 
     # Insert your original prompt unchanged
     prompt = f"""
@@ -104,4 +134,4 @@ def default_chat(messages, chat):
     data = response.json()
 
     reply = data["choices"][0]["message"]["content"].strip()
-    return reply
+    return reply, 'default'

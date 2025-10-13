@@ -19,7 +19,7 @@ if os.path.exists(env_file):
 DEEPSEEK_API_URL = env('deepseek_url')
 DEEPSEEK_API_KEY = env('deepseek_key')
 # Define possible intents
-INTENTS = ["appointment_lookup", "patient_registration", "default"]
+INTENTS = ["appointment_lookup", "patient_registration", "default", 'data_confirmation']
 
 def classify_intent(user_message: str) -> str:
     """
@@ -36,6 +36,7 @@ def classify_intent(user_message: str) -> str:
 
     - appointment_lookup: when the user wants to check or book appointments
     - patient_registration: when the user wants to register/update personal data
+    - data_confirmation: when the user is confirming their personal data
     - default: when it's just general talk, questions, or anything else
 
     Reply with only the intent keyword, nothing else.
