@@ -54,6 +54,10 @@ from ..filters import (
 )
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from rest_framework.pagination import PageNumberPagination
+
+class LargePagination(PageNumberPagination):
+    page_size = 1000
 
 User = get_user_model()
 
@@ -179,6 +183,7 @@ class TratamientoViewSet(viewsets.ModelViewSet):
     filterset_class = TratamientoFilter
     ordering_fields = '__all__'
     permission_classes = [IsAuthenticatedOrReadOnly]
+    pagination_class=LargePagination
 
 class EspecialidadViewSet(viewsets.ModelViewSet):
     queryset = Especialidad.objects.all()
