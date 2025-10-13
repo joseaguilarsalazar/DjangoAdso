@@ -23,6 +23,7 @@ from .models import (
 
 User = get_user_model()
 
+
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, allow_blank=False)
     password2 = serializers.CharField(write_only=True, required=False)
