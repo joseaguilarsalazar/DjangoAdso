@@ -275,7 +275,7 @@ class CierreDeCajaApiView(APIView):
             egresos_data = [
                 {
                     'monto': egr.monto,
-                    'medico': egr.medico.__str__() if egr.medico else "Unknown",
+                    'medico': str(egr.medico) if egr.medico else "Unknown",
                 }
                 for egr in egresos_qs
             ]
