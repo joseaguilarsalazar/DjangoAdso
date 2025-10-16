@@ -73,6 +73,7 @@ class User(AbstractUser):
     foto        = models.ImageField("Foto de perfil", upload_to='user_photos/', null=True, blank=True)
 
     especialidad = models.ForeignKey(Especialidad, on_delete=models.SET_NULL, null=True, blank=True)
+    is_especialista = models.BooleanField("¿Es especialista?", default=False)
     clinica = models.ForeignKey(Clinica, on_delete=models.CASCADE)
     estado      = models.CharField("Estado", max_length=50)
     ROL_CHOICES = [
