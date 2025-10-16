@@ -33,7 +33,8 @@ class Ingreso(models.Model):
             super().save(*args, **kwargs)
             if is_new:
                 # create corresponding Egreso for 40% payment to the medico
-                egreso_monto = float(self.monto) * 0.4 if self.monto is not None else 0.0
+                percentage = 0.5 if self.medico.is_especialista else 0.4
+                egreso_monto = float(self.monto) * percentage if self.monto is not None else 0.0
                 Egreso.objects.create(
                     monto=egreso_monto,
                     medico=self.medico,
