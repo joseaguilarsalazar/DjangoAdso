@@ -158,6 +158,9 @@ class CitaFilter(filters.FilterSet):
     created_at_after = filters.DateTimeFilter(field_name='created_at', lookup_expr='gte')
     created_at_before = filters.DateTimeFilter(field_name='created_at', lookup_expr='lte')
 
+
+    tratamiento_id = filters.NumberFilter(field_name='tratamiento__id')
+
     class Meta:
         model = Cita
         fields = [
@@ -171,6 +174,8 @@ class CitaFilter(filters.FilterSet):
             'fecha', 'fecha_after', 'fecha_before', 'hora_after', 'hora_before',
             # created_at
             'created_at_after', 'created_at_before',
+            # tratamiento_id
+            'tratamiento_id',
         ]
 
 

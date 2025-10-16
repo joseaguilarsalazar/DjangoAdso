@@ -242,6 +242,7 @@ class Cita(models.Model):
 
     cancelado = models.BooleanField(default=False)
     reprogramado = models.BooleanField(default=False)
+    tratamiento = models.ForeignKey(Tratamiento, on_delete=models.SET_NULL, null=True, blank=True)
 
     fecha = models.DateField()
     hora = models.TimeField()

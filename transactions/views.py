@@ -155,6 +155,14 @@ class CierreDeCajaApiView(APIView):
                 type=openapi.TYPE_INTEGER,
                 required=False,
             ),
+            openapi.Parameter(
+                'group_by',
+                openapi.IN_QUERY,
+                description="Group ingresos by 'pacientes' (default) or 'metodo_pago'.",
+                type=openapi.TYPE_STRING,
+                enum=['pacientes', 'metodo_pago'],
+                required=False,
+            ),
         ],
         responses={
             200: openapi.Schema(
@@ -200,6 +208,7 @@ class CierreDeCajaApiView(APIView):
             end_date_str = request.query_params.get('end_date')
             medico_id = request.query_params.get('medico')
             paciente_id = request.query_params.get('paciente')
+            group_by = request.query_params.get('group_by', 'pacientes') #option pacientes or metodo_pago
 
             today = datetime.now().date()
 
@@ -221,16 +230,33 @@ class CierreDeCajaApiView(APIView):
                 ingresos_qs = ingresos_qs.filter(tratamientoPaciente__paciente_id=paciente_id)
 
             total_ingresos = sum(ing.monto or 0.0 for ing in ingresos_qs)
-            ingresos_data = [
-                {
-                    'paciente': f"{i.tratamientoPaciente.paciente.nomb_pac} {i.tratamientoPaciente.paciente.apel_pac}"
-                    if i.tratamientoPaciente else "Unknown",
-                    'monto': i.monto,
-                    'medico': str(i.medico) if i.medico else "Unknown",
-                    'metodo': i.metodo,
-                }
-                for i in ingresos_qs
-            ]
+            if group_by == 'pacientes':
+                ingresos_data = [
+                    {
+                        'paciente': f"{i.tratamientoPaciente.paciente.nomb_pac} {i.tratamientoPaciente.paciente.apel_pac}"
+                        if i.tratamientoPaciente else "Unknown",
+                        'monto': i.monto,
+                        'medico': str(i.medico) if i.medico else "Unknown",
+                        'metodo': i.metodo,
+                    }
+                    for i in ingresos_qs
+                ]
+            else: #group_by metodo_pago
+                ingresos_data = [
+                    {
+                        'metodo': 'efectivo',
+                        'monto': sum(i.monto for i in ingresos_qs if i.metodo == 'efectivo'),
+                    },
+                    {
+                        'metodo': 'tarjeta',
+                        'monto': sum(i.monto for i in ingresos_qs if i.metodo == 'tarjeta'),
+                    },
+                    {
+                        'metodo': 'transferencia',
+                        'monto': sum(i.monto for i in ingresos_qs if i.metodo == 'transferencia'),
+                    }
+                ]
+                 
 
             # --- Query egresos ---
             egresos_qs = Egreso.objects.filter(created_at__date__range=(start_date, end_date))
