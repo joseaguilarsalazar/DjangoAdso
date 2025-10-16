@@ -58,6 +58,14 @@ class IngresoViewSet(viewsets.ModelViewSet):
     def filterset_class(self):
         from .filters import IngresoFilter
         return IngresoFilter
+    
+    def get_queryset(self):
+        all_ingresos = super().get_queryset()
+        filtered_ingresos = all_ingresos
+        user = self.request.user
+        if user.is_authenticated:
+            filtered_ingresos = all_ingresos.filter(medico__clinica=user.clinica)
+        return filtered_ingresos
 
     @swagger_auto_schema(
         request_body=INGRESO_CREATE_SCHEMA,
@@ -267,7 +275,7 @@ class CierreDeCajaApiView(APIView):
             egresos_data = [
                 {
                     'monto': egr.monto,
-                    'medico': egr.medico.username if egr.medico else "Unknown",
+                    'medico': egr.medico.__str__() if egr.medico else "Unknown",
                 }
                 for egr in egresos_qs
             ]
