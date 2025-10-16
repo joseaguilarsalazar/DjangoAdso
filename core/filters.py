@@ -310,10 +310,14 @@ class TratamientoFilter(django_filters.FilterSet):
         field_name='categoria_id',
         lookup_expr='exact'
     )
+
+    nombre = django_filters.CharFilter(
+        field_name='nombre', lookup_expr='icontains'
+    )
     class Meta:
-        model: Tratamiento
+        model = Tratamiento
         fields = [
-            'categoria_id'
+            'categoria_id', 'nombre'
         ]
 
 class TratamientoPacienteFilter(django_filters.FilterSet):
