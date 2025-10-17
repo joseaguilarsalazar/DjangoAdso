@@ -146,7 +146,7 @@ class Paciente(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.nomb_pac} {self.apel_pac} ({self.dni_pac})"
+        return f"{self.nomb_pac} {self.apel_pac}"
     
 class Alergia(models.Model):
     nombre_ale = models.CharField("Nombre de la alergia", max_length=200, blank=True, null=True)
@@ -216,7 +216,7 @@ class TratamientoPaciente(models.Model):
     observacion = models.TextField(max_length=1000, null=True, blank=True)
 
     descuento = models.FloatField()
-    descuento_porcentaje = models.BooleanField(default=True)
+    descuento_porcentaje = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
