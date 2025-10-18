@@ -301,6 +301,67 @@ class CierreDeCajaApiView(APIView):
 
 class DeudaPacienteApiView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
+
+    @swagger_auto_schema(
+        operation_summary="Deuda de Paciente",
+        operation_description=(
+            "Obtiene el detalle de deuda de un paciente, incluyendo tratamientos, pagos realizados y totales.\n"
+            "Requiere el parámetro de consulta 'paciente_id'."
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                'paciente_id',
+                openapi.IN_QUERY,
+                description="ID del paciente.",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+        ],
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'paciente': openapi.Schema(type=openapi.TYPE_STRING, description="Nombre completo del paciente"),
+                    'tratamientos': openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Items(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                'tratamiento': openapi.Schema(type=openapi.TYPE_STRING),
+                                'precio_base': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                                'descuento': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                                'descuento_porcentaje': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                                'monto_neto': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                            },
+                        ),
+                        description="Tratamientos del paciente con montos calculados.",
+                    ),
+                    'pagos': openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Items(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                'monto': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                                'medico': openapi.Schema(type=openapi.TYPE_STRING),
+                                'metodo': openapi.Schema(type=openapi.TYPE_STRING),
+                                'fecha_pago': openapi.Schema(type=openapi.TYPE_STRING, format='date'),
+                            },
+                        ),
+                        description="Pagos (ingresos) realizados por el paciente.",
+                    ),
+                    'deuda_neta': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                    'deuda_bruta': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                    'total_pagos': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                },
+                description="Detalle de deuda del paciente.",
+            ),
+            400: "Parámetro 'paciente_id' faltante o formato inválido.",
+            404: "Paciente no encontrado.",
+            500: "Error interno del servidor.",
+        }
+    )
     def get(self, request, *args, **kwargs):
         paciente_id = request.query_params.get('paciente_id')
         if not paciente_id:
