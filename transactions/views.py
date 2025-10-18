@@ -13,6 +13,8 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.response import Response
 from datetime import datetime
+from core.models import Paciente, TratamientoPaciente
+
 
 # Add explicit request schemas for the serializer input (serializer accepts 'paciente' id write-only)
 INGRESO_CREATE_SCHEMA = openapi.Schema(
@@ -293,5 +295,60 @@ class CierreDeCajaApiView(APIView):
 
         except ValueError:
             return Response({'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=400)
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
+
+
+class DeudaPacienteApiView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    def get(self, request, *args, **kwargs):
+        paciente_id = request.query_params.get('paciente_id')
+        if not paciente_id:
+            return Response({'error': 'paciente_id parameter is required.'}, status=400)
+
+        paciente = Paciente.objects.filter(id=paciente_id).first()
+        if not paciente:
+            return Response({'error': 'Paciente not found.'}, status=404)
+        
+        try:
+            
+            data = {
+                'paciente': f"{paciente.nomb_pac} {paciente.apel_pac}",
+                'tratamientos': [],
+                'pagos': [],
+                'deuda_neta': 0.0,
+                'deuda_bruta': 0.0,
+                'total_pagos': 0.0,
+            }
+            tratamientos = TratamientoPaciente.objects.filter(paciente_id=paciente_id)
+            deuda_bruta = 0.0
+            for tp in tratamientos:
+                deuda_bruta += tp.monto_neto()
+                data['tratamientos'].append({
+                    'id': tp.id,
+                    'tratamiento': tp.tratamiento.nombre,
+                    'precio_base': tp.tratamiento.precioBase,
+                    'descuento': tp.descuento,
+                    'descuento_porcentaje': tp.descuento_porcentaje,
+                    'monto_neto': tp.monto_neto(),
+                })
+
+            ingresos = Ingreso.objects.filter(tratamientoPaciente__paciente_id=paciente_id)
+            total_ingresos = sum(ing.monto or 0.0 for ing in ingresos)
+
+            for ing in ingresos:
+                data['pagos'].append({
+                    'id': ing.id,
+                    'monto': ing.monto,
+                    'medico': str(ing.medico) if ing.medico else "Unknown",
+                    'metodo': ing.metodo,
+                    'fecha_pago': ing.fecha_registro,
+                })
+
+            data['deuda_neta'] = deuda_bruta - total_ingresos
+            data['deuda_bruta'] = deuda_bruta
+            data['total_pagos'] = total_ingresos
+
+            return Response(data, status=200)
         except Exception as e:
             return Response({'error': str(e)}, status=500)

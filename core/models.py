@@ -223,6 +223,16 @@ class TratamientoPaciente(models.Model):
 
     def __str__(self):
         return self.asunto
+    
+    def monto_neto(self):
+        if self.descuento_porcentaje:
+            if self.descuento > 1 and self.descuento <= 100:
+                descuento_monto = self.tratamiento.precioBase * (self.descuento / 100)
+            elif self.descuento <= 1:
+                descuento_monto = self.tratamiento.precioBase * self.descuento
+        else:
+            descuento_monto = self.descuento
+        return self.tratamiento.precioBase - descuento_monto
 
 
     
