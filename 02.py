@@ -23,7 +23,7 @@ real_min_wage = {
 }
 
 # --- Compute inflation-adjusted wage ---
-base_wage = 132  # 1995 minimum wage in soles
+base_wage = 850  # 1995 minimum wage in soles
 adjusted_wage = [base_wage]
 for i in range(1, len(years)):
     prev = adjusted_wage[-1]

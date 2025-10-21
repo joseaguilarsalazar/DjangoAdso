@@ -8,12 +8,17 @@ class Orchestrator:
         self.intent_map = {
             "appointment_lookup": flows.lookup_appointment,
             "patient_registration": flows.register_patient,
+            "lookup_appointment": flows.lookup_appointment,
+            "appointment_registration": flows.register_appointment,
             "default": flows.default_chat
             # add new ones here...
         }
 
     def handle_message(self, text, chat: Chat):
-        intent = classify_intent(text)
+        if chat.current_state != "default":
+            intent = chat.current_state
+        else:
+            intent = classify_intent(text)
 
         messages = chat.last_messages()
 

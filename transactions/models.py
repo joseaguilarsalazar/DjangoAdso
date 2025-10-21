@@ -1,7 +1,7 @@
 from django.db import models
 from django.db import transaction
 from core.models import (
-    TratamientoPaciente,
+    TratamientoPaciente, Clinica
 )
 from django.contrib.auth import get_user_model
 User = get_user_model()
@@ -66,6 +66,8 @@ class Egreso(models.Model):
         null=True,
         blank=True
     )
+
+    clinica = models.ForeignKey(Clinica, on_delete=models.CASCADE, null=True, blank=True)
 
     fecha_registro = models.DateField(null=True, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)

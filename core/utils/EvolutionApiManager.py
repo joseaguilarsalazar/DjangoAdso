@@ -29,14 +29,11 @@ debug = env.bool('true_msg', default=False)
 logger = logging.getLogger(__name__)
 
 class EvolutionApiManager:
-    instance = env('evo_instance')
     key = evo_key
     base_url = env('evol_api_url')  # considerar cargar desde .env
     headers = {"Content-Type": "application/json", "apikey": key}
 
-    def __init__(self, instance: str = None, key: str = None, base_url: str = None):
-        if instance:
-            self.instance = instance
+    def __init__(self, key: str = None, base_url: str = None):
         if key:
             self.key = key
         if base_url:
@@ -153,12 +150,12 @@ class EvolutionApiManager:
         logger.error("Fallo al enviar mensaje a %s: %s", number, err_msg)
         return {"ok": False, "status_code": None, "response": None, "error": err_msg}
     
-    def check_instance_state(self, timeout: float = 5.0, max_retries: int = 3):
+    def check_instance_state(self, timeout: float = 5.0, max_retries: int = 3, instance: str = env('evo_instance')):
         """
         Check the connection state of the instance.
         Returns: {"ok": bool, "status_code": int|None, "result": {"state": str, ...} | None, "error": str|None}
         """
-        url = f'{self.base_url}instance/connectionState/{self.instance}'
+        url = f'{self.base_url}instance/connectionState/{instance}'
         attempt = 0
         backoff = 1.0
         last_exc = None
