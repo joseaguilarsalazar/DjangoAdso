@@ -15,8 +15,6 @@ from datetime import timedelta
 import os
 import environ
 from core.utils.TelegramApiManager import TelegramApiManager
-tel = TelegramApiManager()
-
 
 
 
