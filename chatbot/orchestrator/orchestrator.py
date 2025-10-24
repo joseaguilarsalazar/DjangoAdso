@@ -19,6 +19,8 @@ class Orchestrator:
             intent = chat.current_state
         else:
             intent = classify_intent(text)
+            chat.current_state = intent
+            chat.save()
 
         messages = chat.last_messages()
 

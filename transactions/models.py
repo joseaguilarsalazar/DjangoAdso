@@ -146,3 +146,9 @@ class Egreso(models.Model):
                             # Net amount is 0 or negative, delete existing egreso if it exists
                             if doctor_egreso:
                                 doctor_egreso.delete()
+
+
+
+# 1000, 200
+# 800 400
+#dfio23uy4r9p8023u45r2l3krfj
