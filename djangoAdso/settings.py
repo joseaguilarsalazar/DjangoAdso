@@ -21,8 +21,10 @@ from core.utils.TelegramApiManager import TelegramApiManager
 # Set the project base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env_file = os.path.join(BASE_DIR, ".env")
+environ.Env.read_env(env_file)
+
 env = environ.Env()
-env_file = os.path.join(BASE_DIR, '.env')
 if os.path.exists(env_file):
     environ.Env.read_env(env_file)
 
