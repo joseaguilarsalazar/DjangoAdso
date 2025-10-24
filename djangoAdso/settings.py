@@ -21,16 +21,13 @@ from core.utils.TelegramApiManager import TelegramApiManager
 # Set the project base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-env_file = os.path.join(BASE_DIR, ".env")
-environ.Env.read_env(env_file)
-
+# Load system environment variables (Docker)
 env = environ.Env()
-if os.path.exists(env_file):
-    environ.Env.read_env(env_file)
+environ.Env.read_env(os.path.join(BASE_DIR, '.env')) if os.path.exists(os.path.join(BASE_DIR, '.env')) else None
 
 tel = TelegramApiManager()
 
-SECRET_KEY = env('DJANGO_SECRET')
+SECRET_KEY = env('DJANGO_SECRET', 'losadsadf23132wdaw12l')
 
 
 evo_key = env('evo_key')
