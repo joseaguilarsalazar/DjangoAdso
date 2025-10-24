@@ -27,7 +27,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env')) if os.path.exists(os.path.j
 
 tel = TelegramApiManager()
 
-SECRET_KEY = env('DJANGO_SECRET', 'losadsadf23132wdaw12l')
+SECRET_KEY = env('DJANGO_SECRET')
 
 
 evo_key = env('evo_key')
