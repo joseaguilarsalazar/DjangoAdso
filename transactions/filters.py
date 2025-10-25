@@ -55,6 +55,7 @@ class EgresoFilter(django_filters.FilterSet):
     monto_min = django_filters.NumberFilter(field_name='monto', lookup_expr='gte')
     monto_max = django_filters.NumberFilter(field_name='monto', lookup_expr='lte')
     tipo_egreso = django_filters.CharFilter(method='filter_tipo_egreso')
+    fecha_registro = django_filters.DateFilter(field_name='fecha_registro', lookup_expr='exact')
 
     created_date_after = django_filters.DateFilter(method='filter_created_after')
     created_date_before = django_filters.DateFilter(method='filter_created_before')
@@ -65,6 +66,7 @@ class EgresoFilter(django_filters.FilterSet):
             'monto_min',
             'monto_max',
             'tipo_egreso',
+            'fecha_registro',
             'created_date_after',
             'created_date_before',
         ]
