@@ -292,6 +292,32 @@ class EgresoViewSet(viewsets.ModelViewSet):
         }
     )
     def list(self, request, *args, **kwargs):
+        params = request.query_params
+        divide: bool = params.get('divide', 'false').lower() == 'true'
+
+        if divide:
+            queryset = self.filter_queryset(self.get_queryset())
+            lab_egresos = queryset.filter(
+                tratamientoPaciente__isnull=False,
+                medico__isnull=True
+            )
+            odontologo_egresos = queryset.filter(
+                tratamientoPaciente__isnull=False,
+                medico__isnull=False
+            )
+            clinica_egresos = queryset.filter(
+                tratamientoPaciente__isnull=True
+            )
+
+            lab_serializer = self.get_serializer(lab_egresos, many=True)
+            odontologo_serializer = self.get_serializer(odontologo_egresos, many=True)
+            clinica_serializer = self.get_serializer(clinica_egresos, many=True)
+
+            return Response({
+                'lab': lab_serializer.data,
+                'odontologo': odontologo_serializer.data,
+                'clinica': clinica_serializer.data,
+            })
         return super().list(request, *args, **kwargs)
 
     @swagger_auto_schema(
