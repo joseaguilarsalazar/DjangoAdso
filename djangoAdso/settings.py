@@ -54,7 +54,11 @@ CSRF_TRUSTED_ORIGINS = [
     'http://web-backend.w0br5o.easypanel.host',
     'https://api.adso-peru.org',
 ]
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "https://adso-peru.org",
+    "https://adso-adso-frontend.4oghcf.easypanel.host",
+]
 
 
 # Application definition
