@@ -1,10 +1,13 @@
+from click import prompt
 import requests
 from pathlib import Path
 import os
 import environ
-from chatbot.models import Chat
+from chatbot.models import Chat, Message
 from core.models import Paciente
-
+from openai import OpenAI
+import json
+from core.models import Paciente
 env = environ.Env(
     DEBUG=(bool, False)
 )
@@ -13,20 +16,25 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 env_file = os.path.join(BASE_DIR, '.env')
 
+client = OpenAI(
+    api_key=env('deepseek_key'),
+    base_url=env('deepseek_url')
+)
+
 
 if os.path.exists(env_file):
     environ.Env.read_env(env_file)
 DEEPSEEK_API_URL= env('deepseek_url')
 DEEPSEEK_API_KEY = env('deepseek_key')
 
-def lookup_appointment(text, chat: Chat):
+def lookup_appointment(messages, chat: Chat):
     return f"Tu siguiente atencion sera en 1 dia"
 
 
-def register_appointment(text, chat: Chat):
+def register_appointment(messages, chat: Chat):
     return 'Cita registrada'
 
-def lookup_patient(text, chat: Chat):
+def lookup_patient(messages, chat: Chat):
     patient = chat.patient if chat.patient else None
     there_patient = True if patient else False
     if not patient:
@@ -43,6 +51,9 @@ def lookup_patient(text, chat: Chat):
             there_patient = True
 
     if not there_patient:
+        chat.current_state = 'patient_registration'
+        chat.current_sub_state = 'awaiting_data'
+        chat.save()
         return f'''
         Veo que este numero no esta registrado en nuestro sistema,
         por favor envienos los siguientes datos para poder registrarlo:
@@ -50,8 +61,11 @@ def lookup_patient(text, chat: Chat):
         Apellido:
         DNI:
         Fecha de Nacimiento:
-    ''', 'patient_registration'
+    '''
     else:
+        chat.current_state = 'data_confirmation'
+        chat.current_sub_state = 'awaiting_confirmation'
+        chat.save()
         return f'''
         Por favor confirme que estos sean sus datos antes de continuar:
         Nombre: {patient.nomb_pac} {patient.apel_pac}
@@ -59,29 +73,122 @@ def lookup_patient(text, chat: Chat):
         Fecha de Nacimiento: {patient.fena_pac}
         Numero de Telefono: {patient.telf_pac}
         Direccion: {patient.dire_pac}
-        ''', 'data_confirmation'
+        '''
+    
+def data_confirmation(messages, chat: Chat):
+    transcription, history = transcript_history(messages)
 
-def register_patient(text, chat: Chat):
+    if chat.current_sub_state == 'awaiting_confirmation':
+        prompt = f"""
+        You are an assistant that will determine if the users response confirms their personal data.
+        Your response will be a json and have this format:
+        {{
+            "confirmation": boolean
+        }}
+
+        here is the user chat history, just check the last user message for confirmation:
+        {transcription}
+"""
+        response = client.chat.completions.create(
+                model="deepseek-chat",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=200,
+                temperature=0.7,
+                response_format={"type": "json_object"},
+            )
+
+        reply = response.choices[0].message.content.strip()
+        data = json.loads(reply)     
+        confirmation = data.get('confirmation', False)
+
+        if confirmation:
+            chat.data_confirmed = True
+            chat.current_state = 'default' 
+            chat.current_sub_state = 'default'
+            chat.save()
+            return "Gracias por confirmar sus datos. ¿Desea continuar con el registro de su Cita?"
+        else:
+            chat.current_state = 'patient_registration'
+            chat.current_sub_state = 'awaiting_data'
+            chat.save()
+            return """Lamento el error. Por favor envíenos nuevamente sus datos para actualizar su información:
+                Nombre:
+                Apellido:
+                DNI:
+                Fecha de Nacimiento:"""
+
+def register_patient(messages, chat: Chat):
     # extract patient data with LLM
-    #data = extract_patient_info(text)
+    #data = extract_patient_info(messages)
     #patients.create_patient(data)
-    return "Tu informacion se registro con exito."
 
-def default_chat(messages, chat):
+    transcription, history = transcript_history(messages)
+
+    try:
+
+        if chat.current_sub_state == 'awaiting_data':
+            prompt = f"""
+            You are an assistant that extracts personal information from patients in order to register them in a dental clinic.
+
+            The patient must provide the following data:
+            - DNI
+            - Nombre
+            - Apellido
+            - Fecha de Nacimiento
+            - Numero de Telefono
+
+            Your task is to extract that information from the user's message and return it **only** as a valid JSON object in the following format:
+            {{
+                'dni': string,
+                'nombre': string,
+                'apellido': string,
+                'fecha_nacimiento': string, # formato YYYY-MM-DD
+                'telefono': string,
+            }}
+
+            Analyze the conversation below, but extract the information **only from the last patient message**:
+            {transcription}
+            """
+
+
+            response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=200,
+            temperature=0.7,
+            response_format={"type": "json_object"},
+        )
+
+            reply = response.choices[0].message.content.strip()
+
+            reply = response.choices[0].message.content.strip()
+            data = json.loads(reply)
+
+            paciente = Paciente.objects.create(
+                dni_pac=data.get('dni', ''),
+                nomb_pac=data.get('nombre', ''),
+                apel_pac=data.get('apellido', ''),
+                fena_pac=data.get('fecha_nacimiento', ''),
+                telf_pac=data.get('telefono', ''),
+            )
+
+            chat.current_state = 'default'
+            chat.current_sub_state = 'default'
+            chat.patient = paciente
+            chat.save()
+
+            return f"""Gracias {paciente.nomb_pac}, ya lo he registrado.
+            Desea continuar con la programacion de una cita?"""
+    except Exception as e:
+        return f"Hubo un error al registrar sus datos, por favor intente de nuevo. Error: {str(e)}"
+
+def default_chat(messages, chat: Chat):
     """
     Default fallback flow: continue a natural conversation with the patient.
     Uses the last N messages from the chat history.
     """
 
-    # Convert chat history to plain text transcript
-    history = []
-    for msg in messages:
-        speaker = "paciente" if msg.from_user else "tu"
-        history.append(f"-{speaker}: {msg.text}")
-
-    history = history[::-1]
-
-    transcript = "\n".join(history)
+    transcript, history = transcript_history(messages)
 
     # Insert your original prompt unchanged
     prompt = f"""
@@ -117,21 +224,26 @@ def default_chat(messages, chat):
     Responde al último mensaje del paciente.
     """
 
-    payload = {
-        "model": "deepseek-chat",
-        "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 200,
-        "temperature": 0.7,
-    }
+    response = client.chat.completions.create(
+        model="deepseek-chat",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=200,
+        temperature=0.7,
+    )
 
-    headers = {
-        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-        "Content-Type": "application/json",
-    }
-
-    response = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload)
-    response.raise_for_status()
-    data = response.json()
-
-    reply = data["choices"][0]["message"]["content"].strip()
+    reply = response.choices[0].message.content.strip()
     return reply, 'default'
+
+
+def transcript_history(messages: list[Message]):
+    # Convert chat history to plain text transcript
+    history = []
+    for msg in messages:
+        speaker = "paciente" if msg.from_user else "tu"
+        history.append(f"-{speaker}: {msg.text}")
+
+    history = history[::-1]
+
+    transcript = "\n".join(history)
+
+    return transcript, history

@@ -303,7 +303,7 @@ class TratamientoPacienteSerializer(serializers.ModelSerializer):
             # Manually expand nested fields (depth=2 equivalent)
             representation["paciente"] = {
                 'id' : instance.paciente.id,
-                'name' : instance.paciente.__str__(),
+                'name' : str(instance.paciente),
                 'dni' : instance.paciente.dni_pac,
                 'age' : instance.paciente.edad_pac,
                 'state' : instance.paciente.esta_pac,        

@@ -7,45 +7,15 @@ from .models import (
 )
 from .serializers import (
     IngresoSerializer,
+    EgresoSerializer,
 )
 # Add drf_yasg imports for schema docs
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.response import Response
 from datetime import datetime
-
-# Add explicit request schemas for the serializer input (serializer accepts 'paciente' id write-only)
-INGRESO_CREATE_SCHEMA = openapi.Schema(
-    type=openapi.TYPE_OBJECT,
-    properties={
-        'monto': openapi.Schema(type=openapi.TYPE_NUMBER, description='Amount to allocate (required)'),
-        'paciente': openapi.Schema(type=openapi.TYPE_INTEGER, description='Paciente ID to auto-allocate across unpaid tratamientos (write-only, optional)'),
-        'tratamientoPaciente': openapi.Schema(type=openapi.TYPE_INTEGER, description='TratamientoPaciente ID to assign the ingreso (optional)'),
-        'medico': openapi.Schema(type=openapi.TYPE_INTEGER, description='Medico user ID (required)'),
-        'metodo': openapi.Schema(type=openapi.TYPE_STRING, description="Payment method, e.g. 'Efectivo'"),
-    },
-    required=['monto', 'medico'],
-    description="Create Ingreso. Provide either 'paciente' (to auto-allocate across unpaid TratamientoPaciente) OR 'tratamientoPaciente' to assign to a single tratamiento."
-)
-
-INGRESO_UPDATE_SCHEMA = openapi.Schema(
-    type=openapi.TYPE_OBJECT,
-    properties={
-        'monto': openapi.Schema(type=openapi.TYPE_NUMBER, description='New amount (optional)'),
-        'tratamientoPaciente': openapi.Schema(type=openapi.TYPE_INTEGER, description='Assign/replace tratamientoPaciente (optional)'),
-        'medico': openapi.Schema(type=openapi.TYPE_INTEGER, description='Medico user ID (optional)'),
-        'metodo': openapi.Schema(type=openapi.TYPE_STRING, description='Payment method (optional)'),
-        # Note: 'paciente' is intentionally omitted because reallocation via update is not supported.
-    },
-    description="Update Ingreso. Do NOT supply 'paciente' here — reallocation is not supported on update; create a new ingreso instead."
-)
-
-PACIENTE_QUERY_PARAM = openapi.Parameter(
-    name='paciente',
-    in_=openapi.IN_QUERY,
-    description='Filter list by paciente id (matches ingresos allocated via paciente allocation)',
-    type=openapi.TYPE_INTEGER,
-)
+from core.models import Paciente, TratamientoPaciente
+from .filters import EgresoFilter
 
 class IngresoViewSet(viewsets.ModelViewSet):
     queryset = Ingreso.objects.all()
@@ -68,51 +38,367 @@ class IngresoViewSet(viewsets.ModelViewSet):
         return filtered_ingresos
 
     @swagger_auto_schema(
-        request_body=INGRESO_CREATE_SCHEMA,
-        responses={201: IngresoSerializer},
-        operation_description="Create an Ingreso. If 'paciente' (ID) is provided and 'tratamientoPaciente' is omitted, the provided monto will be auto-allocated across oldest unpaid TratamientoPaciente records for that paciente."
+        operation_summary="Crear Ingreso",
+        operation_description=(
+            "Crea un nuevo ingreso (pago de paciente). Puede asignarlo directamente a un TratamientoPaciente "
+            "o proporcionando un 'paciente' para auto-asignar a los tratamientos pendientes."
+        ),
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['monto', 'medico', 'fecha_registro'],
+            properties={
+                'monto': openapi.Schema(type=openapi.TYPE_NUMBER, format='float', description='Monto del ingreso (requerido)'),
+                'tratamientoPaciente': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del TratamientoPaciente (opcional)'),
+                'medico': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del médico (requerido)'),
+                'metodo': openapi.Schema(
+                    type=openapi.TYPE_STRING, 
+                    enum=['Efectivo', 'Tarjeta', 'Transferencia'],
+                    description="Método de pago (default: 'Efectivo')"
+                ),
+                'fecha_registro': openapi.Schema(type=openapi.TYPE_STRING, format='date', description='Fecha de registro (YYYY-MM-DD, requerido)'),
+            },
+        ),
+        responses={
+            201: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'monto': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                    'tratamientoPaciente': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'medico': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'metodo': openapi.Schema(type=openapi.TYPE_STRING),
+                    'fecha_registro': openapi.Schema(type=openapi.TYPE_STRING, format='date'),
+                    'created_at': openapi.Schema(type=openapi.TYPE_STRING, format='date-time'),
+                    'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format='date-time'),
+                },
+            ),
+            400: "Datos inválidos.",
+        }
     )
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 
     @swagger_auto_schema(
+        operation_summary="Listar Ingresos",
+        operation_description="Obtiene la lista de ingresos filtrados por clínica del usuario autenticado. Soporta filtros y ordenamiento.",
         manual_parameters=[
-            PACIENTE_QUERY_PARAM,
-            openapi.Parameter('ordering', openapi.IN_QUERY, description="Ordering fields", type=openapi.TYPE_STRING),
+            openapi.Parameter('paciente', openapi.IN_QUERY, description="ID del paciente", type=openapi.TYPE_INTEGER, required=False),
+            openapi.Parameter('medico', openapi.IN_QUERY, description="ID del médico", type=openapi.TYPE_INTEGER, required=False),
+            openapi.Parameter('tratamiento', openapi.IN_QUERY, description="ID del tratamiento", type=openapi.TYPE_INTEGER, required=False),
+            openapi.Parameter('monto_min', openapi.IN_QUERY, description="Monto mínimo", type=openapi.TYPE_NUMBER, required=False),
+            openapi.Parameter('monto_max', openapi.IN_QUERY, description="Monto máximo", type=openapi.TYPE_NUMBER, required=False),
+            openapi.Parameter('created_date_after', openapi.IN_QUERY, description="Fecha creación desde (YYYY-MM-DD)", type=openapi.TYPE_STRING, format='date', required=False),
+            openapi.Parameter('created_date_before', openapi.IN_QUERY, description="Fecha creación hasta (YYYY-MM-DD)", type=openapi.TYPE_STRING, format='date', required=False),
+            openapi.Parameter('ordering', openapi.IN_QUERY, description="Campo de ordenamiento (ej: '-created_at')", type=openapi.TYPE_STRING, required=False),
         ],
-        responses={200: IngresoSerializer(many=True)}
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'count': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'next': openapi.Schema(type=openapi.TYPE_STRING, format='uri', nullable=True),
+                    'previous': openapi.Schema(type=openapi.TYPE_STRING, format='uri', nullable=True),
+                    'results': openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Items(type=openapi.TYPE_OBJECT),
+                    ),
+                },
+            )
+        }
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        responses={200: IngresoSerializer}
+        operation_summary="Obtener Ingreso",
+        operation_description="Obtiene los detalles de un ingreso específico por ID.",
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'monto': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                    'tratamientoPaciente': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'medico': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'metodo': openapi.Schema(type=openapi.TYPE_STRING),
+                    'fecha_registro': openapi.Schema(type=openapi.TYPE_STRING, format='date'),
+                    'created_at': openapi.Schema(type=openapi.TYPE_STRING, format='date-time'),
+                    'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format='date-time'),
+                },
+            ),
+            404: "Ingreso no encontrado.",
+        }
     )
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        request_body=INGRESO_UPDATE_SCHEMA,
-        responses={200: IngresoSerializer},
-        operation_description="Update an Ingreso. 'paciente' is not supported here; to reallocate create a new ingreso."
+        operation_summary="Actualizar Ingreso",
+        operation_description="Actualiza completamente un ingreso existente. No se recomienda cambiar el tratamientoPaciente después de creado.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['monto', 'medico', 'fecha_registro'],
+            properties={
+                'monto': openapi.Schema(type=openapi.TYPE_NUMBER, format='float', description='Monto del ingreso'),
+                'tratamientoPaciente': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del TratamientoPaciente'),
+                'medico': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del médico'),
+                'metodo': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    enum=['Efectivo', 'Tarjeta', 'Transferencia'],
+                    description="Método de pago"
+                ),
+                'fecha_registro': openapi.Schema(type=openapi.TYPE_STRING, format='date', description='Fecha de registro (YYYY-MM-DD)'),
+            },
+        ),
+        responses={
+            200: openapi.Schema(type=openapi.TYPE_OBJECT),
+            400: "Datos inválidos.",
+            404: "Ingreso no encontrado.",
+        }
     )
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        request_body=INGRESO_UPDATE_SCHEMA,
-        responses={200: IngresoSerializer},
-        operation_description="Partial update. 'paciente' is not supported on partial updates."
+        operation_summary="Actualizar Parcialmente Ingreso",
+        operation_description="Actualiza parcialmente un ingreso existente (solo campos proporcionados).",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'monto': openapi.Schema(type=openapi.TYPE_NUMBER, format='float', description='Monto del ingreso (opcional)'),
+                'tratamientoPaciente': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del TratamientoPaciente (opcional)'),
+                'medico': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del médico (opcional)'),
+                'metodo': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    enum=['Efectivo', 'Tarjeta', 'Transferencia'],
+                    description="Método de pago (opcional)"
+                ),
+                'fecha_registro': openapi.Schema(type=openapi.TYPE_STRING, format='date', description='Fecha de registro (opcional)'),
+            },
+        ),
+        responses={
+            200: openapi.Schema(type=openapi.TYPE_OBJECT),
+            400: "Datos inválidos.",
+            404: "Ingreso no encontrado.",
+        }
     )
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        responses={204: 'No Content'}
+        operation_summary="Eliminar Ingreso",
+        operation_description="Elimina un ingreso existente. Esto también puede afectar los egresos relacionados del médico.",
+        responses={
+            204: "Ingreso eliminado exitosamente.",
+            404: "Ingreso no encontrado.",
+        }
     )
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
+class EgresoViewSet(viewsets.ModelViewSet):
+    queryset = Egreso.objects.all()
+    serializer_class = EgresoSerializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    ordering_fields = '__all__'
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filterset_class = EgresoFilter  
 
+    def get_queryset(self):
+        all_egresos = super().get_queryset()
+        filtered_egresos = all_egresos
+        user = self.request.user
+        if user.is_authenticated:
+            filtered_egresos = all_egresos.filter(clinica=user.clinica)
+        return filtered_egresos
+    
+    def perform_create(self, serializer):
+        # Automatically set clinica from authenticated user
+        user = self.request.user
+        if user.is_authenticated and hasattr(user, 'clinica'):
+            serializer.save(clinica=user.clinica)
+        else:
+            serializer.save()
+    
+    def perform_update(self, serializer):
+        # Ensure clinica remains the same as user's clinica on update
+        user = self.request.user
+        if user.is_authenticated and hasattr(user, 'clinica'):
+            serializer.save(clinica=user.clinica)
+        else:
+            serializer.save()
+
+    @swagger_auto_schema(
+        operation_summary="Crear Egreso",
+        operation_description=(
+            "Crea un nuevo egreso (gasto). Puede ser de tipo 'lab', 'odontologo' o 'clinica' dependiendo de si "
+            "tiene tratamientoPaciente y/o medico asignado. La clínica se asigna automáticamente del usuario autenticado."
+        ),
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['monto', 'fecha_registro'],
+            properties={
+                'monto': openapi.Schema(type=openapi.TYPE_NUMBER, format='float', description='Monto del egreso (requerido)'),
+                'medico': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del médico (opcional, null para gastos de lab/clinica)'),
+                'description': openapi.Schema(type=openapi.TYPE_STRING, description='Descripción del egreso (opcional)'),
+                'tratamientoPaciente': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del TratamientoPaciente (opcional, para lab/odontologo)'),
+                'fecha_registro': openapi.Schema(type=openapi.TYPE_STRING, format='date', description='Fecha de registro (YYYY-MM-DD, requerido)'),
+            },
+        ),
+        responses={
+            201: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'monto': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                    'medico': openapi.Schema(type=openapi.TYPE_INTEGER, nullable=True),
+                    'description': openapi.Schema(type=openapi.TYPE_STRING),
+                    'tratamientoPaciente': openapi.Schema(type=openapi.TYPE_INTEGER, nullable=True),
+                    'clinica': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'fecha_registro': openapi.Schema(type=openapi.TYPE_STRING, format='date'),
+                    'created_at': openapi.Schema(type=openapi.TYPE_STRING, format='date-time'),
+                    'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format='date-time'),
+                },
+            ),
+            400: "Datos inválidos.",
+        }
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Listar Egresos",
+        operation_description="Obtiene la lista de egresos filtrados por clínica del usuario autenticado. Soporta filtros por tipo, monto y fechas.",
+        manual_parameters=[
+            openapi.Parameter('tipo_egreso', openapi.IN_QUERY, description="Tipo de egreso: 'lab', 'odontologo', 'clinica'", type=openapi.TYPE_STRING, enum=['lab', 'odontologo', 'clinica'], required=False),
+            openapi.Parameter('monto_min', openapi.IN_QUERY, description="Monto mínimo", type=openapi.TYPE_NUMBER, required=False),
+            openapi.Parameter('monto_max', openapi.IN_QUERY, description="Monto máximo", type=openapi.TYPE_NUMBER, required=False),
+            openapi.Parameter('created_date_after', openapi.IN_QUERY, description="Fecha creación desde (YYYY-MM-DD)", type=openapi.TYPE_STRING, format='date', required=False),
+            openapi.Parameter('created_date_before', openapi.IN_QUERY, description="Fecha creación hasta (YYYY-MM-DD)", type=openapi.TYPE_STRING, format='date', required=False),
+            openapi.Parameter('ordering', openapi.IN_QUERY, description="Campo de ordenamiento (ej: '-created_at')", type=openapi.TYPE_STRING, required=False),
+        ],
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'count': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'next': openapi.Schema(type=openapi.TYPE_STRING, format='uri', nullable=True),
+                    'previous': openapi.Schema(type=openapi.TYPE_STRING, format='uri', nullable=True),
+                    'results': openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Items(type=openapi.TYPE_OBJECT),
+                    ),
+                },
+            )
+        }
+    )
+    def list(self, request, *args, **kwargs):
+        params = request.query_params
+        divide: bool = params.get('divide', 'false').lower() == 'true'
+
+        if divide:
+            queryset = self.filter_queryset(self.get_queryset())
+            lab_egresos = queryset.filter(
+                tratamientoPaciente__isnull=False,
+                medico__isnull=True
+            )
+            odontologo_egresos = queryset.filter(
+                tratamientoPaciente__isnull=False,
+                medico__isnull=False
+            )
+            clinica_egresos = queryset.filter(
+                tratamientoPaciente__isnull=True
+            )
+
+            lab_serializer = self.get_serializer(lab_egresos, many=True)
+            odontologo_serializer = self.get_serializer(odontologo_egresos, many=True)
+            clinica_serializer = self.get_serializer(clinica_egresos, many=True)
+
+            return Response({
+                'lab': lab_serializer.data,
+                'odontologo': odontologo_serializer.data,
+                'clinica': clinica_serializer.data,
+            })
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Obtener Egreso",
+        operation_description="Obtiene los detalles de un egreso específico por ID.",
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'monto': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                    'medico': openapi.Schema(type=openapi.TYPE_INTEGER, nullable=True),
+                    'description': openapi.Schema(type=openapi.TYPE_STRING),
+                    'tratamientoPaciente': openapi.Schema(type=openapi.TYPE_INTEGER, nullable=True),
+                    'clinica': openapi.Schema(type=openapi.TYPE_INTEGER),
+                    'fecha_registro': openapi.Schema(type=openapi.TYPE_STRING, format='date'),
+                    'created_at': openapi.Schema(type=openapi.TYPE_STRING, format='date-time'),
+                    'updated_at': openapi.Schema(type=openapi.TYPE_STRING, format='date-time'),
+                },
+            ),
+            404: "Egreso no encontrado.",
+        }
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Actualizar Egreso",
+        operation_description="Actualiza completamente un egreso existente. La clínica se mantiene del usuario autenticado.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['monto', 'fecha_registro'],
+            properties={
+                'monto': openapi.Schema(type=openapi.TYPE_NUMBER, format='float', description='Monto del egreso'),
+                'medico': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del médico (opcional)'),
+                'description': openapi.Schema(type=openapi.TYPE_STRING, description='Descripción del egreso (opcional)'),
+                'tratamientoPaciente': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del TratamientoPaciente (opcional)'),
+                'fecha_registro': openapi.Schema(type=openapi.TYPE_STRING, format='date', description='Fecha de registro (YYYY-MM-DD)'),
+            },
+        ),
+        responses={
+            200: openapi.Schema(type=openapi.TYPE_OBJECT),
+            400: "Datos inválidos.",
+            404: "Egreso no encontrado.",
+        }
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Actualizar Parcialmente Egreso",
+        operation_description="Actualiza parcialmente un egreso existente (solo campos proporcionados). La clínica se mantiene del usuario autenticado.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'monto': openapi.Schema(type=openapi.TYPE_NUMBER, format='float', description='Monto del egreso (opcional)'),
+                'medico': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del médico (opcional)'),
+                'description': openapi.Schema(type=openapi.TYPE_STRING, description='Descripción del egreso (opcional)'),
+                'tratamientoPaciente': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID del TratamientoPaciente (opcional)'),
+                'fecha_registro': openapi.Schema(type=openapi.TYPE_STRING, format='date', description='Fecha de registro (opcional)'),
+            },
+        ),
+        responses={
+            200: openapi.Schema(type=openapi.TYPE_OBJECT),
+            400: "Datos inválidos.",
+            404: "Egreso no encontrado.",
+        }
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Eliminar Egreso",
+        operation_description="Elimina un egreso existente. Si es de tipo 'lab', puede afectar los cálculos de egresos de odontólogos relacionados.",
+        responses={
+            204: "Egreso eliminado exitosamente.",
+            404: "Egreso no encontrado.",
+        }
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
 class CierreDeCajaApiView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
@@ -293,5 +579,119 @@ class CierreDeCajaApiView(APIView):
 
         except ValueError:
             return Response({'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=400)
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
+class DeudaPacienteApiView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    @swagger_auto_schema(
+        operation_summary="Deuda de Paciente",
+        operation_description=(
+            "Obtiene el detalle de deuda de un paciente, incluyendo tratamientos, pagos realizados y totales.\n"
+            "Requiere el parámetro de consulta 'paciente_id'."
+        ),
+        manual_parameters=[
+            openapi.Parameter(
+                'paciente_id',
+                openapi.IN_QUERY,
+                description="ID del paciente.",
+                type=openapi.TYPE_INTEGER,
+                required=True,
+            ),
+        ],
+        responses={
+            200: openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'paciente': openapi.Schema(type=openapi.TYPE_STRING, description="Nombre completo del paciente"),
+                    'tratamientos': openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Items(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                'tratamiento': openapi.Schema(type=openapi.TYPE_STRING),
+                                'precio_base': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                                'descuento': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                                'descuento_porcentaje': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                                'monto_neto': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                            },
+                        ),
+                        description="Tratamientos del paciente con montos calculados.",
+                    ),
+                    'pagos': openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Items(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                'monto': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                                'medico': openapi.Schema(type=openapi.TYPE_STRING),
+                                'metodo': openapi.Schema(type=openapi.TYPE_STRING),
+                                'fecha_pago': openapi.Schema(type=openapi.TYPE_STRING, format='date'),
+                            },
+                        ),
+                        description="Pagos (ingresos) realizados por el paciente.",
+                    ),
+                    'deuda_neta': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                    'deuda_bruta': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                    'total_pagos': openapi.Schema(type=openapi.TYPE_NUMBER, format='float'),
+                },
+                description="Detalle de deuda del paciente.",
+            ),
+            400: "Parámetro 'paciente_id' faltante o formato inválido.",
+            404: "Paciente no encontrado.",
+            500: "Error interno del servidor.",
+        }
+    )
+    def get(self, request, *args, **kwargs):
+        paciente_id = request.query_params.get('paciente_id')
+        if not paciente_id:
+            return Response({'error': 'paciente_id parameter is required.'}, status=400)
+
+        paciente = Paciente.objects.filter(id=paciente_id).first()
+        if not paciente:
+            return Response({'error': 'Paciente not found.'}, status=404)
+        
+        try:
+            
+            data = {
+                'paciente': f"{paciente.nomb_pac} {paciente.apel_pac}",
+                'tratamientos': [],
+                'pagos': [],
+                'deuda_neta': 0.0,
+                'deuda_bruta': 0.0,
+                'total_pagos': 0.0,
+            }
+            tratamientos = TratamientoPaciente.objects.filter(paciente_id=paciente_id)
+            deuda_bruta = 0.0
+            for tp in tratamientos:
+                deuda_bruta += tp.monto_neto()
+                data['tratamientos'].append({
+                    'id': tp.id,
+                    'tratamiento': tp.tratamiento.nombre,
+                    'precio_base': tp.tratamiento.precioBase,
+                    'descuento': tp.descuento,
+                    'descuento_porcentaje': tp.descuento_porcentaje,
+                    'monto_neto': tp.monto_neto(),
+                })
+
+            ingresos = Ingreso.objects.filter(tratamientoPaciente__paciente_id=paciente_id)
+            total_ingresos = sum(ing.monto or 0.0 for ing in ingresos)
+
+            for ing in ingresos:
+                data['pagos'].append({
+                    'id': ing.id,
+                    'monto': ing.monto,
+                    'medico': str(ing.medico) if ing.medico else "Unknown",
+                    'metodo': ing.metodo,
+                    'fecha_pago': ing.fecha_registro,
+                })
+
+            data['deuda_neta'] = deuda_bruta - total_ingresos
+            data['deuda_bruta'] = deuda_bruta
+            data['total_pagos'] = total_ingresos
+
+            return Response(data, status=200)
         except Exception as e:
             return Response({'error': str(e)}, status=500)

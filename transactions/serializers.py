@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Ingreso
+from .models import Ingreso, Egreso
 from core.models import TratamientoPaciente, Paciente # add import
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
@@ -174,3 +174,8 @@ class IngresoSerializer(serializers.ModelSerializer):
 
         response = tp.tratamiento.nombre if tp  else None
         return response
+
+class EgresoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model= Egreso
+        fields='__all__'

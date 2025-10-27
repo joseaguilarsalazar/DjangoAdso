@@ -20,7 +20,8 @@ EXPOSE 7000
 
 # Run migrations and create superuser, then start the server
 
-CMD ["sh", "-c", "python manage.py migrate && \
+CMD ["sh", "-c", "python check_env.py && \
+                  python manage.py migrate && \
                   python manage.py import_data && \
                   python manage.py collectstatic --noinput && \
                   python create_superuser.py && \
