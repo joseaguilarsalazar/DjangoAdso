@@ -101,24 +101,23 @@ class PacienteFilter(django_filters.FilterSet):
         """
         queryset = queryset.annotate(
             total_pagado=Coalesce(
-                Sum('tratamientopaciente_set__ingresos__monto', distinct=True),
+                Sum('tratamientopaciente__ingresos__monto', distinct=True),
                 0.0,
                 output_field=FloatField(),
             ),
             total_tratamiento=Coalesce(
-                Sum('tratamientopaciente_set__tratamiento__precioBase', distinct=True),
+                Sum('tratamientopaciente__tratamiento__precioBase', distinct=True),
                 0.0,
                 output_field=FloatField(),
             ),
         )
 
         if value is True:
-            # Patients whose payments are less than treatment cost
             return queryset.filter(total_pagado__lt=F('total_tratamiento'))
         elif value is False:
-            # Patients fully paid (or prepaid)
             return queryset.filter(total_pagado__gte=F('total_tratamiento'))
         return queryset
+
 
 class TratamientoFilter(django_filters.FilterSet):
     created_at = django_filters.DateFromToRangeFilter()  # ?created_at_after=YYYY-MM-DD&created_at_before=YYYY-MM-DD
