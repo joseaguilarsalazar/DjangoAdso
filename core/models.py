@@ -222,7 +222,7 @@ class TratamientoPaciente(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.asunto
+        return f"{self.tratamiento.nombre} para {self.paciente.nomb_pac}"
     
     def monto_neto(self):
         if self.descuento_porcentaje:
