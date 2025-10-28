@@ -290,6 +290,7 @@ class CategoriaTratamientoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class TratamientoPacienteSerializer(serializers.ModelSerializer):
+    show_str = serializers.CharField(source='__str__', read_only=True)
     class Meta:
         model = TratamientoPaciente
         fields = '__all__'
