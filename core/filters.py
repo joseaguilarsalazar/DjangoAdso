@@ -97,19 +97,27 @@ class PacienteFilter(django_filters.FilterSet):
     def filter_has_debt(self, queryset, name, value):
         """
         value=True  -> pacientes con deuda
-        value=False -> todos los pacientes
+        value=False -> pacientes sin deuda
         """
-        # Anotar el total pagado y el total de tratamientos
         queryset = queryset.annotate(
-            total_pagado=Coalesce(Sum('tratamientopaciente__ingresos__monto'), 0.0, output_field=FloatField()),
-            total_tratamiento=Coalesce(Sum('tratamientopaciente__tratamiento__precioBase'), 0.0, output_field=FloatField())
+            total_pagado=Coalesce(
+                Sum('tratamientopaciente__ingresos__monto', distinct=True),
+                0.0,
+                output_field=FloatField(),
+            ),
+            total_tratamiento=Coalesce(
+                Sum('tratamientopaciente__tratamiento__precioBase', distinct=True),
+                0.0,
+                output_field=FloatField(),
+            ),
         )
 
-        if value:
-            # Solo los pacientes con deuda
+        if value is True:
             return queryset.filter(total_pagado__lt=F('total_tratamiento'))
-        else:
-            return queryset
+        elif value is False:
+            return queryset.filter(total_pagado__gte=F('total_tratamiento'))
+        return queryset
+
 
 class TratamientoFilter(django_filters.FilterSet):
     created_at = django_filters.DateFromToRangeFilter()  # ?created_at_after=YYYY-MM-DD&created_at_before=YYYY-MM-DD
