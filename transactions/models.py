@@ -54,7 +54,7 @@ class Ingreso(models.Model):
 
     def __str__(self):
         # previously referenced self.paciente which doesn't exist; show tratamientoPaciente instead
-        return f"{self.tratamientoPaciente} : {self.created_at}"
+        return f"{self.tratamientoPaciente.tratamiento.nombre}"
     
 class Egreso(models.Model):
     monto = models.FloatField()
