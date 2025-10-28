@@ -25,7 +25,7 @@ if os.path.exists(env_file):
 
 r = redis.Redis.from_url(REDIS_URL)
 
-true_chtbot = env.bool('true_chtbot', default=False) 
+true_chatbot = env.bool('true_chatbot', default=False)
 
 @shared_task
 def process_user_buffer(sender: str):
@@ -39,8 +39,6 @@ def process_user_buffer(sender: str):
     full_text = messages.decode("utf-8")
     r.delete(key)  # clear buffer
 
-    
-
     chat, _ = Chat.objects.get_or_create(number=sender)
 
     # Save fused message
@@ -51,7 +49,7 @@ def process_user_buffer(sender: str):
     machine_message = Message.objects.create(chat=chat, text=reply, from_user=False)
 
     # Send reply
-    if true_chtbot:
+    if true_chatbot:
         manager.send_message(sender, reply)
     elif sender=='51967244227':
         manager.send_message(sender, reply)
