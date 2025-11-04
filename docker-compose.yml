@@ -12,7 +12,7 @@ services:
     ports:
       - "8000:8000"   # Keep app exposed to host
     depends_on:
-      - db
+      - dbadso
       - redis
     networks:
       - app_network
