@@ -48,17 +48,17 @@ else:
 
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
-    'https://adso-adso-backend.4oghcf.easypanel.host',
-    'http://adso-adso-backend.4oghcf.easypanel.host',
     'https://web-backend.w0br5o.easypanel.host',
     'http://web-backend.w0br5o.easypanel.host',
     'https://api.adso-peru.org',
+    'https://adso-api.mishu-soft.org'
 ]
 CORS_ALLOW_CREDENTIALS =True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://adso-peru.org",
     "https://adso-adso-frontend.4oghcf.easypanel.host",
+    'https://adso-ui.mishu-soft.org',
 ]
 
 
