@@ -8,9 +8,10 @@ class Orchestrator:
         self.intent_map = {
             "appointment_lookup": flows.lookup_appointment,
             "patient_registration": flows.register_patient,
-            "lookup_appointment": flows.lookup_appointment,
             "appointment_registration": flows.register_appointment,
-            "default": flows.default_chat
+            "default": flows.default_chat,
+            "data_confirmation": flows.data_confirmation,
+            "lookup_patient": flows.lookup_patient,
             # add new ones here...
         }
 

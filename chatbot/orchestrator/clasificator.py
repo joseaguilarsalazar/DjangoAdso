@@ -37,7 +37,6 @@ def classify_intent(user_message: str) -> str:
     - patient_registration: when the user wants to register/update personal data
     - data_confirmation: when the user is confirming their personal data
     - default: when it's just general talk, questions, or anything else
-
     Reply with only the intent keyword, nothing else.
 
     User message: "{user_message}"
