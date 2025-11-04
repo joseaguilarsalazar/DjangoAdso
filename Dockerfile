@@ -16,7 +16,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . /app/
 
 # Expose port
-EXPOSE 7000
+EXPOSE 8000
 
 # Run migrations and create superuser, then start the server
 
