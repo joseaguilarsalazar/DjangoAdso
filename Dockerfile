@@ -27,7 +27,7 @@ CMD ["sh", "-c", "python check_env.py && \
                   python create_superuser.py && \
                   celery -A djangoAdso worker -l info & \
                   celery -A djangoAdso beat -l info & \
-                  python manage.py runserver 0.0.0.0:7000"]
+                  python manage.py runserver 0.0.0.0:8000"]
 
 
 
