@@ -17,7 +17,7 @@ services:
     networks:
       - app_network
 
-  db:
+  dbadso:
     image: postgres:15
     container_name: postgres_db
     restart: always
