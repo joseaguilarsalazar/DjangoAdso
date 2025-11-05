@@ -8,6 +8,15 @@ from datetime import datetime, timedelta
 def register_appointment(messages, chat: Chat):
     transcription, history = transcript_history(messages)
 
+    if not chat.patient:
+        chat.current_state = "patient_registration"
+        chat.current_sub_state = "awaiting_data"
+        return """Por favor brindeme estos datos antes de registrar una cita:
+        Nombre:
+        Apellido:
+        DNI:
+        Fecha de Nacimiento:"""
+
     prompt = f"""
     Estas recibiendo la hisotia de chat de un paciente que desea registrar una cita en la clinica dental.
     basado en los datos del chat (especialmente los ultimos mensajes) extrae la siguiente informacion en formato json:

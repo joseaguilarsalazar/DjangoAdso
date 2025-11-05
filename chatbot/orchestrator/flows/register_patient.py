@@ -22,7 +22,6 @@ def register_patient(messages, chat: Chat):
             - Nombre
             - Apellido
             - Fecha de Nacimiento
-            - Numero de Telefono
 
             Your task is to extract that information from the user's message and return it **only** as a valid JSON object in the following format:
             {{
@@ -30,7 +29,6 @@ def register_patient(messages, chat: Chat):
                 'nombre': string,
                 'apellido': string,
                 'fecha_nacimiento': string, # formato YYYY-MM-DD
-                'telefono': string,
             }}
 
             Analyze the conversation below, but extract the information **only from the last patient message**:
@@ -56,7 +54,6 @@ def register_patient(messages, chat: Chat):
                 nomb_pac=data.get('nombre', ''),
                 apel_pac=data.get('apellido', ''),
                 fena_pac=data.get('fecha_nacimiento', ''),
-                telf_pac=data.get('telefono', ''),
             )
 
             chat.current_state = 'default'
