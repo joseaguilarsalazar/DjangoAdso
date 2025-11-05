@@ -22,7 +22,14 @@ client = OpenAI(
 )
 
 # Define possible intents
-INTENTS = ["appointment_lookup", "patient_registration", "default", "data_confirmation"]
+INTENTS_AND_DESCRIPTIONS = {
+    "appointment_lookup": "Check or book appointments",
+    "patient_registration": "Register or update personal data",
+    "default": "General talk or questions",
+    "data_confirmation": "Confirm personal data",
+    "lookup_patient": "Look up patient information",
+    "appointment_registration": "Register a new appointment"
+}
 
 def classify_intent(user_message: str) -> str:
     """
@@ -33,15 +40,15 @@ def classify_intent(user_message: str) -> str:
     You are an intent classifier for a dental clinic chatbot.
     Given the user message, classify it into one of the following intents:
 
-    - appointment_lookup: when the user wants to check or book appointments
-    - patient_registration: when the user wants to register/update personal data
-    - data_confirmation: when the user is confirming their personal data
-    - default: when it's just general talk, questions, or anything else
-    Reply with only the intent keyword, nothing else.
+    """
+    for intent, description in INTENTS_AND_DESCRIPTIONS.items():
+        prompt += f"- {intent}: {description}\n"
+    
+    prompt += f"""
 
+    return only the keyword of the intent that best matches the, nothing else.
     User message: "{user_message}"
     """
-
     try:
         response = client.chat.completions.create(
             model="deepseek-chat",
@@ -52,7 +59,7 @@ def classify_intent(user_message: str) -> str:
 
         raw_output = response.choices[0].message.content.strip().lower()
 
-        return raw_output if raw_output in INTENTS else "default"
+        return raw_output if raw_output in INTENTS_AND_DESCRIPTIONS.keys() else "default"
 
     except Exception as e:
         # Optional: handle errors gracefully

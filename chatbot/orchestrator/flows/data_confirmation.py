@@ -2,6 +2,7 @@ from chatbot.models import Chat
 from .AI_Client import client
 import json
 from .trascript_history import transcript_history
+from core.models import Paciente
 
 def data_confirmation(messages, chat: Chat):
     transcription, history = transcript_history(messages)
@@ -10,7 +11,53 @@ def data_confirmation(messages, chat: Chat):
         #and then confirm it in the database in the Paciente model
         #if user exists send to user and pass to awaiting_confirmation
         #else ask for registration
-        pass
+        prompt = f"""
+        The user will provide you with personal data such as name, lastname or DNI.
+        you will retrieve this data from the message history and return it as a json with this format:
+        {{
+            "name": string, (optional)
+            "lastname": string, (optional)
+            "dni": string (optional)
+        }}
+        if the value is not present return null for that field.
+
+        here is the user chat history:
+        {transcription}
+"""
+        response = client.chat.completions.create(
+                model="deepseek-chat",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=200,
+                temperature=0.7,
+                response_format={"type": "json_object"},
+            )
+        reply = response.choices[0].message.content
+        data = json.loads(reply)
+        dni = data.get('dni', None)
+        name = data.get('name', None)
+        lastname = data.get('lastname', None)     
+
+        if dni:
+            paciente  = Paciente.objects.filter(dni=dni).first()
+            chat.patient = paciente
+            chat.save()
+
+            return f"He encontrado sus datos: Nombre: {paciente.nombre}, Apellido: {paciente.apellido}, DNI: {paciente.dni}. ¿Son correctos? Por favor responda con 'sí' o 'no'."
+        elif name and lastname:
+            paciente = Paciente.objects.filter(nombre__iexact=name, apellido__iexact=lastname).first()
+            if paciente:
+                chat.patient = paciente
+                chat.save()
+                return f"He encontrado sus datos: Nombre: {paciente.nombre}, Apellido: {paciente.apellido}, DNI: {paciente.dni}. ¿Son correctos? Por favor responda con 'sí' o 'no'."
+            else:
+                chat.current_state = 'patient_registration'
+                chat.current_sub_state = 'awaiting_data'
+                chat.save()
+                return """No he podido encontrar sus datos. Por favor envíenos sus datos para registrarlos:
+                Nombre:
+                Apellido:
+                DNI:
+                Fecha de Nacimiento:"""
 
     elif chat.current_sub_state == 'awaiting_confirmation':
         prompt = f"""

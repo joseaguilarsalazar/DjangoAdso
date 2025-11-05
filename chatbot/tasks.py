@@ -35,8 +35,8 @@ def process_user_buffer(sender: str):
     if not messages:
         return
 
-    print(messages)
-    full_text = messages.decode("utf-8")
+    full_text = messages.decode("latin-1")
+
     r.delete(key)  # clear buffer
 
     chat, _ = Chat.objects.get_or_create(number=sender)
