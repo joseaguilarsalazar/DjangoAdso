@@ -53,4 +53,4 @@ def default_chat(messages, chat: Chat):
     )
 
     reply = response.choices[0].message.content.strip()
-    return reply, 'default'
+    return reply
