@@ -43,7 +43,7 @@ def register_appointment(messages, chat: Chat):
     else:
         return "Podria por favor especificarme que dia desea agendar la cita?"
 
-    paciente = Paciente.objects.get(id=chat.paciente_id)
+    paciente = Paciente.objects.get(id=chat.patient_id)
     cita = Cita.objects.create(
         paciente=paciente,
         fecha=fecha_cita,
