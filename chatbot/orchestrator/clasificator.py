@@ -3,6 +3,9 @@ from django.conf import settings
 from pathlib import Path
 import os
 import environ
+from chatbot.models import Chat
+from .flows.trascript_history import transcript_history
+import json
 
 env = environ.Env(DEBUG=(bool, False))
 
@@ -31,37 +34,58 @@ INTENTS_AND_DESCRIPTIONS = {
     "appointment_registration": "Register a new appointment"
 }
 
-def classify_intent(user_message: str) -> str:
-    """
-    Use DeepSeek (OpenAI-compatible API) to classify a user message into a predefined intent.
-    """
+def simple_rule_detector(transcription: str) -> str | None:
+    txt = transcription.lower()
+    # appointment keywords (spanish)
+    if any(kw in txt for kw in ("cita", "sacar cita", "agendar", "turno", "reservar")):
+        return "appointment_lookup"
+    if any(kw in txt for kw in ("registro", "registrar", "dni", "nombre", "apellido")):
+        return "patient_registration"
+    # detect explicit DNI patterns or date patterns (regex)
+    # return the matching intent or None
+    return None
 
+def classify_intent(chat: Chat) -> str:
+    messages = chat.last_messages()
+    transcription, history = transcript_history(messages)
+
+    # First, quick deterministic rule check
+    rule = simple_rule_detector(transcription)
+    # Build a prompt with few-shot examples and request JSON output
     prompt = f"""
-    You are an intent classifier for a dental clinic chatbot.
-    Given the user message, classify it into one of the following intents:
+    Eres un clasificador de intenciones (español). Devuelve SOLO un JSON con campos:
+    {{ "intent": "...", "confidence": 0.0 }}
+    Posibles intents: appointment_lookup, patient_registration, default, data_confirmation, lookup_patient, appointment_registration
 
-    """
-    for intent, description in INTENTS_AND_DESCRIPTIONS.items():
-        prompt += f"- {intent}: {description}\n"
-    
-    prompt += f"""
+    Ejemplos:
+    Mensaje: "Quisiera sacar una cita para el martes"
+    Intent: appointment_lookup
 
-    return only the keyword of the intent that best matches the, nothing else.
-    User message: "{user_message}"
+    Mensaje: "No recuerdo mis datos, me podrías registrar?"
+    Intent: patient_registration
+
+    Mensaje: "¿Cuáles son sus horarios?"
+    Intent: default
+
+    Mensaje: "{transcription}"
     """
+    resp = client.chat.completions.create(
+        model="deepseek-chat",
+        messages=[{"role":"user","content":prompt}],
+        max_tokens=60,
+        temperature=0.0,
+        response_format={"type":"json_object"},
+    )
+    # Parse JSON safely
     try:
-        response = client.chat.completions.create(
-            model="deepseek-chat",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=10,
-            temperature=0,
-        )
+        parsed = json.loads(resp.choices[0].message.content)
+        intent = parsed.get("intent")
+        confidence = float(parsed.get("confidence", 0.0))
+    except Exception:
+        intent, confidence = None, 0.0
 
-        raw_output = response.choices[0].message.content.strip().lower()
-
-        return raw_output if raw_output in INTENTS_AND_DESCRIPTIONS.keys() else "default"
-
-    except Exception as e:
-        # Optional: handle errors gracefully
-        print(f"[DeepSeek Error] {e}")
-        return "default"
+    # Combine: if rule and model disagree with low confidence -> prefer rule
+    if intent is None or confidence < 0.65:
+        if rule:
+            return rule
+    return intent if intent in INTENTS_AND_DESCRIPTIONS else "default"

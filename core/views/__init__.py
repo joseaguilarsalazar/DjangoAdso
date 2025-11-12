@@ -29,6 +29,10 @@ from .EnvioMensajeAPIView import EnvioMensajeAPIView
 from .MedicosListView import MedicoListAPIView
 from .HistorialApiView import HistorialApiView
 from .todayScheduleApi import TodayScheduleApi
+from .statisticsViews import (
+    CitasHistogramaApiView,
+    IngresosEgresosHistogramaApiView,
+)
 
 __all__ = [
     # coreViewsets
@@ -66,4 +70,8 @@ __all__ = [
     'MedicoListAPIView',
     "HistorialApiView",
     "TodayScheduleApi",
+
+    # statisticsViews
+    "CitasHistogramaApiView",
+    "IngresosEgresosHistogramaApiView",
 ]

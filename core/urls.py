@@ -36,4 +36,6 @@ urlpatterns = [
     path('medico_list/', MedicoListAPIView.as_view()),
     path('historial/', HistorialApiView.as_view()),
     path('agenda_today/', TodayScheduleApi.as_view()),
+    path('citas_histograma/', CitasHistogramaApiView.as_view()),
+    path('ingresos_egresos_histograma/', IngresosEgresosHistogramaApiView.as_view()),
 ]
