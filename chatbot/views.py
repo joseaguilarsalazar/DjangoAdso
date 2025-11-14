@@ -34,6 +34,11 @@ class WhatsAppWebhookView(APIView):
 
         # WhatsApp text
         text = payload.get("data", {}).get("message", {}).get("conversation")
+        instance = payload.get("data", {}).get("instance")
+
+        if not instance:
+            print("No instance found, setting to testing")
+            instance = 'testing_instance'
 
         # WhatsApp audio
         audio_message = payload.get("data", {}).get("message", {}).get("audioMessage")
@@ -82,6 +87,6 @@ class WhatsAppWebhookView(APIView):
         print(r.get(key))
 
         # Schedule Celery task
-        process_user_buffer.apply_async((sender,), countdown=10)
+        process_user_buffer.apply_async((sender, instance,), countdown=10)
 
         return Response({"status": "buffered"}, status=status.HTTP_200_OK)

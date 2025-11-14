@@ -28,7 +28,7 @@ r = redis.Redis.from_url(REDIS_URL)
 true_chatbot = env.bool('true_chatbot', default=False)
 
 @shared_task
-def process_user_buffer(sender: str):
+def process_user_buffer(sender: str, instance: str):
     key = f"chat:{sender}:buffer"
     messages = r.get(key)
     if not messages:
@@ -49,6 +49,6 @@ def process_user_buffer(sender: str):
 
     # Send reply
     if true_chatbot:
-        manager.send_message(sender, reply)
+        manager.send_message(sender, reply, message_instance=instance)
     elif sender=='51967244227':
-        manager.send_message(sender, reply)
+        manager.send_message(sender, reply, message_instance=instance)

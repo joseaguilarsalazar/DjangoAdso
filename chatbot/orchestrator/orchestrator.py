@@ -13,7 +13,7 @@ class Orchestrator:
             "lookup_patient": flows.lookup_patient,
         }
 
-    def handle_message(self, text, chat: Chat):
+    def handle_message(self, text, chat: Chat, instance: str):
         if chat.current_state != "default":
             intent = chat.current_state
         else:
