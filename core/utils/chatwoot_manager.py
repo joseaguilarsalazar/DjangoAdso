@@ -119,7 +119,7 @@ class ChatwootManager:
             logger.error(f"Failed to get/create conversation: {e.response.text if e.response else e}")
             raise
 
-    def send_message(self, number: str, message: str, timeout: float = 10.0, max_retries: int = 3, message_instance=None):
+    def send_message(self, number: str, message: str, timeout: float = 10.0, max_retries: int = 3, message_instance=None, conversation_id=None, contact_id=None):
         """
         Sends a message with FULL DEBUG logs to trace the 24h window issue.
         """
@@ -139,8 +139,8 @@ class ChatwootManager:
             attempt += 1
             try:
                 # Steps 1 & 2
-                contact_id = self._get_or_create_contact(number, inbox_id)
-                conversation_id = self._get_conversation_id(contact_id, inbox_id)
+                contact_id = contact_id if contact_id else self._get_or_create_contact(number, inbox_id)
+                conversation_id = conversation_id if conversation_id else self._get_conversation_id(contact_id, inbox_id)
                 
                 # Step 3: Send Message
                 url = f"{self.base_url}/api/v1/accounts/{self.account_id}/conversations/{conversation_id}/messages"
