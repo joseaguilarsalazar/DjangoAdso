@@ -41,24 +41,3 @@ def send_cita_reminder(self, cita_id: int):
     cita.reminder_sent = True
 
     return "OK"
-
-
-@shared_task(bind=True, autoretry_for=(requests.RequestException,),
-             retry_backoff=True, retry_kwargs={"max_retries": 3})
-def check_evolution_and_notify(self):
-    """
-    Runs every 15 minutes via beat. If instance is not connected, send Telegram alert.
-    """
-    chatwoot = ChatwootManager()
-    tele = TelegramApiManager()
-    data = chatwoot.check_instance_state()
-
-    # Normalize whatever your API returns. Common fields: "state": "open|connecting|close"
-    state = (data.get("instance") or {}).get("state") or data.get("state")
-    ok_states = {"open", "connected", "online"}  # include your API's "healthy" value(s)
-
-    if state not in ok_states:
-        tele.telegram_notify(
-            f"⚠️ Evolution API instance adso_iquitos_instance is *{state or 'unknown'}*."
-        )
-    return {"state": state}
