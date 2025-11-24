@@ -5,6 +5,7 @@ import os
 import environ
 from requests.exceptions import RequestException, Timeout, ConnectionError, HTTPError
 from pathlib import Path
+import json
 
 # --- Environment Setup ---
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -120,29 +121,24 @@ class ChatwootManager:
 
     def send_message(self, number: str, message: str, timeout: float = 10.0, max_retries: int = 3, message_instance=None):
         """
-        Sends a message via Chatwoot.
-        
-        Flow:
-        1. Find/Create Contact
-        2. Find/Create Conversation
-        3. Send Message
+        Sends a message with FULL DEBUG logs to trace the 24h window issue.
         """
-        
-        # Use provided instance/inbox or default from env
         inbox_id = message_instance if message_instance else self.default_inbox_id
         
         if not self._validate_number(number):
+            logger.error(f"❌ Invalid Number Format: {number}")
             return {"ok": False, "error": f"Invalid number: {number}"}
 
         backoff = 1.0
         attempt = 0
         last_exception = None
 
+        logger.info(f"🚀 START SENDING to {number}: '{message}'")
+
         while attempt < max_retries:
             attempt += 1
             try:
-                # Step 1 & 2: Resolve Contact and Conversation
-                # (We do this inside the loop in case of transient API errors)
+                # Steps 1 & 2
                 contact_id = self._get_or_create_contact(number, inbox_id)
                 conversation_id = self._get_conversation_id(contact_id, inbox_id)
                 
@@ -154,30 +150,38 @@ class ChatwootManager:
                     "private": False
                 }
                 
-                logger.debug(f"Sending message attempt {attempt} to conv {conversation_id} (url={url})")
+                logger.debug(f"📤 [3/3] Sending Message Payload to {url}: {json.dumps(payload)}")
+                
                 resp = requests.post(url, json=payload, headers=self.headers, timeout=timeout)
                 
-                # Check for errors
-                if 500 <= resp.status_code < 600:
+                # --- DEBUGGING RESPONSE ---
+                logger.debug(f"📥 API Response Code: {resp.status_code}")
+                logger.debug(f"📥 API Response Body: {resp.text}")
+                
+                if resp.status_code >= 500:
+                    logger.warning(f"⚠️ Server Error {resp.status_code}. Retrying...")
                     raise HTTPError(f"Server error {resp.status_code}")
                 
-                resp.raise_for_status()
-                
-                logger.info(f"Message sent to {number} (Conv {conversation_id}): status={resp.status_code}")
+                if resp.status_code >= 400:
+                    # Specific check for 24h window error in body
+                    if "24 hours" in resp.text or "template" in resp.text.lower():
+                        logger.critical(f"⛔ BLOCKED BY META 24H RULE: {resp.text}")
+                        return {"ok": False, "error": "24h Window Closed", "response": resp.json()}
+                    
+                    logger.error(f"❌ Client Error {resp.status_code}: {resp.text}")
+                    resp.raise_for_status()
+
+                logger.info(f"✅ Message SENT successfully to {number}!")
                 return {"ok": True, "status_code": resp.status_code, "response": resp.json(), "error": None}
 
-            except (Timeout, ConnectionError, HTTPError, RuntimeError) as e:
-                logger.warning(f"Error sending to {number} (attempt {attempt}/{max_retries}): {e}")
+            except Exception as e:
+                logger.warning(f"⚠️ Attempt {attempt}/{max_retries} failed: {e}")
                 last_exception = e
                 time.sleep(backoff)
                 backoff *= 2
-            except Exception as e:
-                logger.exception(f"Unexpected error sending to {number}: {e}")
-                return {"ok": False, "error": str(e)}
 
-        err_msg = f"Failed after {max_retries} attempts. Last error: {str(last_exception)}"
-        logger.error(err_msg)
-        return {"ok": False, "status_code": None, "error": err_msg}
+        logger.error(f"❌ All attempts failed. Last error: {last_exception}")
+        return {"ok": False, "status_code": None, "error": str(last_exception)}
 
     def check_instance_state(self, timeout: float = 5.0, inbox_id=None):
         """
