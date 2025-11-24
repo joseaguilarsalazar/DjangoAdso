@@ -2,7 +2,7 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 from .models import Cita, Paciente
-from .utils.EvolutionApiManager import EvolutionApiManager
+from .utils.chatwoot_manager import ChatwootManager
 import logging
 from .tasks import send_cita_reminder
 from datetime import datetime, timedelta
@@ -116,15 +116,15 @@ def _send_notifications(doctor, paciente: Paciente, mssg_dtr: str, mssg_pct: str
     """
     Helper function to send notifications to doctor and patient
     """
-    evolMngr = EvolutionApiManager()
+    chatwootMngr = ChatwootManager()
     
     # Send message to doctor
     if hasattr(doctor, 'telefono') and doctor.telefono:
         try:
             if paciente.clinica.nomb_clin == 'Clinica Dental Filial Yurimaguas':
-                response = evolMngr.send_message(doctor.telefono, mssg_dtr, message_instance='adso_instance')
+                response = chatwootMngr.send_message(doctor.telefono, mssg_dtr, message_instance='adso_instance')
             else:
-                response = evolMngr.send_message(doctor.telefono, mssg_dtr, message_instance='adso_iquitos_instance')
+                response = chatwootMngr.send_message(doctor.telefono, mssg_dtr, message_instance='adso_iquitos_instance')
             if not response['ok']:
                 logger.error(response['error'])
             logger.info(f"Successfully sent {action} notification to doctor {doctor.id} for appointment {appointment_id}")
@@ -138,9 +138,9 @@ def _send_notifications(doctor, paciente: Paciente, mssg_dtr: str, mssg_pct: str
     if patient_phone:
         try:
             if paciente.clinica.nomb_clin == 'Clinica Dental Filial Yurimaguas':
-                response = evolMngr.send_message(patient_phone, mssg_pct, message_instance='adso_instance')
+                response = chatwootMngr.send_message(patient_phone, mssg_pct, message_instance='adso_instance')
             else:
-                response = evolMngr.send_message(patient_phone, mssg_pct, message_instance='adso_iquitos_instance')
+                response = chatwootMngr.send_message(patient_phone, mssg_pct, message_instance='adso_iquitos_instance')
             if not response['ok']:
                 logger.error(response['error'])
             logger.info(f"Successfully sent {action} notification to patient {paciente.id} for appointment {appointment_id}")

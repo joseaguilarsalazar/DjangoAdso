@@ -1,6 +1,6 @@
 from celery import shared_task
 from .models import Cita
-from .utils.EvolutionApiManager import EvolutionApiManager
+from .utils.chatwoot_manager import ChatwootManager
 from .utils.TelegramApiManager import TelegramApiManager
 import requests
 
@@ -18,8 +18,8 @@ def send_cita_reminder(self, cita_id: int):
     if cita.reminder_sent == True:
         return 'Salatando, mesaje ya mandado'
 
-    evo = EvolutionApiManager()
-    state = evo.check_instance_state()
+    chatwoot = ChatwootManager()
+    state = chatwoot.check_instance_state()
     print(state)
     if state.get("state") not in {"open", "connected"}:
         # Retry later if instance not ready
@@ -34,9 +34,9 @@ def send_cita_reminder(self, cita_id: int):
     msg   = f"⏰ Recordatorio: su CITA es hoy {fecha} a las {hora}."
 
     if medico_num:
-        evo.send_message(medico_num, f"{msg} (Médico)")
+        chatwoot.send_message(medico_num, f"{msg} (Médico)")
     if paciente_num:
-        evo.send_message(paciente_num, f"{msg} (Paciente)")
+        chatwoot.send_message(paciente_num, f"{msg} (Paciente)")
 
     cita.reminder_sent = True
 
@@ -49,9 +49,9 @@ def check_evolution_and_notify(self):
     """
     Runs every 15 minutes via beat. If instance is not connected, send Telegram alert.
     """
-    evo = EvolutionApiManager()
+    chatwoot = ChatwootManager()
     tele = TelegramApiManager()
-    data = evo.check_instance_state()
+    data = chatwoot.check_instance_state()
 
     # Normalize whatever your API returns. Common fields: "state": "open|connecting|close"
     state = (data.get("instance") or {}).get("state") or data.get("state")

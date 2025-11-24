@@ -2,14 +2,14 @@ from celery import shared_task
 from django.conf import settings
 from chatbot.orchestrator.orchestrator import Orchestrator
 from chatbot.models import Chat, Message
-from core.utils.EvolutionApiManager import EvolutionApiManager
+from core.utils.chatwoot_manager import ChatwootManager
 import redis
 from pathlib import Path
 import os
 import environ
 from djangoAdso.settings import REDIS_URL
 
-manager = EvolutionApiManager()
+manager = ChatwootManager()
 
 env = environ.Env(
     DEBUG=(bool, False)
@@ -24,6 +24,8 @@ if os.path.exists(env_file):
     environ.Env.read_env(env_file)
 
 r = redis.Redis.from_url(REDIS_URL)
+
+test_senders = ['51967244227']  # Números permitidos para pruebas cuando true_chatbot es False
 
 true_chatbot = env.bool('true_chatbot', default=False)
 
@@ -50,5 +52,5 @@ def process_user_buffer(sender: str, instance: str):
     # Send reply
     if true_chatbot:
         manager.send_message(sender, reply, message_instance=instance)
-    elif sender=='51967244227':
+    elif sender in test_senders:
         manager.send_message(sender, reply, message_instance=instance)
