@@ -46,7 +46,7 @@ def process_user_buffer(sender: str, instance: str):
     user_message = Message.objects.create(chat=chat, text=full_text, from_user=True)
 
     # Orchestrate reply
-    reply = Orchestrator().handle_message(full_text, chat)
+    reply = Orchestrator().handle_message(full_text, chat, instance=instance)
     machine_message = Message.objects.create(chat=chat, text=reply, from_user=False)
 
     # Send reply
