@@ -11,6 +11,7 @@ def register_appointment(messages, chat: Chat):
     if not chat.patient:
         chat.current_state = "patient_registration"
         chat.current_sub_state = "awaiting_data"
+        chat.save()
         return """Por favor brindeme estos datos antes de registrar una cita:
         Nombre:
         Apellido:
