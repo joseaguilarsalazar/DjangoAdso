@@ -6,6 +6,21 @@ from datetime import datetime, timedelta
 from core.models import Cita, Paciente, Consultorio
 from datetime import time
 
+from datetime import datetime, timedelta
+import unicodedata
+
+DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']
+
+def normalizar_dia(dia: str) -> str:
+    # minúsculas y sin espacios
+    dia = dia.strip().lower()
+    # quitar tildes/acentos
+    dia = ''.join(
+        c for c in unicodedata.normalize('NFD', dia)
+        if unicodedata.category(c) != 'Mn'
+    )
+    return dia
+
 
 def lookup_appointment(messages, chat: Chat):
     transcription, history = transcript_history(messages)
@@ -39,13 +54,22 @@ def lookup_appointment(messages, chat: Chat):
     
     data = json.loads(ai_response.choices[0].message.content)
     
-    if not data['fecha_cita'] and data['day_cita']:
-        #Establece la cita en el proximo dia de semana especificado
-        fecha_cita = datetime.now() + timedelta((list(['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']).index(data['day_cita'].lower()) - datetime.now().weekday() + 7) % 7)
-    elif data['fecha_cita']:
+    if not data.get('fecha_cita') and data.get('day_cita'):
+        dia_normalizado = normalizar_dia(data['day_cita'])
+
+        if dia_normalizado not in DIAS_SEMANA:
+            return "No entendí el día que indicaste, ¿podrías repetirlo?"
+
+        indice_objetivo = DIAS_SEMANA.index(dia_normalizado)
+        indice_hoy = datetime.now().weekday()  # lunes=0, domingo=6
+
+        dias_delta = (indice_objetivo - indice_hoy + 7) % 7
+        fecha_cita = datetime.now() + timedelta(days=dias_delta)
+
+    elif data.get('fecha_cita'):
         fecha_cita = datetime.strptime(data['fecha_cita'], '%Y-%m-%d')
     else:
-        return "Podria por favor especificarme que dia desea agendar la cita?"
+        return "Podría por favor especificarme qué día desea agendar la cita?"
 
 
     # ------------------ NEW: calcular disponibilidad ------------------
