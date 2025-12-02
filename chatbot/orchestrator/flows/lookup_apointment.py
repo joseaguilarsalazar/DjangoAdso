@@ -153,11 +153,17 @@ def lookup_appointment(messages, chat: Chat):
             else:
                 disponibilidad = " y ".join(formatted[:-1]) + " y " + formatted[-1]
 
+            chat.current_state = "register_appointment"
+            chat.save()
             return f"Atendemos ese día y tenemos disponibilidad {disponibilidad}."
     except Paciente.DoesNotExist:
         chat.current_state = 'data_confirmation'
+        chat.save()
         return "Podria darme su dni para verificar su informacion?"
     except ValueError:
         return "No pude interpretar la fecha solicitada. ¿Podría indicarla en formato YYYY-MM-DD?"
     except Exception:
+        chat.current_state = "lookup_appointment"
+        chat.save()
+
         return "Ocurrió un error al consultar la disponibilidad. Por favor intente más tarde."
