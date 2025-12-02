@@ -1,7 +1,7 @@
 from chatbot.models import Chat
 from .AI_Client import client
 from .trascript_history import transcript_history
-from core.models import Cita, Paciente
+from core.models import Cita, Paciente, Consultorio
 import json
 from datetime import datetime, timedelta
 
@@ -63,9 +63,20 @@ def register_appointment(messages, chat: Chat):
 
     
     paciente = Paciente.objects.get(id=chat.patient_id)
+    consultorios = Consultorio.objects.filter(clinica=paciente.clinica).order_by('id')
+    for consultorio in consultorios:
+        citas_existentes = Cita.objects.filter(
+            consultorio=consultorio,
+            fecha=fecha_cita.date(),
+            hora=data['hora_cita']
+        )
+        if not citas_existentes.exists():
+            break
     cita = Cita.objects.create(
         paciente=paciente,
+        consultorio=consultorio,
         fecha=fecha_cita,
         hora=data['hora_cita']
     )
-    return 'Cita registrada'
+    return """Su cita ha sido registrada exitosamente para el día {} a las {}.""".format(
+        cita.fecha.strftime('%Y-%m-%d'), cita.hora.strftime('%H:%M'))
