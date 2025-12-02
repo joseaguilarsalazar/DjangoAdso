@@ -153,6 +153,10 @@ def lookup_appointment(messages, chat: Chat):
             else:
                 disponibilidad = " y ".join(formatted[:-1]) + " y " + formatted[-1]
 
+            data = {
+                'fecha_cita': date_obj.strftime('%Y-%m-%d')
+            }
+
             chat.current_state = "register_appointment"
             chat.save()
             return f"Atendemos ese día y tenemos disponibilidad {disponibilidad}."
