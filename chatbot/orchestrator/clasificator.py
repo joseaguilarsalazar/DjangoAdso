@@ -59,7 +59,7 @@ INTENTS_AND_DESCRIPTIONS = {
         ]
     },
     "appointment_registration": {
-        "description": "Registrar una nueva cita, se suele activar luego de lookup_appointment",
+        "description": "Registrar una nueva cita, se suele activar luego de lookup_appointment, el paciente no tiene que decir directamente que quiere registrar una cita, es suficiente que el contexto lo sugiera",
         "example": [
             {"user": "Quiero sacar una cita para el martes."},
             {"assistant": "Tenemos disponibilidad el martes. ¿A qué hora le gustaría?"},
