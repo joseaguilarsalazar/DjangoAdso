@@ -46,8 +46,12 @@ def register_appointment(messages, chat: Chat, extra_data:dict=None):
     data = json.loads(ai_reply)
     
     if not data['fecha_cita'] and data['day_cita']:
+        if extra_data and extra_data.get('fecha_cita', None):
+            data['fecha_cita'] = extra_data['fecha_cita']
+
         #Establece la cita en el proximo dia de semana especificado
-        fecha_cita = datetime.now() + timedelta((list(['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']).index(data['day_cita'].lower()) - datetime.now().weekday() + 7) % 7)
+        else:
+            fecha_cita = datetime.now() + timedelta((list(['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']).index(data['day_cita'].lower()) - datetime.now().weekday() + 7) % 7)
     elif data['fecha_cita']:
         fecha_cita = datetime.strptime(data['fecha_cita'], '%Y-%m-%d')
     else:
@@ -55,9 +59,7 @@ def register_appointment(messages, chat: Chat, extra_data:dict=None):
         chat.save()
         return "Podria por favor especificarme que dia desea agendar la cita?"
 
-    if extra_data and extra_data.get('hora_cita', None):
-        data['hora_cita'] = extra_data['hora_cita']
-        
+    
     paciente = Paciente.objects.get(id=chat.patient_id)
     cita = Cita.objects.create(
         paciente=paciente,
