@@ -5,7 +5,7 @@ from core.models import Cita, Paciente
 import json
 from datetime import datetime, timedelta
 
-def register_appointment(messages, chat: Chat):
+def register_appointment(messages, chat: Chat, extra_data:dict=None):
     transcription, history = transcript_history(messages)
 
     if not chat.patient:
@@ -44,8 +44,6 @@ def register_appointment(messages, chat: Chat):
         return "Lo siento, no pude registrar su cita. Por favor intente nuevamente."
     ai_reply = ai_response.choices[0].message.content
     data = json.loads(ai_reply)
-    if data['hora_cita']:
-        return "Podria confirmarme a que hora desa agendar la cita?"
     
     if not data['fecha_cita'] and data['day_cita']:
         #Establece la cita en el proximo dia de semana especificado
@@ -57,6 +55,9 @@ def register_appointment(messages, chat: Chat):
         chat.save()
         return "Podria por favor especificarme que dia desea agendar la cita?"
 
+    if extra_data and extra_data.get('hora_cita', None):
+        data['hora_cita'] = extra_data['hora_cita']
+        
     paciente = Paciente.objects.get(id=chat.patient_id)
     cita = Cita.objects.create(
         paciente=paciente,
