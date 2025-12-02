@@ -53,7 +53,7 @@ def register_appointment(messages, chat: Chat):
     elif data['fecha_cita']:
         fecha_cita = datetime.strptime(data['fecha_cita'], '%Y-%m-%d')
     else:
-        chat.current_state = "lookup_appointment"
+        chat.current_state = "lookup_apointmnet"
         chat.save()
         return "Podria por favor especificarme que dia desea agendar la cita?"
 

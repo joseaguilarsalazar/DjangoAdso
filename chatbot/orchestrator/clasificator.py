@@ -26,7 +26,7 @@ client = OpenAI(
 
 # Define possible intents with description + example
 INTENTS_AND_DESCRIPTIONS = {
-    "lookup_apointment": {
+    "lookup_apointmnet": {
         "description": "Cuando el paciente escoge una fecha para la cita, se asegura de que haya un horario disponible ese dia",
         "example": [
             {"user": "¿Hay alguna cita disponible este viernes?"},
