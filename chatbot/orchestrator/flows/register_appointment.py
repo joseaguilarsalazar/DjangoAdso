@@ -47,7 +47,7 @@ def register_appointment(messages, chat: Chat):
     
     if not data['fecha_cita'] and data['day_cita']:
         if chat.extra_data and chat.extra_data.get('fecha_cita', None):
-            data['fecha_cita'] = chat.extra_data['fecha_cita']
+            fecha_cita = chat.extra_data['fecha_cita']
             chat.extra_data = {}
             chat.save()
 
