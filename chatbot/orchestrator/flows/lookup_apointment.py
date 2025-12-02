@@ -156,6 +156,7 @@ def lookup_appointment(messages, chat: Chat):
             data = {
                 'fecha_cita': date_obj.strftime('%Y-%m-%d'),
             }
+            chat.extra_data = data
 
             chat.current_state = "register_appointment"
             chat.save()
