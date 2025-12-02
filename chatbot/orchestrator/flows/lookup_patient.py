@@ -4,6 +4,9 @@ from core.models import Paciente
 def lookup_patient(messages, chat: Chat):
     patient = chat.patient if chat.patient else None
     there_patient = True if patient else False
+    if chat.data_confirmed and patient:
+        return """Veo que su informacion ya esta regisrada, digame por favor.
+        ¿En qué puedo ayudarle hoy?"""
     if not patient:
         number = chat.number.split('1')[1] if '1' in chat.number else chat.number
         if len(number) != 9:

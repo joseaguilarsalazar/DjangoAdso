@@ -23,7 +23,7 @@ def lookup_appointment(messages, chat: Chat):
         'fecha_cita': null,
         'day_cita': null
     }}
-    Aqui la historia del chat:
+    Aqui la historia del chat, si hay mas de 2 fechas mencionadas para citas, elige la ultima mencionada:
     f{transcription}
 """
     ai_response = client.chat.completions.create(

@@ -24,58 +24,87 @@ client = OpenAI(
     base_url=DEEPSEEK_API_URL
 )
 
-# Define possible intents
+# Define possible intents with description + example
 INTENTS_AND_DESCRIPTIONS = {
-    "appointment_lookup": "Check or book appointments",
-    "patient_registration": "Register or update personal data",
-    "default": "General talk or questions",
-    "data_confirmation": "Confirm personal data",
-    "lookup_patient": "Look up patient information",
-    "appointment_registration": "Register a new appointment"
+    "lookup_apointment": {
+        "description": "Cuando el paciente escoge una fecha para la cita, se asegura de que haya un horario disponible ese dia",
+        "example": [
+            {"user": "¿Hay alguna cita disponible este viernes?"},
+            {"assistant": "Sí, tenemos espacio libre de las 2 PM a las 5 PM."},
+        ]
+    },
+    "patient_registration": {
+        "description": "Registrar informacion del paciente, en la practica esto nunca se dispara directamente aqui",
+        "example": [
+            'no applicable'
+        ]
+    },
+    "default": {
+        "description": "Charla general o preguntas no relacionadas con citas o registro de pacientes",
+        "example": [
+            {"user": "¿Qué servicios ofrecen?"},
+            {"assistant": "Ofrecemos limpiezas, tratamientos dentales, ortodoncia y más."}
+        ]
+    },
+    "data_confirmation": {
+        "description": "Cuando el sistema quiera confirmar o actualizar los datos del paciente ya registrado, en la practica esto nunca se dispara directamente aqui",
+        "example": [
+            'no applicable'
+        ]
+    },
+    "lookup_patient": {
+        "description": "Asegurarse de que este chat tenga un paciente registrado, en la práctica esto nunca se dispara directamente aquí",
+        "example": [
+            'no applicable'
+        ]
+    },
+    "appointment_registration": {
+        "description": "Registrar una nueva cita, se suele activar luego de lookup_appointment",
+        "example": [
+            {"user": "Quiero sacar una cita para el martes."},
+            {"assistant": "Tenemos disponibilidad el martes. ¿A qué hora le gustaría?"},
+            {"user": "En la tarde, por favor."},
+            {"assistant": "Perfecto, te registro el martes a las 4 PM."}
+        ]
+    }
 }
 
-def simple_rule_detector(transcription: str) -> str | None:
-    txt = transcription.lower()
-    # appointment keywords (spanish)
-    if any(kw in txt for kw in ("cita", "sacar cita", "agendar", "turno", "reservar")):
-        return "appointment_lookup"
-    if any(kw in txt for kw in ("registro", "registrar", "dni", "nombre", "apellido")):
-        return "patient_registration"
-    # detect explicit DNI patterns or date patterns (regex)
-    # return the matching intent or None
-    return None
 
 def classify_intent(chat: Chat) -> str:
     messages = chat.last_messages()
     transcription, history = transcript_history(messages)
 
-    # First, quick deterministic rule check
-    rule = simple_rule_detector(transcription)
-    # Build a prompt with few-shot examples and request JSON output
+    # Build intent list as a simple string and full JSON for the LLM
+    intents_list = ", ".join(INTENTS_AND_DESCRIPTIONS.keys())
+    intents_json = json.dumps(INTENTS_AND_DESCRIPTIONS, ensure_ascii=False)
+
+    # Build a prompt with the full intents dictionary and request JSON output
     prompt = f"""
-    Eres un clasificador de intenciones (español). Devuelve SOLO un JSON con campos:
-    {{ "intent": "...", "confidence": 0.0 }}
-    Posibles intents: appointment_lookup, patient_registration, default, data_confirmation, lookup_patient, appointment_registration
+Eres un clasificador de intenciones en español.
 
-    Ejemplos:
-    Mensaje: "Quisiera sacar una cita para el martes"
-    Intent: appointment_lookup
+Debes devolver SOLO un JSON con la siguiente estructura:
+{{
+  "intent": "<una de: {intents_list}>",
+  "confidence": 0.0
+}}
 
-    Mensaje: "No recuerdo mis datos, me podrías registrar?"
-    Intent: patient_registration
+Aquí tienes todas las intenciones posibles, cada una con su descripción y ejemplos de conversación:
+{intents_json}
 
-    Mensaje: "¿Cuáles son sus horarios?"
-    Intent: default
+Toma en cuenta el mensaje del usuario (puede venir de una transcripción de audio):
 
-    Mensaje: "{transcription}"
-    """
+Historial de mensajes del usuario:
+\"\"\"{transcription}\"\"\"
+"""
+
     resp = client.chat.completions.create(
         model="deepseek-chat",
-        messages=[{"role":"user","content":prompt}],
+        messages=[{"role": "user", "content": prompt}],
         max_tokens=60,
         temperature=0.0,
-        response_format={"type":"json_object"},
+        response_format={"type": "json_object"},
     )
+
     # Parse JSON safely
     try:
         parsed = json.loads(resp.choices[0].message.content)
@@ -84,8 +113,4 @@ def classify_intent(chat: Chat) -> str:
     except Exception:
         intent, confidence = None, 0.0
 
-    # Combine: if rule and model disagree with low confidence -> prefer rule
-    if intent is None or confidence < 0.65:
-        if rule:
-            return rule
     return intent if intent in INTENTS_AND_DESCRIPTIONS else "default"
