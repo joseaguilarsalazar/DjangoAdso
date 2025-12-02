@@ -5,7 +5,7 @@ from ..models import Chat
 class Orchestrator:
     def __init__(self):
         self.intent_map = {
-            "lookup_appointmnet": flows.lookup_appointment,
+            "lookup_apointmnet": flows.lookup_appointment,
             "patient_registration": flows.register_patient,
             "appointment_registration": flows.register_appointment,
             "default": flows.default_chat,
