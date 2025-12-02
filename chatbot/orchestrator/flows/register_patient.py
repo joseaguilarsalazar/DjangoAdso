@@ -29,6 +29,7 @@ def register_patient(messages, chat: Chat):
                 'nombre': string,
                 'apellido': string,
                 'fecha_nacimiento': string, # formato YYYY-MM-DD
+                'ciudad_de_residencia': string (optional) #opciones por ahora Iquitos, Yurimaguas
             }}
 
             Analyze the conversation below, but extract the information **only from the last patient message**:
@@ -48,12 +49,16 @@ def register_patient(messages, chat: Chat):
 
             reply = response.choices[0].message.content.strip()
             data = json.loads(reply)
-
+            clinica_id = None
+            if data.get('ciudad_de_residencia', None):
+                from core.models import Clinica
+                clinica_id = 1 if data['ciudad_de_residencia'].lower() == 'iquitos' else 2
             paciente = Paciente.objects.create(
                 dni_pac=data.get('dni', ''),
                 nomb_pac=data.get('nombre', ''),
                 apel_pac=data.get('apellido', ''),
                 fena_pac=data.get('fecha_nacimiento', ''),
+                clinica=Clinica.objects.get(id=clinica_id) if clinica_id else None
             )
 
             chat.current_state = 'default'

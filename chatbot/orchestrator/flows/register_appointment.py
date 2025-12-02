@@ -16,7 +16,9 @@ def register_appointment(messages, chat: Chat):
         Nombre:
         Apellido:
         DNI:
-        Fecha de Nacimiento:"""
+        Fecha de Nacimiento:
+        Ciudad de residencia (Iquitos o Yurimaguas):
+        """
 
     prompt = f"""
     Estas recibiendo la hisotia de chat de un paciente que desea registrar una cita en la clinica dental.
