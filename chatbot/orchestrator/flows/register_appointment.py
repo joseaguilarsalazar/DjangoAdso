@@ -62,21 +62,37 @@ def register_appointment(messages, chat: Chat):
         return "Podria por favor especificarme que dia desea agendar la cita?"
 
     
+    # Corrección de fecha: Asegurar que fecha_cita no tenga horas/minutos residuales
+    # Si calculaste fecha_cita con datetime.now(), conviértelo a date puro
+    if isinstance(fecha_cita, datetime):
+        fecha_cita = fecha_cita.date() 
+
     paciente = Paciente.objects.get(id=chat.patient_id)
     consultorios = Consultorio.objects.filter(clinica=paciente.clinica).order_by('id')
+    
+    consultorio_disponible = None # Variable bandera
+
     for consultorio in consultorios:
         citas_existentes = Cita.objects.filter(
             consultorio=consultorio,
-            fecha=fecha_cita.date(),
+            fecha=fecha_cita, # Ya es un objeto date puro
             hora=data['hora_cita']
         )
         if not citas_existentes.exists():
-            break
+            consultorio_disponible = consultorio
+            break # Encontramos uno libre, salimos y guardamos la referencia
+    
+    # VERIFICACIÓN CRÍTICA
+    if not consultorio_disponible:
+        return "Lo siento, no hay consultorios disponibles en ese horario. ¿Podría intentar otra hora?"
+
+    # Crear la cita con el consultorio que sí está libre
     cita = Cita.objects.create(
         paciente=paciente,
-        consultorio=consultorio,
+        consultorio=consultorio_disponible,
         fecha=fecha_cita,
         hora=data['hora_cita']
     )
+    
     return """Su cita ha sido registrada exitosamente para el día {} a las {}.""".format(
-        cita.fecha.strftime('%Y-%m-%d'), cita.hora.strftime('%H:%M'))
+        cita.fecha.strftime('%Y-%m-%d'), cita.hora) # cita.hora ya suele ser string o time object
