@@ -11,6 +11,8 @@ from chatbot.models import Chat, Message
 chatjd = Chat.objects.filter(number='51967244227').first()
 if chatjd:
     Message.objects.filter(chat=chatjd).delete()
+    chatjd.current_state = 'default'
+    chatjd.save()
 
 User = get_user_model()
 

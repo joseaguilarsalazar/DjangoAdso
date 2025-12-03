@@ -10,6 +10,8 @@ class Chat(models.Model):
     patient = models.ForeignKey(Paciente, on_delete=models.SET_NULL, null=True, blank=True)
     data_confirmed = models.BooleanField(default=False)
 
+    extra_data = models.JSONField(null=True, blank=True)
+
     def last_messages(self, limit=20):
         return Message.objects.filter(chat_id=self.id).order_by("created_at").reverse()[:limit]
 

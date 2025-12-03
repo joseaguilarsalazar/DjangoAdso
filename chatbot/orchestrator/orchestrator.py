@@ -4,25 +4,25 @@ from ..models import Chat
 
 class Orchestrator:
     def __init__(self):
-        # Intent → function map
         self.intent_map = {
-            "appointment_lookup": flows.lookup_appointment,
+            "lookup_apointmnet": flows.lookup_appointment,
             "patient_registration": flows.register_patient,
-            "lookup_appointment": flows.lookup_appointment,
-            "appointment_registration": flows.register_appointment,
-            "default": flows.default_chat
-            # add new ones here...
+            "register_appointment": flows.register_appointment,
+            "default": flows.default_chat,
+            "data_confirmation": flows.data_confirmation,
+            "lookup_patient": flows.lookup_patient,
         }
 
-    def handle_message(self, text, chat: Chat):
+    def handle_message(self, text, chat: Chat, instance: str):
         if chat.current_state != "default":
             intent = chat.current_state
         else:
-            intent = classify_intent(text)
+            intent = classify_intent(chat)
             chat.current_state = intent
             chat.save()
 
         messages = chat.last_messages()
+        print(f"{chat.current_state}, {chat.current_sub_state}")
 
         # Get the right handler, or fallback to default
         handler = self.intent_map.get(intent, flows.default_chat)

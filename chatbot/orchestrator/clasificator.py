@@ -3,6 +3,9 @@ from django.conf import settings
 from pathlib import Path
 import os
 import environ
+from chatbot.models import Chat
+from .flows.trascript_history import transcript_history
+import json
 
 env = environ.Env(DEBUG=(bool, False))
 
@@ -21,41 +24,93 @@ client = OpenAI(
     base_url=DEEPSEEK_API_URL
 )
 
-# Define possible intents
-INTENTS = ["appointment_lookup", "patient_registration", "default", "data_confirmation"]
+# Define possible intents with description + example
+INTENTS_AND_DESCRIPTIONS = {
+    "lookup_apointmnet": {
+        "description": "Cuando el paciente escoge una fecha para la cita, se asegura de que haya un horario disponible ese dia",
+        "example": [
+            {"user": "¿Hay alguna cita disponible este viernes?"},
+            {"assistant": "Sí, tenemos espacio libre de las 2 PM a las 5 PM."},
+        ]
+    },
+    "patient_registration": {
+        "description": "Registrar informacion del paciente, en la practica esto nunca se dispara directamente aqui",
+        "example": [
+            'no applicable'
+        ]
+    },
+    "default": {
+        "description": "Charla general o preguntas no relacionadas con citas o registro de pacientes",
+        "example": [
+            {"user": "¿Qué servicios ofrecen?"},
+            {"assistant": "Ofrecemos limpiezas, tratamientos dentales, ortodoncia y más."}
+        ]
+    },
+    "data_confirmation": {
+        "description": "Cuando el sistema quiera confirmar o actualizar los datos del paciente ya registrado, en la practica esto nunca se dispara directamente aqui",
+        "example": [
+            'no applicable'
+        ]
+    },
+    "lookup_patient": {
+        "description": "Asegurarse de que este chat tenga un paciente registrado, en la práctica esto nunca se dispara directamente aquí",
+        "example": [
+            'no applicable'
+        ]
+    },
+    "register_appointment": {
+        "description": "Registrar una nueva cita, se suele activar luego de lookup_appointment, el paciente no tiene que decir directamente que quiere registrar una cita, es suficiente que el contexto lo sugiera",
+        "example": [
+            {"user": "Quiero sacar una cita para el martes."},
+            {"assistant": "Tenemos disponibilidad el martes. ¿A qué hora le gustaría?"},
+            {"user": "En la tarde, por favor."},
+            {"assistant": "Perfecto, te registro el martes a las 4 PM."}
+        ]
+    }
+}
 
-def classify_intent(user_message: str) -> str:
-    """
-    Use DeepSeek (OpenAI-compatible API) to classify a user message into a predefined intent.
-    """
 
+def classify_intent(chat: Chat) -> str:
+    messages = chat.last_messages()
+    transcription, history = transcript_history(messages)
+
+    # Build intent list as a simple string and full JSON for the LLM
+    intents_list = ", ".join(INTENTS_AND_DESCRIPTIONS.keys())
+    intents_json = json.dumps(INTENTS_AND_DESCRIPTIONS, ensure_ascii=False)
+
+    # Build a prompt with the full intents dictionary and request JSON output
     prompt = f"""
-    You are an intent classifier for a dental clinic chatbot.
-    Given the user message, classify it into one of the following intents:
+Eres un clasificador de intenciones en español.
 
-    - appointment_lookup: when the user wants to check or book appointments
-    - patient_registration: when the user wants to register/update personal data
-    - data_confirmation: when the user is confirming their personal data
-    - default: when it's just general talk, questions, or anything else
+Debes devolver SOLO un JSON con la siguiente estructura:
+{{
+  "intent": "<una de: {intents_list}>",
+  "confidence": 0.0
+}}
 
-    Reply with only the intent keyword, nothing else.
+Aquí tienes todas las intenciones posibles, cada una con su descripción y ejemplos de conversación:
+{intents_json}
 
-    User message: "{user_message}"
-    """
+Toma en cuenta el mensaje del usuario (puede venir de una transcripción de audio):
 
+Historial de mensajes del usuario:
+\"\"\"{transcription}\"\"\"
+"""
+
+    resp = client.chat.completions.create(
+        model="deepseek-chat",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=60,
+        temperature=0.0,
+        response_format={"type": "json_object"},
+    )
+
+    # Parse JSON safely
     try:
-        response = client.chat.completions.create(
-            model="deepseek-chat",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=10,
-            temperature=0,
-        )
+        parsed = json.loads(resp.choices[0].message.content)
+        intent = parsed.get("intent")
+        confidence = float(parsed.get("confidence", 0.0))
+    except Exception:
+        intent, confidence = None, 0.0
 
-        raw_output = response.choices[0].message.content.strip().lower()
-
-        return raw_output if raw_output in INTENTS else "default"
-
-    except Exception as e:
-        # Optional: handle errors gracefully
-        print(f"[DeepSeek Error] {e}")
-        return "default"
+    return intent if intent in INTENTS_AND_DESCRIPTIONS else "default"

@@ -105,8 +105,8 @@ class EnvioMensajeAPIView(views.APIView):
 
         for paciente in pacientes:
             numero = f"51{str(paciente)}"
-            mensaje = f"""¡¡Buen día estimado paciente de la Institución : Jardín N 26 !! Le saludamos de la clínica odontológica Adso dent sede Yurimaguas para coordinar la cita odontológica que consta en una evaluación y aplicación de flúor sin costo por convenio con la Institución Educativa. ¿Qué día y en qué horario le agendamos?.. esparemos su pronta respuesta, cualquier urgencia dental estamos para atudarlo .
-Que tengan un bendecido día🤗
+            mensaje = f"""¡¡¡¡Buen día estimado Docente de la Institución : Jardín N 26 !! Le saludamos de la clínica odontológica Adso dent sede Yurimaguas para coordinar la cita odontológica que consta en una evaluación , consulta y topicación de flúor gracias al convenio con la Institución Educativa. Por este medio nos puede brindar el día y el horario.. esparemos su pronta respuesta, cualquier urgencia dental estamos para ayudarlo .
+Que tengan un bendecido día 🦷🤗
 """
 
             if numero not in already_sent:
