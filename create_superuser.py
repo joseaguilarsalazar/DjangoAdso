@@ -1,13 +1,14 @@
 # create_superuser.py
 import os
 import django
-from chatbot.tasks import test_senders
+
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djangoAdso.settings")
 django.setup()
 
 from django.contrib.auth import get_user_model
 from chatbot.models import Chat, Message
+from chatbot.tasks import test_senders
 
 for sender in test_senders:
     chat = Chat.objects.filter(number=sender).first()
