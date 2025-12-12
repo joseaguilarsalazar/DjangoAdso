@@ -155,7 +155,7 @@ class Alergia(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.nombre_ale or f"Alergia #{self.cod_ale}"
+        return self.nombre_ale or f"Alergia #{self.id}"
 
 class PacienteAlergia(models.Model):
     paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)

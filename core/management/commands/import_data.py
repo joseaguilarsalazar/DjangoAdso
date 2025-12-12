@@ -2,7 +2,7 @@ import csv
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.utils.timezone import make_aware
-from core.models import Paciente, Especialidad, Clinica,  Consultorio, Enfermedad, Cita, CategoriaTratamiento, Tratamiento
+from core.models import Paciente, Especialidad, Clinica,  Consultorio, Enfermedad, Cita, CategoriaTratamiento, Tratamiento, Alergia
 import os
 from django.contrib.auth import get_user_model
 
@@ -48,6 +48,32 @@ class Command(BaseCommand):
                 'email_clin' : 'email 2',
             }
             )
+
+        alergias = [
+            "Ninguna",
+            "Látex",
+            "Penicilina",
+            "Amoxicilina",
+            "AINEs (Aspirina, Ibuprofeno, Naproxeno)",
+            "Lidocaína (Anestesia local)",
+            "Articaína",
+            "Metales (Níquel, Cromo, Cobalto)",
+            "Resinas acrílicas / Metacrilatos",
+            "Sulfitos (preservante en anestesia)",
+            "Yodo / Yodopovidona",
+            "Clindamicina",
+            "Codeína",
+            "Eritromicina",
+            "Cefalosporinas",
+            "Hipoclorito de Sodio"
+        ]
+
+        # Tu código para guardar en la BD
+        for alergia in alergias:
+            # Usamos _ para la variable 'created' ya que no la estamos usando
+            obj, created = Alergia.objects.get_or_create(nombre_ale=alergia)
+            if created:
+                self.stdout.write(f"Alergia creada: {obj.nombre_ale}")
         
 
         #create consultorios
