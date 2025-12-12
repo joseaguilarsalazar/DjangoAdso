@@ -6,7 +6,7 @@ from ..models import (
     PacienteEvolucion, 
     PacientePlaca,
     Cita,
-    Tratamiento
+    TratamientoPaciente
     )
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -19,7 +19,7 @@ from core.serializers import (
     PacienteEvolucionSerializer, 
     PacientePlacaSerializer,
     CitaSerializer,
-    TratamientoSerializer,
+    TratamientoPacienteSerializer,
     )
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -82,8 +82,8 @@ class HistorialApiView(views.APIView):
         evoluciones = PacienteEvolucion.objects.filter(paciente__id = paciente.id)
         historic_data['evoluciones'] = PacienteEvolucionSerializer(evoluciones, many=True).data if evoluciones.exists() else None
 
-        tratmientos = Tratamiento.objects.filter(paciente__id = paciente.id)
-        historic_data['tratamientos'] = TratamientoSerializer(tratmientos, many=True).data if tratmientos.exists() else None
+        tratamientos = TratamientoPaciente.objects.filter(paciente__id = paciente.id)
+        historic_data['tratamientos'] = TratamientoPacienteSerializer(tratamientos, many=True).data if tratamientos.exists() else None
 
 
         citas = Cita.objects.filter(paciente__id = paciente.id)

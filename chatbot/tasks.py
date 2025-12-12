@@ -26,7 +26,7 @@ if os.path.exists(env_file):
 r = redis.Redis.from_url(REDIS_URL)
 
 test_senders = ['51967244227', #yo
-
+                '51965007525', #Dr. Ronaldg
                 #==========equipo de Iquitos=========#
                  '51930492745', #licenciado 
                  '51953656319', #Ale
