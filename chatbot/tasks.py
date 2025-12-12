@@ -26,10 +26,14 @@ if os.path.exists(env_file):
 r = redis.Redis.from_url(REDIS_URL)
 
 test_senders = ['51967244227', #yo
+                '51965007525', #Dr. Ronaldg
+                #==========equipo de Iquitos=========#
                  '51930492745', #licenciado 
                  '51953656319', #Ale
                  '51972547142', #Cinthia
                  '51935433771', #Sara
+                #==========equipo de Yurimaguas======#
+                 '51900366452', #numero principal
                  ]  # Números permitidos para pruebas cuando true_chatbot es False
 
 true_chatbot = env.bool('true_chatbot', default=False)

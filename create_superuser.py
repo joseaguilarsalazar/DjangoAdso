@@ -2,17 +2,21 @@
 import os
 import django
 
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djangoAdso.settings")
 django.setup()
 
 from django.contrib.auth import get_user_model
 from chatbot.models import Chat, Message
+from chatbot.tasks import test_senders
 
-chatjd = Chat.objects.filter(number='51967244227').first()
-if chatjd:
-    Message.objects.filter(chat=chatjd).delete()
-    chatjd.current_state = 'default'
-    chatjd.save()
+for sender in test_senders:
+    chat = Chat.objects.filter(number=sender).first()
+    if chat:
+        Message.objects.filter(chat=chat).delete()
+        chat.current_state = 'default'
+        chat.extra_data = {}
+        chat.save()
 
 User = get_user_model()
 

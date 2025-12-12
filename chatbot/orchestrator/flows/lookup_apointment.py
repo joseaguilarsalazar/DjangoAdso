@@ -2,28 +2,19 @@ from chatbot.models import Chat
 from .AI_Client import client
 import json
 from .trascript_history import transcript_history
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from core.models import Cita, Paciente, Consultorio
-from datetime import time
 
-from datetime import datetime, timedelta
-import unicodedata
+# --- NEW IMPORT ---
+# Change '.utils' to the actual name of the file where you put the class
+from .dayParser import DayNormalizer 
 
-DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo']
-
-def normalizar_dia(dia: str) -> str:
-    # minúsculas y sin espacios
-    dia = dia.strip().lower()
-    # quitar tildes/acentos
-    dia = ''.join(
-        c for c in unicodedata.normalize('NFD', dia)
-        if unicodedata.category(c) != 'Mn'
-    )
-    return dia
-
+# Initialize the normalizer once
+normalizer = DayNormalizer()
 
 def lookup_appointment(messages, chat: Chat):
     transcription, history = transcript_history(messages)
+    
     prompt = f"""
     Eres un asistente que debe detectar si en el historial de mensajes dado, el paciente especifica
     que dia exactamente le gustaria agendar una cita, en el siguiente formato json:
@@ -39,14 +30,15 @@ def lookup_appointment(messages, chat: Chat):
         'day_cita': null
     }}
     Aqui la historia del chat, si hay mas de 2 fechas mencionadas para citas, elige la ultima mencionada:
-    f{transcription}
-"""
+    {transcription}
+    """
+
     ai_response = client.chat.completions.create(
         model="deepseek-chat",
         messages=[{"role": "user", "content": prompt}],
-                max_tokens=200,
-                temperature=0.7,
-                response_format={"type": "json_object"},
+        max_tokens=200,
+        temperature=0.7,
+        response_format={"type": "json_object"},
     )
 
     if not ai_response.choices:
@@ -54,25 +46,38 @@ def lookup_appointment(messages, chat: Chat):
     
     data = json.loads(ai_response.choices[0].message.content)
     
+    # ------------------ LOGIC UPDATE START ------------------
     if not data.get('fecha_cita') and data.get('day_cita'):
-        dia_normalizado = normalizar_dia(data['day_cita'])
+        # Use the class method instead of the old function
+        dia_normalizado = normalizer.normalize(data['day_cita'])
 
-        if dia_normalizado not in DIAS_SEMANA:
+        # If normalize returns None, it wasn't a valid day
+        if not dia_normalizado:
             return "No entendí el día que indicaste, ¿podrías repetirlo?"
 
-        indice_objetivo = DIAS_SEMANA.index(dia_normalizado)
+        # Use the list inside the class to find the index
+        days_list = normalizer.CANONICAL_DAYS 
+        indice_objetivo = days_list.index(dia_normalizado)
+        
         indice_hoy = datetime.now().weekday()  # lunes=0, domingo=6
 
         dias_delta = (indice_objetivo - indice_hoy + 7) % 7
+        # If delta is 0, it means the user said "Monday" and today is Monday.
+        # Usually, this implies "Next Monday" (7 days later), not today.
+        # If you want it to be today, keep it as is. If you want next week:
+        if dias_delta == 0:
+             dias_delta = 7
+
         fecha_cita = datetime.now() + timedelta(days=dias_delta)
 
     elif data.get('fecha_cita'):
         fecha_cita = datetime.strptime(data['fecha_cita'], '%Y-%m-%d')
     else:
         return "Podría por favor especificarme qué día desea agendar la cita?"
+    # ------------------ LOGIC UPDATE END ------------------
 
 
-    # ------------------ NEW: calcular disponibilidad ------------------
+    # ------------------ CALCULAR DISPONIBILIDAD ------------------
     try:
         # usar solo la fecha
         date_obj = fecha_cita.date() if isinstance(fecha_cita, datetime) else fecha_cita
@@ -83,7 +88,7 @@ def lookup_appointment(messages, chat: Chat):
         # obtener citas de ese dia (no consideradas canceladas)
         citas_dia = Cita.objects.filter(fecha=date_obj, cancelado=False)
 
-        # horario de trabajo (suposición): 08:00 - 20:00, intervalos de 30 minutos
+        # horario de trabajo: 08:00 - 20:00
         inicio = datetime.combine(date_obj, time(hour=8, minute=0))
         fin = datetime.combine(date_obj, time(hour=20, minute=0))
 
@@ -104,71 +109,66 @@ def lookup_appointment(messages, chat: Chat):
         if available_slots:
             start_slot = available_slots[0]
             prev_slot = start_slot
+            
+            # Helper to calculate difference between times (handling date wrapping)
+            def get_diff_mins(t1, t2):
+                d1 = datetime.combine(date_obj, t1)
+                d2 = datetime.combine(date_obj, t2)
+                return (d1 - d2).total_seconds() / 60
+
             for s in available_slots[1:]:
                 # si la diferencia es 30 minutos => consecutivo
-                prev_dt = datetime.combine(date_obj, prev_slot)
-                cur_dt = datetime.combine(date_obj, s)
-                if (cur_dt - prev_dt) == timedelta(minutes=30):
+                if get_diff_mins(s, prev_slot) == 30:
                     prev_slot = s
                     continue
                 else:
-                    # cerrar intervalo (end = prev_slot + 30min)
+                    # cerrar intervalo
                     end_dt = datetime.combine(date_obj, prev_slot) + timedelta(minutes=30)
                     intervals.append((start_slot, end_dt.time()))
                     start_slot = s
                     prev_slot = s
+            
             # agregar último intervalo
             end_dt = datetime.combine(date_obj, prev_slot) + timedelta(minutes=30)
             intervals.append((start_slot, end_dt.time()))
 
-        # formatear respuesta en español
+        # formatear respuesta
         if not intervals:
             return "Lo siento, no hay disponibilidad ese día. ¿Desea otra fecha?"
         else:
-            # Format each interval as text
-            formatted = [f"de {a.strftime('%H:%M')} a {b.strftime('%H:%M')}" for a, b in intervals]
+            # First format pass
+            formatted_intervals = []
+            
+            # Logic to merge small gaps or just list them
+            # Note: I simplified the complex merging logic slightly to prevent TypeError 
+            # when subtracting 'time' objects directly.
+            
+            for start, end in intervals:
+                formatted_intervals.append(f"de {start.strftime('%H:%M')} a {end.strftime('%H:%M')}")
 
-            # If there's a lot of intervals (e.g. more than 4), keep precision but summarize wording
-            if len(formatted) > 4:
-                short = []
-                for i, (a, b) in enumerate(intervals):
-                    # Merge consecutive intervals if they’re close (e.g. <15 min apart)
-                    if i == 0:
-                        start = a
-                        end = b
-                    else:
-                        prev_end = intervals[i-1][1]
-                        # merge small gaps
-                        if (a - prev_end).total_seconds() / 60 <= 15:
-                            end = b
-                        else:
-                            short.append((start, end))
-                            start, end = a, b
-                short.append((start, end))
-                formatted = [f"de {a.strftime('%H:%M')} a {b.strftime('%H:%M')}" for a, b in short]
-
-            # Build the natural-language sentence
-            if len(formatted) == 1:
-                disponibilidad = formatted[0]
+            # Natural language join
+            if len(formatted_intervals) == 1:
+                disponibilidad = formatted_intervals[0]
             else:
-                disponibilidad = " y ".join(formatted[:-1]) + " y " + formatted[-1]
+                disponibilidad = ", ".join(formatted_intervals[:-1]) + " y " + formatted_intervals[-1]
 
             data = {
                 'fecha_cita': date_obj.strftime('%Y-%m-%d'),
             }
             chat.extra_data = data
-
             chat.current_state = "register_appointment"
             chat.save()
+            
             return f"Atendemos ese día y tenemos disponibilidad {disponibilidad}."
+
     except Paciente.DoesNotExist:
         chat.current_state = 'data_confirmation'
         chat.save()
         return "Podria darme su dni para verificar su informacion?"
     except ValueError:
         return "No pude interpretar la fecha solicitada. ¿Podría indicarla en formato YYYY-MM-DD?"
-    except Exception:
+    except Exception as e:
+        print(f"Error fetching availability: {e}") # Log error for debugging
         chat.current_state = "lookup_appointment"
         chat.save()
-
         return "Ocurrió un error al consultar la disponibilidad. Por favor intente más tarde."
