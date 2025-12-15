@@ -48,6 +48,11 @@ class TelegramApiManager:
             response = requests.post(url, json=payload, timeout=5)
             response_data = response.json()
 
+            if not response.ok:
+                logger.error(f"TELEGRAM FAIL: {response_data}") # 👈 This will print the REAL reason
+                # Don't raise_for_status here yet, or you won't see the log above
+                return False
+
             # Check for HTTP errors (4xx, 5xx)
             response.raise_for_status()
 
