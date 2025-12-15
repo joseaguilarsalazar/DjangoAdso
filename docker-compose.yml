@@ -60,6 +60,9 @@ services:
       - minio_data:/data
     networks:
       - app_network
+    extra_hosts:
+      - "minio.mishu-soft.org:host-gateway"
+      - "minio.adso-peru.org:host-gateway"
 
   # ✅ BUCKET CREATOR
   createbuckets:
