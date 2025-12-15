@@ -172,8 +172,8 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
-#MEDIA_URL = '/media/'
-#MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -216,25 +216,36 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 #------------------this part is not being used right now (21/08/2025) update in the future-------#
 
+# settings.py
+
+# 1. Backend Configuration
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
+# 2. Auth Credentials (Must match docker-compose environment variables)
 AWS_ACCESS_KEY_ID = 'admin'
-AWS_SECRET_ACCESS_KEY = '12345678'
+AWS_SECRET_ACCESS_KEY = 'password1234' # Matches MINIO_ROOT_PASSWORD
 
+# 3. Bucket Name (Created by the 'createbuckets' service)
 AWS_STORAGE_BUCKET_NAME = 'devadsobucket'
-AWS_S3_ENDPOINT_URL = 'https://flask-minio.jmtqu4.easypanel.host/'  # e.g., http://127.0.0.1:9000 or public IP
 
+# 4. Networking
+# IMPORTANT: Inside Docker, Django sees the server as "http://minio:9000"
+AWS_S3_ENDPOINT_URL = 'http://minio:9000' 
+
+# 5. Configuration
 AWS_S3_FILE_OVERWRITE = False
-AWS_DEFAULT_ACL = None  # MinIO doesn't support ACLs by default
-AWS_S3_ADDRESSING_STYLE = "path"  # important for MinIO compatibility
+AWS_DEFAULT_ACL = None 
+AWS_S3_ADDRESSING_STYLE = "path" 
+AWS_S3_SIGNATURE_VERSION = 's3v4'
 
+# 6. Presigned URL Settings
+AWS_QUERYSTRING_AUTH = True 
+AWS_QUERYSTRING_EXPIRE = 3600  # 1 hour
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
 }
-AWS_QUERYSTRING_AUTH = True 
-AWS_S3_SIGNATURE_VERSION = 's3v4'
-AWS_QUERYSTRING_EXPIRE = 36000  # 1 hour
-PRESIGNED_URL_EXPIRATION = 36000
+
+# ⚠️ Remove AWS_S3_CUSTOM_DOMAIN for private presigned URLs locally
 AWS_S3_CUSTOM_DOMAIN = None
 
 
