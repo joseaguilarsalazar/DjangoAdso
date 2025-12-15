@@ -230,7 +230,10 @@ AWS_STORAGE_BUCKET_NAME = 'devadsobucket'
 
 # 4. Networking
 # IMPORTANT: Inside Docker, Django sees the server as "http://minio:9000"
-AWS_S3_ENDPOINT_URL = 'http://minio:9000' 
+if DEBUG:
+    AWS_S3_ENDPOINT_URL = 'https://minio.mishu-soft.org' 
+else:
+    AWS_S3_ENDPOINT_URL = 'https://minio.adso-peru.org'
 
 # 5. Configuration
 AWS_S3_FILE_OVERWRITE = False
