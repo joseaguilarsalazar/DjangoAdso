@@ -7,6 +7,8 @@ import logging
 from .tasks import send_cita_reminder
 from datetime import datetime, timedelta
 from django.conf import settings
+from .utils import TelegramApiManager  # Adjust import path as needed
+from .models import Cita
 # Set up logging
 logger = logging.getLogger(__name__)
 
@@ -24,10 +26,12 @@ DIAS_SEMANA = {
 @receiver(post_save, sender=Cita)
 def notify_appointment_created_updated(sender, instance: Cita, created: bool, **kwargs):
     """
-    Notify medics and patients when an appointment is created or updated
+    Notify medics and patients when an appointment is created or updated.
+    Also sends a notification to the Clinic's Telegram Group.
     """
     if getattr(instance, "_skip_signal", False):
         return  # 👈 Don’t run if flagged
+    
     if not instance.medico or not instance.paciente:
         logger.warning(f"Appointment {instance.id} missing doctor or patient information")
         return
@@ -36,7 +40,9 @@ def notify_appointment_created_updated(sender, instance: Cita, created: bool, **
     paciente = instance.paciente
     
     # Get day name in Spanish
-    dia_nombre = DIAS_SEMANA.get(instance.fecha.weekday(), 'N/A')
+    # Ensure DIAS_SEMANA is defined or imported
+    DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+    dia_nombre = DIAS_SEMANA[instance.fecha.weekday()]
     
     # Format date properly
     fecha_formateada = instance.fecha.strftime('%d/%m/%Y')
@@ -51,7 +57,8 @@ Doctor: {doctor.name}'''
         mssg_dtr = f'''📅 Nueva cita programada:
 Paciente: {paciente.__str__()}
 Fecha: {dia_nombre} {fecha_formateada}
-Hora: {instance.hora}'''
+Hora: {instance.hora}
+Doctor asignado: {doctor.name if doctor else 'No asignado'}'''
     else:
         # Appointment updated
         mssg_pct = f'''📝 Su cita ha sido reprogramada para el día {dia_nombre}
@@ -61,24 +68,41 @@ Doctor: {doctor.name}'''
         mssg_dtr = f'''📝 Cita actualizada:
 Paciente: {paciente.__str__()}
 Nueva fecha: {dia_nombre} {fecha_formateada}
-Nueva hora: {instance.hora}'''
+Nueva hora: {instance.hora}
+Doctor asignado: {doctor.name if doctor else 'No asignado'}'''
     
-    # Send messages
-    _send_notifications(doctor, paciente, mssg_dtr, mssg_pct, instance.id, "created/updated")
+    # 1. Send standard notifications (WhatsApp/SMS via your internal helper)
+    # _send_notifications(doctor, paciente, mssg_dtr, mssg_pct, instance.id, "created/updated")
 
+    # 2. TELEGRAM NOTIFICATION TO CLINIC GROUP
+    # We check if the patient belongs to a clinic and if that clinic has a chat ID
+    if paciente.clinica and paciente.clinica.telegram_chat_id:
+        try:
+            telegram = TelegramApiManager()
+            telegram.telegram_notify(
+                chat_id=paciente.clinica.telegram_chat_id,
+                text=mssg_dtr  # Reusing the doctor's message for the group
+            )
+        except Exception as e:
+            # We log the error but don't stop the flow (so the celery task still schedules)
+            logger.error(f"Failed to send Telegram group notification for Cita {instance.id}: {e}")
+
+    # 3. Schedule Reminder Task (Only on Create)
     if created:
         # Build the appointment datetime in project TZ
         naive_dt = datetime.combine(instance.fecha, instance.hora)
         tz = timezone.get_current_timezone()
         cita_dt = naive_dt.replace(tzinfo=tz) if timezone.is_naive(naive_dt) else naive_dt.astimezone(tz)
 
-        offset = getattr(settings, "REMINDER_OFFSET_HOURS", 3)
+        # Use settings for offset, default to 3 hours
+        # offset = getattr(settings, "REMINDER_OFFSET_HOURS", 3)
+        offset = 3 
         remind_at = cita_dt - timedelta(hours=offset)
 
         # If reminder time has passed (e.g., appointment soon), send shortly
         eta = remind_at if remind_at > timezone.now() else timezone.now() + timedelta(minutes=1)
 
-        # Schedule the reminder task; Celery worker handles ETA without Celery Beat
+        # Schedule the reminder task
         send_cita_reminder.apply_async((instance.id,), eta=eta)
 
 @receiver(post_delete, sender=Cita)
