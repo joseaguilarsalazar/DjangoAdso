@@ -246,7 +246,7 @@ AWS_S3_OBJECT_PARAMETERS = {
 }
 
 # ⚠️ Remove AWS_S3_CUSTOM_DOMAIN for private presigned URLs locally
-AWS_S3_CUSTOM_DOMAIN = 'minio:9020/devadsobucket'
+AWS_S3_CUSTOM_DOMAIN = None
 
 
 #-----------------------------------------------------------------------------------------------#
