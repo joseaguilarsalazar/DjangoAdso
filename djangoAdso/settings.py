@@ -216,29 +216,27 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 #------------------this part is not being used right now (21/08/2025) update in the future-------#
 
-# --- AUTH ---
+# settings.py
+
+# 1. Use the new Custom Class
+DEFAULT_FILE_STORAGE = 'core.storage_backends.MediaStorage'
+
+# 2. Internal Connection (Django talks to Docker container directly)
+AWS_S3_ENDPOINT_URL = 'http://minio:9000'
+
+# 3. ⚠️ IMPORTANT: Set this to None to force Django to generate signatures
+AWS_S3_CUSTOM_DOMAIN = None 
+
+# 4. Standard Config
 AWS_ACCESS_KEY_ID = 'admin'
 AWS_SECRET_ACCESS_KEY = 'password1234'
 AWS_STORAGE_BUCKET_NAME = 'devadsobucket'
-
-# --- NETWORK CONFIGURATION (THE FIX) ---
-
-# 1. Internal Connection (For Uploads/Checks)
-# Django will talk directly to the container on port 9000.
-# This fixes the 403 error because it bypasses Cloudflare/Internet.
-AWS_S3_ENDPOINT_URL = 'http://minio:9000'
-
-# 2. External URLs (For the Browser)
-# When Django generates a link for the frontend, it will use this domain.
-AWS_S3_CUSTOM_DOMAIN = 'minio.mishu-soft.org'
-
-# --- SECURITY & PROTOCOLS ---
 AWS_S3_URL_PROTOCOL = 'https:'
 AWS_S3_FILE_OVERWRITE = False
 AWS_DEFAULT_ACL = None 
 AWS_S3_ADDRESSING_STYLE = "path"
 AWS_S3_SIGNATURE_VERSION = 's3v4'
-AWS_QUERYSTRING_AUTH = True 
+AWS_QUERYSTRING_AUTH = True # Enable signed URLs
 
 # Optimization
 AWS_S3_OBJECT_PARAMETERS = {
