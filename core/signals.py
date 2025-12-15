@@ -7,7 +7,7 @@ import logging
 from .tasks import send_cita_reminder
 from datetime import datetime, timedelta
 from django.conf import settings
-from .utils import TelegramApiManager  # Adjust import path as needed
+from .utils.TelegramApiManager import TelegramApiManager  # Adjust import path as needed
 from .models import Cita
 # Set up logging
 logger = logging.getLogger(__name__)
