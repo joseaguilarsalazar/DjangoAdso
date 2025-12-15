@@ -219,7 +219,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # settings.py
 
 # 1. Use the new Custom Class
-DEFAULT_FILE_STORAGE = 'core.storage_backends.MediaStorage'
+DEFAULT_FILE_STORAGE = 'djangoAdso.storage_backends.MediaStorage'
 
 # 2. Internal Connection (Django talks to Docker container directly)
 AWS_S3_ENDPOINT_URL = 'http://minio:9000'
