@@ -166,14 +166,14 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 STORAGES = {
     "default": {
-        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "BACKEND": "djangoAdso.storage_backends.MediaStorage",
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
-#MEDIA_URL = '/media/'
-#MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -216,26 +216,37 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 #------------------this part is not being used right now (21/08/2025) update in the future-------#
 
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+# settings.py
 
+# 1. Use the new Custom Class
+#DEFAULT_FILE_STORAGE = 'djangoAdso.storage_backends.MediaStorage'
+#go to Storages dict above
+
+# 2. Internal Connection (Django talks to Docker container directly)
+AWS_S3_ENDPOINT_URL = 'http://minio:9000'
+
+if DEBUG:
+    AWS_S3_PUBLIC_ENDPOINT = 'https://minio.mishu-soft.org'
+else:
+    AWS_S3_PUBLIC_ENDPOINT = 'https://minio.adso-peru.org'
+# 3. ⚠️ IMPORTANT: Set this to None to force Django to generate signatures
+AWS_S3_CUSTOM_DOMAIN = None 
+
+# 4. Standard Config
 AWS_ACCESS_KEY_ID = 'admin'
-AWS_SECRET_ACCESS_KEY = '12345678'
-
+AWS_SECRET_ACCESS_KEY = 'password1234'
 AWS_STORAGE_BUCKET_NAME = 'devadsobucket'
-AWS_S3_ENDPOINT_URL = 'https://flask-minio.jmtqu4.easypanel.host/'  # e.g., http://127.0.0.1:9000 or public IP
-
+AWS_S3_URL_PROTOCOL = 'https:'
 AWS_S3_FILE_OVERWRITE = False
-AWS_DEFAULT_ACL = None  # MinIO doesn't support ACLs by default
-AWS_S3_ADDRESSING_STYLE = "path"  # important for MinIO compatibility
+AWS_DEFAULT_ACL = None 
+AWS_S3_ADDRESSING_STYLE = "path"
+AWS_S3_SIGNATURE_VERSION = 's3v4'
+AWS_QUERYSTRING_AUTH = True # Enable signed URLs
 
+# Optimization
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
 }
-AWS_QUERYSTRING_AUTH = True 
-AWS_S3_SIGNATURE_VERSION = 's3v4'
-AWS_QUERYSTRING_EXPIRE = 36000  # 1 hour
-PRESIGNED_URL_EXPIRATION = 36000
-AWS_S3_CUSTOM_DOMAIN = None
 
 
 #-----------------------------------------------------------------------------------------------#
