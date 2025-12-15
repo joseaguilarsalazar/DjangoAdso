@@ -166,7 +166,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 STORAGES = {
     "default": {
-        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "BACKEND": "djangoAdso.storage_backends.MediaStorage",
     },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
@@ -219,7 +219,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # settings.py
 
 # 1. Use the new Custom Class
-DEFAULT_FILE_STORAGE = 'djangoAdso.storage_backends.MediaStorage'
+#DEFAULT_FILE_STORAGE = 'djangoAdso.storage_backends.MediaStorage'
+#go to Storages dict above
 
 # 2. Internal Connection (Django talks to Docker container directly)
 AWS_S3_ENDPOINT_URL = 'http://minio:9000'
