@@ -225,6 +225,10 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # 2. Internal Connection (Django talks to Docker container directly)
 AWS_S3_ENDPOINT_URL = 'http://minio:9000'
 
+if DEBUG:
+    AWS_S3_PUBLIC_ENDPOINT = 'https://minio.mishu-soft.org'
+else:
+    AWS_S3_PUBLIC_ENDPOINT = 'https://minio.adso-peru.org'
 # 3. ⚠️ IMPORTANT: Set this to None to force Django to generate signatures
 AWS_S3_CUSTOM_DOMAIN = None 
 
