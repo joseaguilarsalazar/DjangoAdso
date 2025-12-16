@@ -9,10 +9,11 @@ django.setup()
 from django.contrib.auth import get_user_model
 from chatbot.models import Chat, Message
 from chatbot.tasks import test_senders
+from djangoAdso.settings import DEBUG
 
 for sender in test_senders:
     chat = Chat.objects.filter(number=sender).first()
-    if chat:
+    if chat and DEBUG:
         Message.objects.filter(chat=chat).delete()
         chat.current_state = 'default'
         chat.extra_data = {}

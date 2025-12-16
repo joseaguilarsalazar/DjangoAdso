@@ -39,14 +39,30 @@ def data_confirmation(messages, chat: Chat):
 
         if dni:
             paciente  = Paciente.objects.filter(dni=dni).first()
-            chat.patient = paciente
+            chat.extra_data['patients'].append({
+                'nombre': paciente.nombre,
+                'apellido': paciente.apellido,
+                'dni': paciente.dni,
+                'fecha_nacimiento': str(paciente.fecha_nacimiento),
+                'clinica_id': paciente.clinica.id if paciente.clinica else None,
+                'patient_id': paciente.id,
+                'is_phone_owner': True if paciente.telf_pac == chat.number else False
+            })
             chat.save()
 
             return f"He encontrado sus datos: Nombre: {paciente.nombre}, Apellido: {paciente.apellido}, DNI: {paciente.dni}. ¿Son correctos? Por favor responda con 'sí' o 'no'."
         elif name and lastname:
             paciente = Paciente.objects.filter(nombre__iexact=name, apellido__iexact=lastname).first()
             if paciente:
-                chat.patient = paciente
+                chat.extra_data['patients'].append({
+                'nombre': paciente.nombre,
+                'apellido': paciente.apellido,
+                'dni': paciente.dni,
+                'fecha_nacimiento': str(paciente.fecha_nacimiento),
+                'clinica_id': paciente.clinica.id if paciente.clinica else None,
+                'patient_id': paciente.id,
+                'is_phone_owner': True if paciente.telf_pac == chat.number else False
+            })
                 chat.save()
                 return f"He encontrado sus datos: Nombre: {paciente.nombre}, Apellido: {paciente.apellido}, DNI: {paciente.dni}. ¿Son correctos? Por favor responda con 'sí' o 'no'."
             else:

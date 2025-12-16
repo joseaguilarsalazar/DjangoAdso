@@ -14,7 +14,7 @@ normalizer = DayNormalizer()
 def register_appointment(messages, chat: Chat):
     transcription, history = transcript_history(messages)
 
-    if not chat.patient:
+    if chat.extra_data.get('patients', None) is None or len(chat.extra_data['patients']) == 0:
         chat.current_state = "patient_registration"
         chat.current_sub_state = "awaiting_data"
         chat.save()
@@ -25,6 +25,47 @@ def register_appointment(messages, chat: Chat):
         Fecha de Nacimiento:
         Ciudad de residencia (Iquitos o Yurimaguas):
         """
+    else:
+        prompt = f"""
+        Estás recibiendo la historia de chat de un paciente que desea registrar una cita en la clínica dental.
+        Basado en los ultimos datos del chat, ayuda a confirmar para cual de los pacientes asociados a este numero de teléfono se desea registrar la cita.
+        Y en caso el paciente para quien se quiere registrar la cita no esté en la lista, indicalo.
+        Aqui los pacientes asociados:
+        {json.dumps(chat.extra_data['patients'])}
+        Basado en la conversacion retorna el 'patient_id' del paciente correcto, en el siguiente formato json:
+        {{
+            'patient_id': integer,
+            'none_registered_wants_appointment': boolean # true si el usuario no quiere registrar una cita para ninguno de los pacientes listados
+        }}
+        Aquí la historia del chat:
+        {transcription}
+        """
+
+        ai_response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=200,
+            temperature=0.7,
+            response_format={"type": "json_object"},
+        )
+
+        if not ai_response.choices:
+            return "Lo siento, no pude registrar su cita. Por favor intente nuevamente."
+        
+        data = json.loads(ai_response.choices[0].message.content)
+        patient_id = data.get('patient_id', None)
+        none_registered = data.get('none_registered_wants_appointment', False)
+        if not patient_id and none_registered:
+            return """Por favor bríndeme estos datos antes de registrar la cita:
+        Nombre:
+        Apellido:
+        DNI:
+        Fecha de Nacimiento:
+        Ciudad de residencia (Iquitos o Yurimaguas):
+        """
+        elif not patient_id and not none_registered:
+            return "No estoy seguro para cuál paciente desea registrar la cita. ¿Podría confirmarlo?"
+
 
     prompt = f"""
     Estás recibiendo la historia de chat de un paciente que desea registrar una cita en la clínica dental.
@@ -61,7 +102,7 @@ def register_appointment(messages, chat: Chat):
         if chat.extra_data and chat.extra_data.get('fecha_cita'):
             fecha_cita = datetime.strptime(chat.extra_data['fecha_cita'], '%Y-%m-%d')
             # Clear extra data after using it
-            chat.extra_data = {} 
+            chat.extra_data['fecha_cita'] = None 
             chat.save()
         else:
             # 2. Calculate date using DayNormalizer
@@ -97,7 +138,7 @@ def register_appointment(messages, chat: Chat):
     if isinstance(fecha_cita, datetime):
         fecha_cita = fecha_cita.date() 
 
-    paciente = Paciente.objects.get(id=chat.patient_id)
+    paciente = Paciente.objects.get(id=patient_id)
     consultorios = Consultorio.objects.filter(clinica=paciente.clinica).order_by('id')
     
     consultorio_disponible = None 

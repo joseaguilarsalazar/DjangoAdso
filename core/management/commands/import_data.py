@@ -31,23 +31,26 @@ class Command(BaseCommand):
 
         #crear Clinicas
 
-        clinicaIquitos, created = Clinica.objects.get_or_create(
-            nomb_clin='Clinica Dental Sede Iquitos',
+        clinicaIquitos, created = Clinica.objects.update_or_create(
+            nomb_clin='Clinica Dental Sede Iquitos', # The field used to find the match
             defaults={
                 'direc_clin': 'Calle Callao 176',
                 'telf_clin': 917435154,
                 'email_clin': 'email 1',
+                'telegram_chat_id': '-5055463094', # <--- Replace with your actual Iquitos Chat ID
             }
         )
 
-        clinicaYurimaguas, created = Clinica.objects.get_or_create(
-            nomb_clin = 'Clinica Dental Filial Yurimaguas',
+        # 2. Yurimaguas
+        clinicaYurimaguas, created = Clinica.objects.update_or_create(
+            nomb_clin='Clinica Dental Filial Yurimaguas', # The field used to find the match
             defaults={
-                'direc_clin' : 'Calle 15 de agosto 726',
-                'telf_clin' : 900366452,
-                'email_clin' : 'email 2',
+                'direc_clin': 'Calle 15 de agosto 726',
+                'telf_clin': 900366452,
+                'email_clin': 'email 2',
+                'telegram_chat_id': '-5041569133', # <--- Replace with your actual Yurimaguas Chat ID
             }
-            )
+        )
 
         alergias = [
             "Ninguna",

@@ -82,7 +82,7 @@ def lookup_appointment(messages, chat: Chat):
         # usar solo la fecha
         date_obj = fecha_cita.date() if isinstance(fecha_cita, datetime) else fecha_cita
 
-        paciente = Paciente.objects.get(id=chat.patient_id)
+        paciente = Paciente.objects.get(id=chat.extra_data['patients'][0]['patient_id'])
         consultorios_count = Consultorio.objects.filter(clinica=paciente.clinica).count() or 1
 
         # obtener citas de ese dia (no consideradas canceladas)
@@ -155,7 +155,7 @@ def lookup_appointment(messages, chat: Chat):
             data = {
                 'fecha_cita': date_obj.strftime('%Y-%m-%d'),
             }
-            chat.extra_data = data
+            chat.extra_data['fecha_cita'] = data["fecha_cita"]
             chat.current_state = "register_appointment"
             chat.save()
             

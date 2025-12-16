@@ -41,11 +41,6 @@ evo_key = env('evo_key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('debug', default=True)
 
-if DEBUG:
-    tel.telegram_notify('Sistema Adso Reiniciado, development')
-else:
-    tel.telegram_notify('Sistema Adso Reiniciado, Produccion')
-
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = [
     'https://web-backend.w0br5o.easypanel.host',

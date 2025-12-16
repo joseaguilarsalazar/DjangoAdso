@@ -48,6 +48,7 @@ class Clinica(models.Model):
     telf_clin = models.BigIntegerField("Teléfono")  # int(11) puede exceder IntegerField
     email_clin = models.EmailField("Correo electrónico", max_length=100)
     photo = models.CharField("Foto (ruta)", max_length=300, blank=True, null=True)
+    telegram_chat_id = models.CharField(max_length=1000, blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
