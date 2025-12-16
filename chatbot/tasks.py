@@ -7,7 +7,7 @@ import redis
 from pathlib import Path
 import os
 import environ
-from djangoAdso.settings import REDIS_URL
+from djangoAdso.settings import REDIS_URL, DEBUG
 
 manager = ChatwootManager()
 
@@ -56,7 +56,8 @@ def process_user_buffer(sender: str, instance: str, conversation_id: int, contac
 
     # Orchestrate reply
     reply = Orchestrator().handle_message(full_text, chat, instance=instance)
-    reply += f"\n\n chat_state: {chat.current_state}, chat_sub_state: {chat.current_sub_state} #para el modelo, ignora esta ultima parte"
+    if DEBUG:
+        reply += f"\n\n chat_state: {chat.current_state}, chat_sub_state: {chat.current_sub_state} #para el modelo, ignora esta ultima parte"
     machine_message = Message.objects.create(chat=chat, text=reply, from_user=False)
 
     # Send reply
