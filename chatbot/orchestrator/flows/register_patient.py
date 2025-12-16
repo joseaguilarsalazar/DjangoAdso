@@ -12,7 +12,6 @@ def register_patient(messages, chat: Chat):
     transcription, history = transcript_history(messages)
 
     try:
-
         if chat.current_sub_state == 'awaiting_data':
             prompt = f"""
             You are an assistant that extracts personal information from patients in order to register them in a dental clinic.
@@ -22,6 +21,9 @@ def register_patient(messages, chat: Chat):
             - Nombre
             - Apellido
             - Fecha de Nacimiento
+            
+            And this data you must get from conversation context:
+            - We are registering phone owner data, or from someone else? (child, parent, relative, friend, etc)
 
             Your task is to extract that information from the user's message and return it **only** as a valid JSON object in the following format:
             {{
@@ -30,9 +32,16 @@ def register_patient(messages, chat: Chat):
                 'apellido': string,
                 'fecha_nacimiento': string, # formato YYYY-MM-DD
                 'ciudad_de_residencia': string (optional) #opciones por ahora Iquitos, Yurimaguas
+                'is_phone_owner': boolean
             }}
 
-            Analyze the conversation below, but extract the information **only from the last patient message**:
+            ### Extraction Logic:
+            1. **Dates:** Convert any relative dates (like "born in 1990") to YYYY-MM-DD.
+            2. **Phone Owner:** - Set 'is_phone_owner': true if the user implies the appointment is for themselves (e.g., "I need an appointment").
+            - Set 'is_phone_owner': false if they mention a third party (son, mother, friend).
+            3. **Scope:** Analyze the input text strictly. Do not invent information.
+
+            ### Input Text:
             {transcription}
             """
 
@@ -45,10 +54,7 @@ def register_patient(messages, chat: Chat):
             response_format={"type": "json_object"},
         )
 
-            reply = response.choices[0].message.content.strip()
-
-            reply = response.choices[0].message.content.strip()
-            data = json.loads(reply)
+            data = json.loads(response.choices[0].message.content)
             clinica_id = None
             if data.get('ciudad_de_residencia', None):
                 from core.models import Clinica
@@ -63,10 +69,22 @@ def register_patient(messages, chat: Chat):
 
             chat.current_state = 'default'
             chat.current_sub_state = 'default'
-            chat.patient = paciente
+
+            if not chat.extra_data.get('patients', None):
+                chat.extra_data['patients'] = []
+
+            chat.extra_data['patients'].append({
+                'nombre': paciente.nomb_pac,
+                'apellido': paciente.apel_pac,
+                'dni': paciente.dni_pac,
+                'fecha_nacimiento': str(paciente.fena_pac),
+                'clinica_id': clinica_id,
+                'patient_id': paciente.id,
+                'is_phone_owner': data.get('is_phone_owner', False)
+            })
             chat.save()
 
-            return f"""Gracias {paciente.nomb_pac}, ya lo he registrado.
-            Desea continuar con la programacion de una cita?"""
+            return f"""Gracias, ya estan registrados sus datos.
+            Desea continuar con la programacion de la cita?"""
     except Exception as e:
         return f"Hubo un error al registrar sus datos, por favor intente de nuevo. Error: {str(e)}"
