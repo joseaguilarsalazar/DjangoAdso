@@ -91,7 +91,14 @@ Debes devolver SOLO un JSON con la siguiente estructura:
 Aquí tienes todas las intenciones posibles, cada una con su descripción y ejemplos de conversación:
 {intents_json}
 
-Toma en cuenta el mensaje del usuario (puede venir de una transcripción de audio):
+Este es el estado actual de la conversación: {chat.current_state}, {chat.current_sub_state}
+En caso de que el usuario no siga con el flujo esperado del estado actual, clasifícalo como "default".
+Ejemplo:
+- usuario: "Deseo agendar una cita." (Esto hara al asistente entrar en modo de agendar cita)
+- asistente: "Claro, ¿para qué fecha le gustaría?" (El asistente ahora está en modo de agendar cita)
+- usuario: "Por cierto, ¿qué servicios ofrecen?" (Aunque el asistente esté en modo de agendar cita, esta pregunta no está relacionada, así que clasifícala como "default", para responder con coherencia)
+
+Pero si no ves ninguna desviación del flujo esperado, simplemente devuelve el estado actual {{intent: {chat.current_state}}}.
 
 Historial de mensajes del usuario:
 \"\"\"{transcription}\"\"\"
