@@ -14,12 +14,9 @@ class Orchestrator:
         }
 
     def handle_message(self, text, chat: Chat, instance: str):
-        if chat.current_state != "default":
-            intent = chat.current_state
-        else:
-            intent = classify_intent(chat)
-            chat.current_state = intent
-            chat.save()
+        intent = classify_intent(chat)
+        chat.current_state = intent
+        chat.save()
 
         messages = chat.last_messages()
         print(f"{chat.current_state}, {chat.current_sub_state}")
