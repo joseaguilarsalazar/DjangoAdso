@@ -23,6 +23,7 @@ EXPOSE 7000
 CMD ["sh", "-c", "python check_env.py && \
                   python manage.py migrate && \
                   python manage.py import_data && \
+                  python manage.py seed_dientes && \
                   python manage.py collectstatic --noinput && \
                   python create_superuser.py && \
                   celery -A djangoAdso worker -l info & \

@@ -1,0 +1,418 @@
+[
+    {
+        "model": "odontograma.diente",
+        "pk": 18,
+        "fields": {
+            "numero": 18,
+            "hitbox_json": "{\"x\": 0.0408, \"y\": 0.1353, \"width\": 0.0658, \"height\": 0.0803}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 17,
+        "fields": {
+            "numero": 17,
+            "hitbox_json": "{\"x\": 0.1094, \"y\": 0.1353, \"width\": 0.0631, \"height\": 0.0784}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 16,
+        "fields": {
+            "numero": 16,
+            "hitbox_json": "{\"x\": 0.1752, \"y\": 0.1373, \"width\": 0.0631, \"height\": 0.0764}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 15,
+        "fields": {
+            "numero": 15,
+            "hitbox_json": "{\"x\": 0.241, \"y\": 0.1373, \"width\": 0.0603, \"height\": 0.0784}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 14,
+        "fields": {
+            "numero": 14,
+            "hitbox_json": "{\"x\": 0.3041, \"y\": 0.1392, \"width\": 0.0548, \"height\": 0.0764}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 13,
+        "fields": {
+            "numero": 13,
+            "hitbox_json": "{\"x\": 0.3589, \"y\": 0.1373, \"width\": 0.0466, \"height\": 0.0764}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 12,
+        "fields": {
+            "numero": 12,
+            "hitbox_json": "{\"x\": 0.4056, \"y\": 0.1373, \"width\": 0.0494, \"height\": 0.0764}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 11,
+        "fields": {
+            "numero": 11,
+            "hitbox_json": "{\"x\": 0.4549, \"y\": 0.1373, \"width\": 0.0439, \"height\": 0.0764}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 21,
+        "fields": {
+            "numero": 21,
+            "hitbox_json": "{\"x\": 0.4988, \"y\": 0.1392, \"width\": 0.0494, \"height\": 0.0744}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 22,
+        "fields": {
+            "numero": 22,
+            "hitbox_json": "{\"x\": 0.5536, \"y\": 0.1412, \"width\": 0.0411, \"height\": 0.0705}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 23,
+        "fields": {
+            "numero": 23,
+            "hitbox_json": "{\"x\": 0.6003, \"y\": 0.1412, \"width\": 0.0384, \"height\": 0.0725}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 24,
+        "fields": {
+            "numero": 24,
+            "hitbox_json": "{\"x\": 0.6387, \"y\": 0.1431, \"width\": 0.0686, \"height\": 0.0705}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 25,
+        "fields": {
+            "numero": 25,
+            "hitbox_json": "{\"x\": 0.7072, \"y\": 0.1431, \"width\": 0.0576, \"height\": 0.0705}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 26,
+        "fields": {
+            "numero": 26,
+            "hitbox_json": "{\"x\": 0.7621, \"y\": 0.1373, \"width\": 0.0713, \"height\": 0.0784}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 27,
+        "fields": {
+            "numero": 27,
+            "hitbox_json": "{\"x\": 0.8361, \"y\": 0.1373, \"width\": 0.0658, \"height\": 0.0784}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 28,
+        "fields": {
+            "numero": 28,
+            "hitbox_json": "{\"x\": 0.9019, \"y\": 0.1373, \"width\": 0.0713, \"height\": 0.0784}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 55,
+        "fields": {
+            "numero": 55,
+            "hitbox_json": "{\"x\": 0.2246, \"y\": 0.341, \"width\": 0.0713, \"height\": 0.0823}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 54,
+        "fields": {
+            "numero": 54,
+            "hitbox_json": "{\"x\": 0.2986, \"y\": 0.341, \"width\": 0.0631, \"height\": 0.0803}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 53,
+        "fields": {
+            "numero": 53,
+            "hitbox_json": "{\"x\": 0.3617, \"y\": 0.3429, \"width\": 0.0466, \"height\": 0.0764}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 52,
+        "fields": {
+            "numero": 52,
+            "hitbox_json": "{\"x\": 0.4138, \"y\": 0.3429, \"width\": 0.0439, \"height\": 0.0744}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 51,
+        "fields": {
+            "numero": 51,
+            "hitbox_json": "{\"x\": 0.4604, \"y\": 0.341, \"width\": 0.0384, \"height\": 0.0744}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 61,
+        "fields": {
+            "numero": 61,
+            "hitbox_json": "{\"x\": 0.4961, \"y\": 0.3449, \"width\": 0.0494, \"height\": 0.0784}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 62,
+        "fields": {
+            "numero": 62,
+            "hitbox_json": "{\"x\": 0.5509, \"y\": 0.3449, \"width\": 0.0494, \"height\": 0.0764}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 63,
+        "fields": {
+            "numero": 63,
+            "hitbox_json": "{\"x\": 0.603, \"y\": 0.3449, \"width\": 0.0411, \"height\": 0.0725}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 64,
+        "fields": {
+            "numero": 64,
+            "hitbox_json": "{\"x\": 0.6496, \"y\": 0.3449, \"width\": 0.0631, \"height\": 0.0744}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 65,
+        "fields": {
+            "numero": 65,
+            "hitbox_json": "{\"x\": 0.71, \"y\": 0.3469, \"width\": 0.0686, \"height\": 0.0744}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 85,
+        "fields": {
+            "numero": 85,
+            "hitbox_json": "{\"x\": 0.2328, \"y\": 0.433, \"width\": 0.0658, \"height\": 0.0725}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 84,
+        "fields": {
+            "numero": 84,
+            "hitbox_json": "{\"x\": 0.2959, \"y\": 0.435, \"width\": 0.0686, \"height\": 0.0744}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 83,
+        "fields": {
+            "numero": 83,
+            "hitbox_json": "{\"x\": 0.3672, \"y\": 0.4291, \"width\": 0.0439, \"height\": 0.0744}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 82,
+        "fields": {
+            "numero": 82,
+            "hitbox_json": "{\"x\": 0.411, \"y\": 0.435, \"width\": 0.0466, \"height\": 0.0686}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 81,
+        "fields": {
+            "numero": 81,
+            "hitbox_json": "{\"x\": 0.4604, \"y\": 0.4311, \"width\": 0.0411, \"height\": 0.0744}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 71,
+        "fields": {
+            "numero": 71,
+            "hitbox_json": "{\"x\": 0.5043, \"y\": 0.433, \"width\": 0.0439, \"height\": 0.0725}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 72,
+        "fields": {
+            "numero": 72,
+            "hitbox_json": "{\"x\": 0.5482, \"y\": 0.433, \"width\": 0.0521, \"height\": 0.0705}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 73,
+        "fields": {
+            "numero": 73,
+            "hitbox_json": "{\"x\": 0.6003, \"y\": 0.4291, \"width\": 0.0439, \"height\": 0.0784}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 74,
+        "fields": {
+            "numero": 74,
+            "hitbox_json": "{\"x\": 0.6441, \"y\": 0.4291, \"width\": 0.0658, \"height\": 0.0823}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 75,
+        "fields": {
+            "numero": 75,
+            "hitbox_json": "{\"x\": 0.71, \"y\": 0.4311, \"width\": 0.074, \"height\": 0.0764}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 48,
+        "fields": {
+            "numero": 48,
+            "hitbox_json": "{\"x\": 0.0436, \"y\": 0.6681, \"width\": 0.0576, \"height\": 0.0646}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 47,
+        "fields": {
+            "numero": 47,
+            "hitbox_json": "{\"x\": 0.1066, \"y\": 0.6661, \"width\": 0.0631, \"height\": 0.0705}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 46,
+        "fields": {
+            "numero": 46,
+            "hitbox_json": "{\"x\": 0.1779, \"y\": 0.6642, \"width\": 0.0576, \"height\": 0.0686}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 45,
+        "fields": {
+            "numero": 45,
+            "hitbox_json": "{\"x\": 0.2383, \"y\": 0.6622, \"width\": 0.0576, \"height\": 0.0764}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 44,
+        "fields": {
+            "numero": 44,
+            "hitbox_json": "{\"x\": 0.2959, \"y\": 0.6622, \"width\": 0.0658, \"height\": 0.0764}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 43,
+        "fields": {
+            "numero": 43,
+            "hitbox_json": "{\"x\": 0.3589, \"y\": 0.6603, \"width\": 0.0466, \"height\": 0.0725}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 42,
+        "fields": {
+            "numero": 42,
+            "hitbox_json": "{\"x\": 0.4138, \"y\": 0.6622, \"width\": 0.0384, \"height\": 0.0744}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 41,
+        "fields": {
+            "numero": 41,
+            "hitbox_json": "{\"x\": 0.4577, \"y\": 0.6661, \"width\": 0.0439, \"height\": 0.0666}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 31,
+        "fields": {
+            "numero": 31,
+            "hitbox_json": "{\"x\": 0.5043, \"y\": 0.6661, \"width\": 0.0494, \"height\": 0.0705}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 32,
+        "fields": {
+            "numero": 32,
+            "hitbox_json": "{\"x\": 0.5482, \"y\": 0.6642, \"width\": 0.0494, \"height\": 0.0705}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 33,
+        "fields": {
+            "numero": 33,
+            "hitbox_json": "{\"x\": 0.603, \"y\": 0.6603, \"width\": 0.0466, \"height\": 0.0686}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 34,
+        "fields": {
+            "numero": 34,
+            "hitbox_json": "{\"x\": 0.6496, \"y\": 0.6603, \"width\": 0.0576, \"height\": 0.0764}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 35,
+        "fields": {
+            "numero": 35,
+            "hitbox_json": "{\"x\": 0.7072, \"y\": 0.6622, \"width\": 0.0631, \"height\": 0.0725}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 36,
+        "fields": {
+            "numero": 36,
+            "hitbox_json": "{\"x\": 0.7703, \"y\": 0.6603, \"width\": 0.0686, \"height\": 0.0725}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 37,
+        "fields": {
+            "numero": 37,
+            "hitbox_json": "{\"x\": 0.8388, \"y\": 0.6603, \"width\": 0.0658, \"height\": 0.0725}"
+        }
+    },
+    {
+        "model": "odontograma.diente",
+        "pk": 38,
+        "fields": {
+            "numero": 38,
+            "hitbox_json": "{\"x\": 0.9047, \"y\": 0.6603, \"width\": 0.0631, \"height\": 0.0725}"
+        }
+    }
+]

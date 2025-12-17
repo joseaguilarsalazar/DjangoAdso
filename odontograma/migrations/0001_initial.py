@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
             name='DienteOdontograma',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('iconoModificado', models.ImageField(blank=True, null=True, upload_to=odontograma.models.odontograma_upload_path)),
+                ('iconoModificado', models.ImageField(blank=True, null=True, upload_to='legacy_placeholder/')),
                 ('datosRecuadro', models.CharField(blank=True, default='', max_length=3)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
