@@ -4,15 +4,14 @@ from .views import (
     DienteViewSet,
     OdontogramaViewSet,
     CasoMultidentalViewSet,
-    DienteOdontogramaViewSet,
+    HallazgoViewSet
 )
 
 router = DefaultRouter()
 router.register(r'dientes', DienteViewSet)
 router.register(r'odontogramas', OdontogramaViewSet)
 router.register(r'casos_multidental', CasoMultidentalViewSet)
-router.register(r'diente_odontograma', DienteOdontogramaViewSet)
-
+router.register(r'hallazgos', HallazgoViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

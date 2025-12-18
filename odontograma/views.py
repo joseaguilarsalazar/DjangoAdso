@@ -6,23 +6,23 @@ from core.models import Paciente
 
 from .models import (
     Odontograma, 
-    Diente, 
-    DienteOdontograma, 
+    Diente,  
     CasoMultidental,
+    Hallazgo,
     )
 
 from .serializers import (
     OdontogramaSerializer, 
     DienteSerializer, 
-    DienteOdontogramaSerializer, 
     CasoMultidentalSerializer,
+    HallazgoSerializer,
     )
 
 from .filters import (
     OdontogramaFilter, 
     DienteFilter, 
-    DienteOdontogramaFilter, 
     CasoMultidentalFilter,
+    HallazgoFilter,
     )
 # Create your views here.
 
@@ -70,24 +70,24 @@ class DienteViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated()]
 
 
-class DienteOdontogramaViewSet(viewsets.ModelViewSet):
-    queryset = DienteOdontograma.objects.all().order_by('id')
-    serializer_class = DienteOdontogramaSerializer
+class CasoMultidentalViewSet(viewsets.ModelViewSet):
+    queryset = CasoMultidental.objects.all().order_by('id')
+    serializer_class = CasoMultidentalSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_class = DienteOdontogramaFilter
+    filterset_class = CasoMultidentalFilter
     ordering_fields = '__all__'
 
     def get_permissions(self):
         if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
             return [AllowAny()]
         return [IsAuthenticated()]
+    
 
-
-class CasoMultidentalViewSet(viewsets.ModelViewSet):
-    queryset = CasoMultidental.objects.all().order_by('id')
-    serializer_class = CasoMultidentalSerializer
+class HallazgoViewSet(viewsets.ModelViewSet):
+    queryset = Hallazgo.objects.all().order_by('id')
+    serializer_class = HallazgoSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_class = CasoMultidentalFilter
+    filterset_class = HallazgoFilter
     ordering_fields = '__all__'
 
     def get_permissions(self):

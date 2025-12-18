@@ -527,6 +527,7 @@ class CierreDeCajaApiView(APIView):
             if group_by == 'pacientes':
                 ingresos_data = [
                     {
+                        'id' : i.id,
                         'paciente': f"{i.tratamientoPaciente.paciente.nomb_pac} {i.tratamientoPaciente.paciente.apel_pac}"
                         if i.tratamientoPaciente else "Unknown",
                         'monto': i.monto,
