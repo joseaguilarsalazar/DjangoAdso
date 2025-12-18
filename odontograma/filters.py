@@ -2,7 +2,8 @@ import django_filters
 from .models import (
     Odontograma, 
     Diente, 
-    CasoMultidental
+    CasoMultidental,
+    Hallazgo
     )
 
 
@@ -31,3 +32,12 @@ class CasoMultidentalFilter(django_filters.FilterSet):
     class Meta:
         model = CasoMultidental
         fields = ['odontograma_id', 'diente1', 'diente2', 'caso', 'paciente_id']
+
+
+class HallazgoFilter(django_filters.FilterSet):
+    odontograma_id = django_filters.NumberFilter(field_name="odontograma__id")
+    diente_numero = django_filters.NumberFilter(field_name="diente__numero")
+    
+    class Meta:
+        model = Hallazgo
+        fields = ['odontograma_id', 'diente_numero']

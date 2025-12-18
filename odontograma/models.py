@@ -2,16 +2,18 @@ from django.db import models
 from core.models import Paciente
 
 class Odontograma(models.Model):
-    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
+    paciente = models.ForeignKey(
+        Paciente, 
+        on_delete=models.CASCADE,
+        related_name='odontogramas' # Allows accessing via paciente.odontogramas.all()
+    )
     
-    # --- VISUAL LAYER ---
-    # Instead of images, we store the "Digital Paper" state here.
-    # This contains all the paths, lines, and colors drawn on the full map.
-    # Frontend library (Fabric.js/Konva) dumps the entire canvas to this JSON.
-    diagrama_json = models.JSONField(null=True, blank=True, help_text="Full canvas drawing data")
-    
-    # Capture the final look as one single image for quick previews/PDFs
-    # (Optional, but recommended for performance)
+    drawings = models.JSONField(
+        default=dict, 
+        blank=True, 
+        help_text="Normalized vector paths grouped by Tooth ID"
+    )
+
     preview_image = models.ImageField(upload_to='odontogramas/previews/', null=True, blank=True)
 
     especificaciones = models.TextField(max_length=2000, blank=True)
@@ -19,9 +21,18 @@ class Odontograma(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-created_at'] # Shows newest charts first by default
 
     def __str__(self):
         return f"Odontograma {self.paciente} - {self.created_at.date()}"
+    
+    @property
+    def teeth_treated_count(self):
+        """Helper to count how many teeth have drawings"""
+        if self.drawings:
+            return len(self.drawings.keys())
+        return 0
 
 
 class Diente(models.Model):
@@ -29,12 +40,8 @@ class Diente(models.Model):
     STATIC TABLE (Populate once).
     Serves as the 'Map Configuration'.
     """
-    numero = models.IntegerField(unique=True)  # 11, 12... 85
+    numero = models.IntegerField(unique=True)
     
-    # --- ZOOM LOGIC ---
-    # These coordinates tell the UI where to 'camera zoom' on the base image
-    # when this tooth is selected. 
-    # Example: {'x': 100, 'y': 200, 'width': 50, 'height': 80}
     hitbox_json = models.JSONField(help_text="Coordinates for zoom/click detection on the master map")
 
     def __str__(self):

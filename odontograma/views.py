@@ -8,18 +8,21 @@ from .models import (
     Odontograma, 
     Diente,  
     CasoMultidental,
+    Hallazgo,
     )
 
 from .serializers import (
     OdontogramaSerializer, 
     DienteSerializer, 
     CasoMultidentalSerializer,
+    HallazgoSerializer,
     )
 
 from .filters import (
     OdontogramaFilter, 
     DienteFilter, 
     CasoMultidentalFilter,
+    HallazgoFilter,
     )
 # Create your views here.
 
@@ -72,6 +75,19 @@ class CasoMultidentalViewSet(viewsets.ModelViewSet):
     serializer_class = CasoMultidentalSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = CasoMultidentalFilter
+    ordering_fields = '__all__'
+
+    def get_permissions(self):
+        if self.request.method in ['GET', 'HEAD', 'OPTIONS']:
+            return [AllowAny()]
+        return [IsAuthenticated()]
+    
+
+class HallazgoViewSet(viewsets.ModelViewSet):
+    queryset = Hallazgo.objects.all().order_by('id')
+    serializer_class = HallazgoSerializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = HallazgoFilter
     ordering_fields = '__all__'
 
     def get_permissions(self):

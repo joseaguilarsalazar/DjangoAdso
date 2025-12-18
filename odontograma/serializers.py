@@ -4,6 +4,7 @@ from .models import (
     Diente,
     CasoMultidental,
     Odontograma,
+    Hallazgo
 )
 from django.conf import settings
 import boto3
@@ -25,5 +26,11 @@ class CasoMultidentalSerializer(ModelSerializer):
 class OdontogramaSerializer(ModelSerializer):
     class Meta:
         model = Odontograma
+        fields = '__all__'
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+class HallazgoSerializer(ModelSerializer):
+    class Meta:
+        model = Hallazgo
         fields = '__all__'
         read_only_fields = ['id', 'created_at', 'updated_at']
