@@ -18,6 +18,7 @@ class Odontograma(models.Model):
 
     especificaciones = models.TextField(max_length=2000, blank=True)
     observaciones = models.TextField(max_length=2000, blank=True)
+    multi_tooth_drawings = models.JSONField(default=list, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
