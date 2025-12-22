@@ -49,29 +49,16 @@ class Diente(models.Model):
 
 
 class Hallazgo(models.Model):
-    """
-    DATA LAYER (The Logical/Legal part).
-    Even if the doctor 'draws' the caries, they usually select a condition 
-    to populate the legal text report automatically.
-    """
     odontograma = models.ForeignKey(Odontograma, related_name='hallazgos', on_delete=models.CASCADE)
     diente = models.ForeignKey(Diente, on_delete=models.PROTECT)
     
-    # e.g., 'Caries', 'Restauración', 'Ausente'
     condicion = models.CharField(max_length=50) 
     
-    # Specifics like 'Mesial', 'Distal', 'Oclusal'
     superficie = models.CharField(max_length=50, blank=True, null=True) 
-
-    # Colors required by COP (Colegio de Odontólogos del Perú)
-    # This helps if you need to reconstruct statistics (e.g. "Count Red vs Blue")
-    estado = models.CharField(max_length=10, choices=[('GOOD', 'Bueno/Azul'), ('BAD', 'Malo/Rojo')])
+    estado = models.CharField(max_length=10, blank=True, null=True, choices=[('GOOD', 'Bueno/Azul'), ('BAD', 'Malo/Rojo')])
 
     class Meta:
-        # Ensures we don't have duplicate 'Caries' entries for the same tooth in one chart
-        # But allows multiple findings like (Caries + Fracture) on the same tooth? 
-        # If yes, remove this unique_together. If strict, keep it.
-        unique_together = ('odontograma', 'diente', 'condicion')
+        unique_together = ('odontograma', 'diente')
     
 
 class CasoMultidental(models.Model):
