@@ -133,6 +133,7 @@ class OdontogramaAPIView(APIView):
             "toothStates": tooth_states,       # Transformed Dict
             "especificaciones": odontograma.especificaciones,
             "observaciones": odontograma.observaciones,
+            "multiToothDrawings": odontograma.multi_tooth_drawings,
             "id": odontograma.id,              # Useful for updates
             "updated_at": odontograma.updated_at
         })
@@ -158,6 +159,7 @@ class OdontogramaAPIView(APIView):
         odontograma.drawings = data.get('drawings', {})
         odontograma.especificaciones = data.get('especificaciones', '')
         odontograma.observaciones = data.get('observaciones', '')
+        odontograma.multi_tooth_drawings = data.get('multiToothDrawings', [])
         odontograma.save()
 
         # 3. Save Hallazgos (The Tooth Codes)
