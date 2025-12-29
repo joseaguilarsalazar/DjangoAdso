@@ -3,6 +3,11 @@ from .models import Cita, Clinica
 from .utils.chatwoot_manager import ChatwootManager
 from .utils.TelegramApiManager import TelegramApiManager
 from datetime import date, timedelta
+from .models import Paciente
+import logging
+import time
+
+logger = logging.getLogger(__name__)
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def send_cita_reminder(self, cita_id: int):
@@ -83,3 +88,71 @@ Esta es la lista detallada de citas registradas hoy:\n"""
             chat_id=clinica.telegram_chat_id,
             text=reporte
         )
+
+ENCUESTA_TEMPLATE = {
+    "name": "encuesta_pacientes",
+    "category": "MARKETING",
+    "language": "es"
+}
+
+@shared_task
+def enviar_encuesta_masiva_task():
+    """
+    Envía el template de encuesta a todos los pacientes únicos.
+    Se ejecuta en background para evitar timeouts.
+    """
+    manager = ChatwootManager()
+    
+    # 1. Obtener pacientes con teléfono (optimizamos la query para traer solo lo necesario)
+    # select_related('clinica') evita hacer una query extra por cada paciente para chequear la clínica
+    pacientes = Paciente.objects.exclude(telefono__isnull=True).exclude(telefono__exact='').select_related('clinica')
+    
+    mensajes_enviados = 0
+    numeros_procesados = set() # Set para evitar duplicados
+    errores = 0
+
+    logger.info(f"🚀 Iniciando campaña masiva de encuestas a {pacientes.count()} candidatos potenciales.")
+
+    for paciente in pacientes:
+        # Normalizar teléfono (simple)
+        telefono = str(paciente.telefono).strip().replace(' ', '')
+        
+        # --- LÓGICA DE DEDUPLICACIÓN ---
+        if telefono in numeros_procesados:
+            continue # Ya enviamos a este número (quizás es la mamá de otro paciente)
+        
+        numeros_procesados.add(telefono)
+
+        # --- SELECCIÓN DE INBOX ---
+        # Usamos la misma lógica que en tus signals
+        inbox_alias = 'adso_iquitos_instance' # Default
+        if paciente.clinica and paciente.clinica.nomb_clin == 'Clinica Dental Filial Yurimaguas':
+            inbox_alias = 'adso_instance'
+
+        # --- PREPARACIÓN DE VARIABLES ---
+        # Asumo que el template es: "Hola {{1}}, ayúdanos con una encuesta..."
+        # Si tu template NO tiene variables, deja la lista vacía: variables = []
+        variables = [paciente.nombres.split()[0]] # Solo el primer nombre para ser amigable
+
+        try:
+            # Enviar Template
+            manager.send_template(
+                number=telefono,
+                template_name=ENCUESTA_TEMPLATE["name"],
+                category=ENCUESTA_TEMPLATE["category"],
+                language=ENCUESTA_TEMPLATE["language"],
+                variables=variables,
+            )
+            mensajes_enviados += 1
+            
+            # ⚠️ IMPORTANTE: Rate Limiting
+            # WhatsApp puede bloquearte si envías masivamente muy rápido.
+            # Dormir 0.5 o 1 segundo entre mensajes es una buena práctica de seguridad.
+            time.sleep(0.5) 
+
+        except Exception as e:
+            logger.error(f"❌ Error enviando a {telefono}: {e}")
+            errores += 1
+
+    logger.info(f"🏁 Campaña finalizada. Enviados: {mensajes_enviados}. Errores: {errores}. Duplicados ignorados: {len(numeros_procesados)}")
+    return f"Enviados: {mensajes_enviados}, Errores: {errores}"

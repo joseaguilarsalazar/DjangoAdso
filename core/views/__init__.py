@@ -33,6 +33,8 @@ from .statisticsViews import (
     CitasHistogramaApiView,
     IngresosEgresosHistogramaApiView,
 )
+from EncuestaView import TriggerSurveyBroadcastView
+from recent_patients import RecentPatientsCountView
 
 __all__ = [
     # coreViewsets
@@ -70,6 +72,8 @@ __all__ = [
     'MedicoListAPIView',
     "HistorialApiView",
     "TodayScheduleApi",
+    "RecentPatientsCountView",
+    "TriggerSurveyBroadcastView",
 
     # statisticsViews
     "CitasHistogramaApiView",

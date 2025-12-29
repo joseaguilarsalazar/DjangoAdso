@@ -18,6 +18,24 @@ env = environ.Env(DEBUG=(bool, False))
 
 logger = logging.getLogger(__name__)
 
+TEMPLATES = {
+    "notificacion_cita_medico ": {
+        "name": "notificacion_cita_medico ",
+        "category": "UTILITY",
+        "language": "es"
+    },
+    "notificacion_cita_paciente": {
+        "name": "notificacion_cita_paciente",
+        "category": "UTILITY",
+        "language": "es"
+    },
+    "encuesta_pacientes": {
+        "name" : "encuesta_pacientes",
+        "category": "MARKETING",
+        "language": "es"
+    }
+}
+
 class ChatwootManager:
     """
     Manager to interact with Chatwoot API v1.
@@ -210,6 +228,69 @@ class ChatwootManager:
             
         except Exception as e:
             logger.error(f"Failed to check inbox state: {e}")
+            return {"ok": False, "error": str(e)}
+
+    def send_template(self, number: str, template_name: str, category: str = "MARKETING", language: str = "es", variables: list = None, header_params: dict = None):
+        """
+        Sends a WhatsApp Template message. 
+        Crucial for starting conversations (outside 24h window) or sending specific notifications.
+
+        :param template_name: The exact name of the template in Facebook Business Manager (e.g., 'appointment_reminder')
+        :param category: 'MARKETING', 'UTILITY', or 'AUTHENTICATION'
+        :param language: Language code, e.g., 'es', 'es_PE', 'en_US'
+        :param variables: List of body variables in order. ['John', '10:00 AM'] maps to {{1}}, {{2}}
+        :param header_params: Dict for header media/text if valid. E.g., {'type': 'image', 'url': '...'}
+        """
+        inbox_id = self.default_inbox_id
+        
+        # 1. Validate & Get IDs (Same logic as send_message)
+        if not self._validate_number(number):
+            logger.error(f"❌ Invalid Number: {number}")
+            return {"ok": False, "error": "Invalid number"}
+
+        try:
+            contact_id = self._get_or_create_contact(number, inbox_id)
+            conversation_id = self._get_conversation_id(contact_id, inbox_id)
+            
+            # 2. Construct Variable Map (Chatwoot expects {"1": "val", "2": "val"})
+            body_params = {}
+            if variables:
+                for i, var in enumerate(variables):
+                    body_params[str(i + 1)] = str(var)
+
+            # 3. Construct Payload
+            # Chatwoot API v1 requires 'template_params' inside the body
+            payload = {
+                "content": f"Template: {template_name}", # Fallback text for internal UI
+                "message_type": "outgoing",
+                "private": False,
+                "template_params": {
+                    "name": template_name,
+                    "category": category,
+                    "language": language,
+                    "processed_params": {
+                        "body": body_params
+                    }
+                }
+            }
+
+            # Add Header params if they exist (for templates with images/documents)
+            if header_params:
+                # payload['template_params']['processed_params']['header'] = header_params
+                # Note: Chatwoot implementation for headers can vary slightly by version. 
+                # Standard is usually: {"media_url": "...", "media_type": "image"} inside 'header'
+                payload['template_params']['processed_params']['header'] = header_params
+
+            url = f"{self.base_url}/api/v1/accounts/{self.account_id}/conversations/{conversation_id}/messages"
+            
+            logger.info(f"📤 Sending Template '{template_name}' to {number}")
+            resp = requests.post(url, json=payload, headers=self.headers)
+            resp.raise_for_status()
+            
+            return {"ok": True, "status_code": resp.status_code, "response": resp.json()}
+
+        except Exception as e:
+            logger.error(f"❌ Template Failed: {e}")
             return {"ok": False, "error": str(e)}
 
 if __name__ == "__main__":

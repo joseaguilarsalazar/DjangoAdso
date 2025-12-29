@@ -7,168 +7,193 @@ import logging
 from .tasks import send_cita_reminder
 from datetime import datetime, timedelta
 from django.conf import settings
-from .utils.TelegramApiManager import TelegramApiManager  # Adjust import path as needed
+from .utils.TelegramApiManager import TelegramApiManager
 from .models import Cita
+
 # Set up logging
 logger = logging.getLogger(__name__)
 
-# Spanish day names mapping
+# Configuración de Plantillas de WhatsApp
+# NOTA: Asegúrate de que el orden de las variables aquí coincida EXACTAMENTE
+# con el orden de {{1}}, {{2}}, {{3}} en tu administrador de WhatsApp de Meta.
+TEMPLATES = {
+    "notificacion_cita_medico": {
+        "name": "notificacion_cita_medico", # Debe coincidir con Meta
+        "category": "UTILITY",
+        "language": "es"
+    },
+    "notificacion_cita_paciente": {
+        "name": "notificacion_cita_paciente", # Debe coincidir con Meta
+        "category": "UTILITY",
+        "language": "es"
+    },
+    "encuesta_pacientes": {
+        "name": "encuesta_pacientes",
+        "category": "MARKETING",
+        "language": "es"
+    }
+}
+
 DIAS_SEMANA = {
-    0: 'Lunes',
-    1: 'Martes', 
-    2: 'Miércoles',
-    3: 'Jueves',
-    4: 'Viernes',
-    5: 'Sábado',
-    6: 'Domingo'
+    0: 'Lunes', 1: 'Martes', 2: 'Miércoles', 3: 'Jueves', 
+    4: 'Viernes', 5: 'Sábado', 6: 'Domingo'
 }
 
 @receiver(post_save, sender=Cita)
 def notify_appointment_created_updated(sender, instance: Cita, created: bool, **kwargs):
     """
-    Notify medics and patients when an appointment is created or updated.
-    Also sends a notification to the Clinic's Telegram Group.
+    Notifica a médicos y pacientes usando Plantillas de WhatsApp (Templates).
     """
     if getattr(instance, "_skip_signal", False):
-        return  # 👈 Don’t run if flagged
+        return
     
     if not instance.medico or not instance.paciente:
-        logger.warning(f"Appointment {instance.id} missing doctor or patient information")
+        logger.warning(f"Cita {instance.id} falta información de doctor o paciente")
         return
     
     doctor = instance.medico
     paciente = instance.paciente
     
-    # Get day name in Spanish
-    # Ensure DIAS_SEMANA is defined or imported
-    DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+    # 1. Preparar datos comunes
     dia_nombre = DIAS_SEMANA[instance.fecha.weekday()]
-    
-    # Format date properly
     fecha_formateada = instance.fecha.strftime('%d/%m/%Y')
+    hora_formateada = str(instance.hora)
     
-    # Create messages based on action
-    if created:
-        # New appointment created
-        mssg_pct = f'''✅ Se ha programado su cita para el día {dia_nombre}
-{fecha_formateada} a las {instance.hora}.
-Doctor: {doctor.name}'''
-        
-        mssg_dtr = f'''📅 Nueva cita programada:
-Paciente: {paciente.__str__()}
-Fecha: {dia_nombre} {fecha_formateada}
-Hora: {instance.hora}
-Doctor asignado: {doctor.name if doctor else 'No asignado'}'''
-    else:
-        # Appointment updated
-        mssg_pct = f'''📝 Su cita ha sido reprogramada para el día {dia_nombre}
-{fecha_formateada} a las {instance.hora}.
-Doctor: {doctor.name}'''
-        
-        mssg_dtr = f'''📝 Cita actualizada:
-Paciente: {paciente.__str__()}
-Nueva fecha: {dia_nombre} {fecha_formateada}
-Nueva hora: {instance.hora}
-Doctor asignado: {doctor.name if doctor else 'No asignado'}'''
-    
-    # 1. Send standard notifications (WhatsApp/SMS via your internal helper)
-    # _send_notifications(doctor, paciente, mssg_dtr, mssg_pct, instance.id, "created/updated")
+    # 2. Determinar la instancia de Chatwoot (Inbox Alias)
+    # Asumimos que tu ChatwootManager maneja estos alias internamente o los mapea a IDs
+    inbox_alias = 'adso_iquitos_instance' # Default
+    if paciente.clinica and paciente.clinica.nomb_clin == 'Clinica Dental Filial Yurimaguas':
+        inbox_alias = 'adso_instance'
 
-    # 2. TELEGRAM NOTIFICATION TO CLINIC GROUP
-    # We check if the patient belongs to a clinic and if that clinic has a chat ID
+    manager = ChatwootManager()
+
+    # --- NOTIFICACIÓN AL PACIENTE (Vía Template) ---
+    patient_phone = getattr(paciente, 'telf_pac', None) or getattr(paciente, 'telefono', None)
+    
+    if patient_phone:
+        tmpl_pac = TEMPLATES["notificacion_cita_paciente"]
+        
+        # DEFINIR VARIABLES DEL TEMPLATE PACIENTE
+        # IMPORTANTE: Ajusta este orden según tu plantilla real en Meta.
+        # Ejemplo: "Hola {{1}}, su cita es el {{2}} a las {{3}} con el Dr. {{4}}"
+        paciente_vars = [
+            dia_nombre,       # {{1}} matches {{dia}}
+            fecha_formateada, # {{2}} matches {{fecha}}
+            hora_formateada,  # {{3}} matches {{hora}}
+            doctor.name       # {{4}} matches {{nombre}}
+        ]
+
+        try:
+            # Nota: Asegúrate de actualizar tu ChatwootManager.send_template para aceptar 'message_instance' 
+            # o pasar el inbox_id correspondiente si usas múltiples inboxes.
+            manager.send_template(
+                number=patient_phone,
+                template_name=tmpl_pac["name"],
+                category=tmpl_pac["category"],
+                language=tmpl_pac["language"],
+                variables=paciente_vars,
+                # message_instance=inbox_alias # Descomentar si modificaste send_template para aceptar esto
+            )
+            logger.info(f"Template enviado al paciente {paciente.id} para cita {instance.id}")
+        except Exception as e:
+            logger.error(f"Error enviando template paciente: {e}")
+    else:
+        logger.warning(f"Paciente {paciente.id} no tiene teléfono")
+
+    # --- NOTIFICACIÓN AL DOCTOR (Vía Template) ---
+    if hasattr(doctor, 'telefono') and doctor.telefono:
+        tmpl_doc = TEMPLATES["notificacion_cita_medico"]
+        
+        # DEFINIR VARIABLES DEL TEMPLATE DOCTOR
+        # Ejemplo: "Hola Dr {{1}}, tiene nueva cita con {{2}} el {{3}} a las {{4}}"
+        doctor_vars = [
+            doctor.name,                    # {{1}} Nombre Doctor
+            str(paciente),                  # {{2}} Nombre Paciente
+            f"{dia_nombre} {fecha_formateada}", # {{3}} Fecha
+            hora_formateada                 # {{4}} Hora
+        ]
+
+        try:
+            manager.send_template(
+                number=doctor.telefono,
+                template_name=tmpl_doc["name"],
+                category=tmpl_doc["category"],
+                language=tmpl_doc["language"],
+                variables=doctor_vars,
+                # message_instance=inbox_alias 
+            )
+            logger.info(f"Template enviado al doctor {doctor.id} para cita {instance.id}")
+        except Exception as e:
+            logger.error(f"Error enviando template doctor: {e}")
+    else:
+        logger.warning(f"Doctor {doctor.id} no tiene teléfono")
+
+
+    # 3. NOTIFICACIÓN A GRUPO TELEGRAM (Texto plano)
+    # Mantenemos esto igual ya que Telegram no requiere templates estrictos
     if paciente.clinica and paciente.clinica.telegram_chat_id:
         try:
+            telegram_msg = f'''📅 Cita {'Creada' if created else 'Actualizada'}:
+Paciente: {paciente}
+Fecha: {dia_nombre} {fecha_formateada}
+Hora: {hora_formateada}
+Doctor: {doctor.name}'''
+            
             telegram = TelegramApiManager()
             telegram.telegram_notify(
                 chat_id=paciente.clinica.telegram_chat_id,
-                text=mssg_dtr  # Reusing the doctor's message for the group
+                text=telegram_msg
             )
         except Exception as e:
-            # We log the error but don't stop the flow (so the celery task still schedules)
-            logger.error(f"Failed to send Telegram group notification for Cita {instance.id}: {e}")
+            logger.error(f"Error Telegram Group: {e}")
 
-    # 3. Schedule Reminder Task (Only on Create)
+    # 4. TAREA DE RECORDATORIO (Solo al crear)
     if created:
-        # Build the appointment datetime in project TZ
         naive_dt = datetime.combine(instance.fecha, instance.hora)
         tz = timezone.get_current_timezone()
         cita_dt = naive_dt.replace(tzinfo=tz) if timezone.is_naive(naive_dt) else naive_dt.astimezone(tz)
-
-        # Use settings for offset, default to 3 hours
-        # offset = getattr(settings, "REMINDER_OFFSET_HOURS", 3)
+        
         offset = 3 
         remind_at = cita_dt - timedelta(hours=offset)
-
-        # If reminder time has passed (e.g., appointment soon), send shortly
         eta = remind_at if remind_at > timezone.now() else timezone.now() + timedelta(minutes=1)
-
-        # Schedule the reminder task
+        
         send_cita_reminder.apply_async((instance.id,), eta=eta)
+
 
 @receiver(post_delete, sender=Cita)
 def notify_appointment_deleted(sender, instance: Cita, **kwargs):
     """
-    Notify medics and patients when an appointment is deleted
+    Notifica eliminación.
+    NOTA: Se mantiene con send_message (texto) porque no se proveyó template de cancelación.
+    Si la ventana de 24h está cerrada, esto fallará.
     """
     if getattr(instance, "_skip_signal", False):
-        return  # 👈 Don’t run if flagged
+        return
     if not instance.medico or not instance.paciente:
-        logger.warning(f"Deleted appointment missing doctor or patient information")
         return
     
     doctor = instance.medico
     paciente = instance.paciente
     
-    # Get day name in Spanish
     dia_nombre = DIAS_SEMANA.get(instance.fecha.weekday(), 'N/A')
     fecha_formateada = instance.fecha.strftime('%d/%m/%Y')
     
-    # Cancellation messages
-    mssg_pct = f'''❌ Su cita del día {dia_nombre} {fecha_formateada}
-               a las {instance.hora} ha sido cancelada.
-               Por favor contacte al consultorio si quisiera reprogramar.'''
-    
-    mssg_dtr = f'''❌ Cita cancelada:
-               Paciente: {paciente.__str__()}
-               Fecha: {dia_nombre} {fecha_formateada}
-               Hora: {instance.hora}'''
-    
-    # Send messages
-    _send_notifications(doctor, paciente, mssg_dtr, mssg_pct, instance.id, "deleted")
+    # Mensajes de texto plano (Fallback)
+    mssg_pct = f"❌ Su cita del {dia_nombre} {fecha_formateada} a las {instance.hora} ha sido cancelada."
+    mssg_dtr = f"❌ Cita cancelada: {paciente} - {dia_nombre} {fecha_formateada} {instance.hora}"
 
-def _send_notifications(doctor, paciente: Paciente, mssg_dtr: str, mssg_pct: str, appointment_id: int, action: str):
-    """
-    Helper function to send notifications to doctor and patient
-    """
-    chatwootMngr = ChatwootManager()
+    # Determinar instancia
+    inbox_alias = 'adso_iquitos_instance'
+    if paciente.clinica and paciente.clinica.nomb_clin == 'Clinica Dental Filial Yurimaguas':
+        inbox_alias = 'adso_instance'
+        
+    manager = ChatwootManager()
     
-    # Send message to doctor
+    # Intentar enviar al Doctor
     if hasattr(doctor, 'telefono') and doctor.telefono:
-        try:
-            if paciente.clinica.nomb_clin == 'Clinica Dental Filial Yurimaguas':
-                response = chatwootMngr.send_message(doctor.telefono, mssg_dtr, message_instance='adso_instance')
-            else:
-                response = chatwootMngr.send_message(doctor.telefono, mssg_dtr, message_instance='adso_iquitos_instance')
-            if not response['ok']:
-                logger.error(response['error'])
-            logger.info(f"Successfully sent {action} notification to doctor {doctor.id} for appointment {appointment_id}")
-        except Exception as e:
-            logger.error(f"Failed to send {action} notification to doctor {doctor.id} for appointment {appointment_id}: {str(e)}")
-    else:
-        logger.warning(f"Doctor {doctor.id} has no phone number for appointment {appointment_id}")
-    
-    # Send message to patient
+        manager.send_message(doctor.telefono, mssg_dtr, message_instance=inbox_alias)
+        
+    # Intentar enviar al Paciente
     patient_phone = getattr(paciente, 'telf_pac', None) or getattr(paciente, 'telefono', None)
     if patient_phone:
-        try:
-            if paciente.clinica.nomb_clin == 'Clinica Dental Filial Yurimaguas':
-                response = chatwootMngr.send_message(patient_phone, mssg_pct, message_instance='adso_instance')
-            else:
-                response = chatwootMngr.send_message(patient_phone, mssg_pct, message_instance='adso_iquitos_instance')
-            if not response['ok']:
-                logger.error(response['error'])
-            logger.info(f"Successfully sent {action} notification to patient {paciente.id} for appointment {appointment_id}")
-        except Exception as e:
-            logger.error(f"Failed to send {action} notification to patient {paciente.id} for appointment {appointment_id}: {str(e)}")
-    else:
-        logger.warning(f"Patient {paciente.id} has no phone number for appointment {appointment_id}")
+        manager.send_message(patient_phone, mssg_pct, message_instance=inbox_alias)
