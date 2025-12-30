@@ -277,17 +277,28 @@ class ChatwootManager:
                     }
                 ]
 
+            template_params_data = {
+                "name": template_name,
+                "category": category,
+                "language": language, 
+                "processed_params": processed_params
+            }
+
             # 5. Final Payload
             payload = {
                 "content": f"Template: {template_name}", 
                 "message_type": "outgoing",
                 "private": False,
                 "content_type": "text", 
-                "template_params": {
-                    "name": template_name,
-                    "category": category,
-                    "language": language,
-                    "processed_params": processed_params
+                
+                # LOCATION A: For modern Chatwoot
+                "template_params": template_params_data,
+                
+                # LOCATION B: The "Self-Hosted" Safety Net
+                # Many self-hosted instances ONLY read from here because 
+                # the top-level key gets stripped by the API controller.
+                "additional_attributes": {
+                    "template_params": template_params_data
                 }
             }
 
