@@ -143,7 +143,7 @@ def enviar_encuesta_masiva_task(target_number=None):
         inbox_alias = 'adso_iquitos_instance' 
 
         # --- PREPARACIÓN DE VARIABLES ---
-        variables = [paciente.nomb_pac.split()[0]] if paciente.nomb_pac else ["Paciente"]
+        variables = []
 
         try:
             # Enviar Template
