@@ -105,14 +105,18 @@ def enviar_encuesta_masiva_task(target_number=None):
     manager = ChatwootManager()
     
     # 1. Base Query: Obtener pacientes con teléfono válido
-    pacientes = Paciente.objects.exclude(telefono__isnull=True).exclude(telefono__exact='').select_related('clinica')
+    pacientes = Paciente.objects.exclude(telf_pac__isnull=True).exclude(telf_pac__exact='').select_related('clinica')
     
     # --- MODIFICACIÓN: FILTRO DE MODO TEST ---
     if target_number:
         # Si recibimos un número, filtramos el QuerySet para traer SOLO ese paciente.
         # Usamos icontains por si el input es "999888777" pero en DB está como "999 888 777"
         # (Aunque lo ideal es que coincida exacto, esto ayuda en testing)
-        pacientes = pacientes.filter(telefono__icontains=target_number)
+        pacientes = pacientes.filter(telf_pac__icontains=target_number)
+        if pacientes.count() == 0:
+            new_paciente = Paciente(telf_pac=target_number, nombres="Test", apellidos="Paciente")
+            new_paciente.save()
+            pacientes = Paciente.objects.filter(id=new_paciente.id)
         logger.info(f"🧪 MODO TEST ACTIVADO: Buscando coincidencias para '{target_number}'")
     else:
         logger.info(f"🚀 Iniciando campaña masiva de encuestas a {pacientes.count()} candidatos potenciales.")
@@ -127,7 +131,7 @@ def enviar_encuesta_masiva_task(target_number=None):
 
     for paciente in pacientes:
         # Normalizar teléfono
-        telefono = str(paciente.telefono).strip().replace(' ', '')
+        telefono = str(paciente.telf_pac).strip().replace(' ', '')
         
         # --- LÓGICA DE DEDUPLICACIÓN ---
         if telefono in numeros_procesados:
