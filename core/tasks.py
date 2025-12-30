@@ -6,6 +6,7 @@ from datetime import date, timedelta
 from .models import Paciente
 import logging
 import time
+from chatbot.models import Chat
 
 logger = logging.getLogger(__name__)
 
@@ -96,43 +97,51 @@ ENCUESTA_TEMPLATE = {
 }
 
 @shared_task
-def enviar_encuesta_masiva_task():
+def enviar_encuesta_masiva_task(target_number=None):
     """
     Envía el template de encuesta a todos los pacientes únicos.
-    Se ejecuta en background para evitar timeouts.
+    Si target_number está presente, filtra solo ese número para testing.
     """
     manager = ChatwootManager()
     
-    # 1. Obtener pacientes con teléfono (optimizamos la query para traer solo lo necesario)
-    # select_related('clinica') evita hacer una query extra por cada paciente para chequear la clínica
+    # 1. Base Query: Obtener pacientes con teléfono válido
     pacientes = Paciente.objects.exclude(telefono__isnull=True).exclude(telefono__exact='').select_related('clinica')
     
+    # --- MODIFICACIÓN: FILTRO DE MODO TEST ---
+    if target_number:
+        # Si recibimos un número, filtramos el QuerySet para traer SOLO ese paciente.
+        # Usamos icontains por si el input es "999888777" pero en DB está como "999 888 777"
+        # (Aunque lo ideal es que coincida exacto, esto ayuda en testing)
+        pacientes = pacientes.filter(telefono__icontains=target_number)
+        logger.info(f"🧪 MODO TEST ACTIVADO: Buscando coincidencias para '{target_number}'")
+    else:
+        logger.info(f"🚀 Iniciando campaña masiva de encuestas a {pacientes.count()} candidatos potenciales.")
+
     mensajes_enviados = 0
-    numeros_procesados = set() # Set para evitar duplicados
+    numeros_procesados = set() 
     errores = 0
 
-    logger.info(f"🚀 Iniciando campaña masiva de encuestas a {pacientes.count()} candidatos potenciales.")
+    if not pacientes.exists() and target_number:
+        logger.warning(f"⚠️ MODO TEST: No se encontró ningún paciente con el número {target_number}")
+        return "Modo Test: Número no encontrado en DB."
 
     for paciente in pacientes:
-        # Normalizar teléfono (simple)
+        # Normalizar teléfono
         telefono = str(paciente.telefono).strip().replace(' ', '')
         
         # --- LÓGICA DE DEDUPLICACIÓN ---
         if telefono in numeros_procesados:
-            continue # Ya enviamos a este número (quizás es la mamá de otro paciente)
+            continue 
         
         numeros_procesados.add(telefono)
 
         # --- SELECCIÓN DE INBOX ---
-        # Usamos la misma lógica que en tus signals
-        inbox_alias = 'adso_iquitos_instance' # Default
+        inbox_alias = 'adso_iquitos_instance' 
         if paciente.clinica and paciente.clinica.nomb_clin == 'Clinica Dental Filial Yurimaguas':
             inbox_alias = 'adso_instance'
 
         # --- PREPARACIÓN DE VARIABLES ---
-        # Asumo que el template es: "Hola {{1}}, ayúdanos con una encuesta..."
-        # Si tu template NO tiene variables, deja la lista vacía: variables = []
-        variables = [paciente.nombres.split()[0]] # Solo el primer nombre para ser amigable
+        variables = [paciente.nombres.split()[0]] if paciente.nombres else ["Paciente"]
 
         try:
             # Enviar Template
@@ -144,15 +153,21 @@ def enviar_encuesta_masiva_task():
                 variables=variables,
             )
             mensajes_enviados += 1
+
+            # Buscar o crear Chat para rastrear estado
+            chat = Chat.objects.filter(number=telefono).first()
+            if not chat:
+                chat = Chat.objects.create(number=telefono)
             
-            # ⚠️ IMPORTANTE: Rate Limiting
-            # WhatsApp puede bloquearte si envías masivamente muy rápido.
-            # Dormir 0.5 o 1 segundo entre mensajes es una buena práctica de seguridad.
+            chat.current_state = "esperando_encuesta"
+            chat.save()
+
+            # ⚠️ Rate Limiting (Solo si es masivo, en test no es tan critico pero no hace daño)
             time.sleep(0.5) 
 
         except Exception as e:
             logger.error(f"❌ Error enviando a {telefono}: {e}")
             errores += 1
 
-    logger.info(f"🏁 Campaña finalizada. Enviados: {mensajes_enviados}. Errores: {errores}. Duplicados ignorados: {len(numeros_procesados)}")
-    return f"Enviados: {mensajes_enviados}, Errores: {errores}"
+    logger.info(f"🏁 Finalizado. Enviados: {mensajes_enviados}. Errores: {errores}. Mode: {'TEST' if target_number else 'MASIVO'}")
+    return f"Mode: {'TEST' if target_number else 'BROADCAST'} | Enviados: {mensajes_enviados}, Errores: {errores}"

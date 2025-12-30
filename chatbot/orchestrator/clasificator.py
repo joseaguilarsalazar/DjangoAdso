@@ -66,6 +66,12 @@ INTENTS_AND_DESCRIPTIONS = {
             {"user": "En la tarde, por favor."},
             {"assistant": "Perfecto, te registro el martes a las 4 PM."}
         ]
+    },
+    "esperando_encuesta": {
+        "description": "El sistema ha enviado una encuesta al paciente y está esperando su respuesta. Si el chat se encuentra en este estado no cambies el estado, otro algoritmo se encargara de este flujo.",
+        "example": [
+            'no applicable'
+        ]
     }
 }
 

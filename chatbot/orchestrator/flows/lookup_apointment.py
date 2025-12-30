@@ -16,6 +16,8 @@ def lookup_appointment(messages, chat: Chat):
     transcription, history = transcript_history(messages)
     
     prompt = f"""
+    Fecha de hoy: {datetime.now().strftime('%Y-%m-%d')}
+    Dia de la semana de hoy: {datetime.now().strftime('%A')}
     Eres un asistente que debe detectar si en el historial de mensajes dado, el paciente especifica
     que dia exactamente le gustaria agendar una cita, en el siguiente formato json:
     {{
@@ -29,6 +31,9 @@ def lookup_appointment(messages, chat: Chat):
         'fecha_cita': null,
         'day_cita': null
     }}
+
+    Atencion: Si el usuario es obtuso diciendo cosas como: la proxima semana, entre hoy y el viernes,
+    el proximo mes, etc. responde la proxima fecha mas cercana que este en esos valores..
     Aqui la historia del chat, si hay mas de 2 fechas mencionadas para citas, elige la ultima mencionada:
     {transcription}
     """

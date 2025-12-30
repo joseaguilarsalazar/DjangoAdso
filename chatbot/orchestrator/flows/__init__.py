@@ -4,6 +4,7 @@ from .lookup_apointment import lookup_appointment
 from .register_appointment import register_appointment
 from .register_patient import register_patient
 from .lookup_patient import lookup_patient
+from .esperando_encuesta import esperando_encuesta
 
 __all__ = [
     "data_confirmation",
@@ -12,4 +13,5 @@ __all__ = [
     "register_appointment",
     "register_patient",
     "lookup_patient",
+    "esperando_encuesta"
 ]

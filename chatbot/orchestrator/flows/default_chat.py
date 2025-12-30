@@ -37,7 +37,10 @@ def default_chat(messages, chat: Chat):
     ejemplo 4:
     -paciente: A cuanto estan la computadoras?
     -tu: hola, te estas comunicando con ADSO, no podemos ayudarte con eso, somos una clinica dental, si necesesitas ayuda con algun tema de salud bucal estamos felizes de ayudarte
-    
+    informacion general: {{
+    'ciudades de atencion' : 'Iquitos, Yurimaguas'
+    'precio consulta basica' : '50 soles',
+    }}
     Esta es la conversación reciente con el paciente, las ultimas interacciones, tu solo debes
     responder de forma coherente al ultimo mensaje, siguiendo el hilo de la conversacion:
     {transcript}

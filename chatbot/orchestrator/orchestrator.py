@@ -11,6 +11,7 @@ class Orchestrator:
             "default": flows.default_chat,
             "data_confirmation": flows.data_confirmation,
             "lookup_patient": flows.lookup_patient,
+            "esperando_encuesta" : flows.esperando_encuesta,
         }
 
     def handle_message(self, text, chat: Chat, instance: str):
