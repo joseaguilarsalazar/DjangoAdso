@@ -28,7 +28,7 @@ class EncuestaSatisfaccion(models.Model):
         ('NEGATIVE', 'Negativo'),
     ]
 
-    paciente = models.ForeignKey('Paciente', on_delete=models.CASCADE, related_name='encuestas')
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='encuestas')
     fecha = models.DateTimeField(auto_now_add=True)
     texto_original = models.TextField()
     
