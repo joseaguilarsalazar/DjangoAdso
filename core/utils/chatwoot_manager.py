@@ -241,51 +241,36 @@ class ChatwootManager:
             contact_id = self._get_or_create_contact(number, inbox_id)
             conversation_id = self._get_conversation_id(contact_id, inbox_id)
             
-            # --- 1. BUILD PROCESSED PARAMS ---
-            processed_params = {}
-            
-            if variables:
-                body_params = [{"type": "text", "text": str(var)} for var in variables]
-                processed_params["body"] = body_params
-
-            if header_params:
-                processed_params["header"] = header_params
-
-            if button_suffix:
-                processed_params["buttons"] = [{"type": "url", "parameter": str(button_suffix)}]
-
-            # --- 2. CONSTRUCT TEMPLATE PARAMS ---
-            template_params_data = {
+            # WhatsApp Business API format
+            template_params = {
                 "name": template_name,
+                "language": language,
                 "category": category,
-                "language": language
             }
+            
+            # Add namespace if your templates have one (check Meta Business Manager)
+            # template_params["namespace"] = "your_namespace_here"
+            
+            # Add parameters in the format WhatsApp expects
+            if variables or header_params or button_suffix:
+                params = {}
+                
+                if variables:
+                    params["body"] = [{"type": "text", "text": str(v)} for v in variables]
+                
+                if header_params:
+                    params["header"] = header_params
+                
+                if button_suffix:
+                    params["button"] = [{"type": "url", "parameter": str(button_suffix)}]
+                
+                template_params["params"] = params  # Try "params" instead of "processed_params"
 
-            if processed_params:
-                template_params_data["processed_params"] = processed_params
-
-            # --- 3. PAYLOAD (CRITICAL FIXES) ---
+            # Minimal payload
             payload = {
-                "content": f"Template: {template_name}",
+                "content": template_name,
                 "message_type": "outgoing",
-                "private": False,
-                "content_type": "input_select",  # ✅ CHANGED from "text"
-                
-                # ✅ ADD content_attributes
-                "content_attributes": {
-                    "submitted_values": [
-                        {
-                            "name": template_name,
-                            "category": category,
-                            "language": language,
-                            "namespace": "",  # Add if you have a namespace
-                            "processed_params": processed_params if processed_params else {}
-                        }
-                    ]
-                },
-                
-                # Keep template_params for API validation
-                "template_params": template_params_data
+                "template_params": template_params
             }
 
             if campaign_id:
@@ -293,16 +278,21 @@ class ChatwootManager:
 
             url = f"{self.base_url}/api/v1/accounts/{self.account_id}/conversations/{conversation_id}/messages"
             
-            logger.info(f"📤 Sending Template '{template_name}' to {number}")
-            logger.debug(f"Payload: {json.dumps(payload, indent=2)}")  # Debug logging
+            logger.info(f"📤 Payload: {json.dumps(payload, indent=2)}")
             
             resp = requests.post(url, json=payload, headers=self.headers)
+            
+            if resp.status_code >= 400:
+                logger.error(f"❌ Status {resp.status_code}: {resp.text}")
+            
             resp.raise_for_status()
             
             return {"ok": True, "status_code": resp.status_code, "response": resp.json()}
 
         except Exception as e:
-            logger.error(f"❌ Template Failed: {e}")
+            logger.error(f"❌ Failed: {e}")
+            if hasattr(e, 'response') and e.response:
+                logger.error(f"Response: {e.response.text}")
             return {"ok": False, "error": str(e)}
 
 if __name__ == "__main__":
