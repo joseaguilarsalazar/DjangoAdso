@@ -241,36 +241,43 @@ class ChatwootManager:
             contact_id = self._get_or_create_contact(number, inbox_id)
             conversation_id = self._get_conversation_id(contact_id, inbox_id)
             
-            # WhatsApp Business API format
+            # Build template params
             template_params = {
                 "name": template_name,
                 "language": language,
                 "category": category,
             }
             
-            # Add namespace if your templates have one (check Meta Business Manager)
-            # template_params["namespace"] = "your_namespace_here"
-            
-            # Add parameters in the format WhatsApp expects
+            # Add parameters if they exist
             if variables or header_params or button_suffix:
-                params = {}
+                processed_params = {}
                 
                 if variables:
-                    params["body"] = [{"type": "text", "text": str(v)} for v in variables]
+                    # Try indexed format: {"1": "value1", "2": "value2"}
+                    processed_params["body"] = {str(i+1): str(v) for i, v in enumerate(variables)}
                 
                 if header_params:
-                    params["header"] = header_params
+                    processed_params["header"] = header_params
                 
                 if button_suffix:
-                    params["button"] = [{"type": "url", "parameter": str(button_suffix)}]
+                    processed_params["buttons"] = [{"type": "url", "parameter": str(button_suffix)}]
                 
-                template_params["params"] = params  # Try "params" instead of "processed_params"
+                template_params["processed_params"] = processed_params
 
-            # Minimal payload
+            # ✅ KEY FIX: Add content_type and content_attributes
             payload = {
                 "content": template_name,
                 "message_type": "outgoing",
-                "template_params": template_params
+                "content_type": "input_select",  # This tells Chatwoot it's a template
+                "private": False,
+                "template_params": template_params,
+                # Try adding this too:
+                "content_attributes": {
+                    "items": [{
+                        "title": template_name,
+                        "value": template_name
+                    }]
+                }
             }
 
             if campaign_id:
@@ -286,6 +293,8 @@ class ChatwootManager:
                 logger.error(f"❌ Status {resp.status_code}: {resp.text}")
             
             resp.raise_for_status()
+            
+            logger.info(f"✅ Response: {resp.json()}")
             
             return {"ok": True, "status_code": resp.status_code, "response": resp.json()}
 
