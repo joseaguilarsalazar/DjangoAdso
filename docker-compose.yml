@@ -1,0 +1,90 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "7000:7000"
+    depends_on:
+      - dbadso
+      - redis
+      - minio
+    networks:
+      - app_network
+
+  dbadso:
+    image: postgres:15
+    container_name: postgres_db_adso
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis_server
+    restart: always
+    env_file:
+      - .env
+    networks:
+      - app_network
+
+  # ✅ MINIO SERVICE
+  minio:
+    image: minio/minio
+    container_name: minio_server
+    restart: always
+    command: server /data --console-address ":9001"
+    ports:
+      # LEFT SIDE is your computer (Host), RIGHT SIDE is Docker (Container)
+      # We use 9020 on host to avoid "Address already in use" error
+      - "9020:9000" # API: Host 9020 -> Container 9000
+      - "9021:9001" # Console: Host 9021 -> Container 9001
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password1234
+    volumes:
+      - minio_data:/data
+    networks:
+      - app_network
+    extra_hosts:
+      - "minio.mishu-soft.org:host-gateway"
+      - "minio.adso-peru.org:host-gateway"
+
+  # ✅ BUCKET CREATOR
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    networks:
+      - app_network
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5; 
+      /usr/bin/mc alias set myminio http://minio:9000 admin password1234;
+      /usr/bin/mc mb myminio/devadsobucket;
+      exit 0;
+      "
+      # Note: We use http://minio:9000 above because inside the Docker network,
+      # MinIO is always listening on port 9000, regardless of the mapped host port.
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
