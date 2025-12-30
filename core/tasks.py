@@ -132,6 +132,8 @@ def enviar_encuesta_masiva_task(target_number=None):
     for paciente in pacientes:
         # Normalizar teléfono
         telefono = str(paciente.telf_pac).strip().replace(' ', '')
+
+        print(telefono)
         
         # --- LÓGICA DE DEDUPLICACIÓN ---
         if telefono in numeros_procesados:
