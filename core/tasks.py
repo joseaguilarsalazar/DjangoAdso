@@ -141,8 +141,6 @@ def enviar_encuesta_masiva_task(target_number=None):
 
         # --- SELECCIÓN DE INBOX ---
         inbox_alias = 'adso_iquitos_instance' 
-        if paciente.clinica and paciente.clinica.nomb_clin == 'Clinica Dental Filial Yurimaguas':
-            inbox_alias = 'adso_instance'
 
         # --- PREPARACIÓN DE VARIABLES ---
         variables = [paciente.nomb_pac.split()[0]] if paciente.nomb_pac else ["Paciente"]
