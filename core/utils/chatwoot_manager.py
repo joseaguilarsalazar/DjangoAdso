@@ -230,7 +230,7 @@ class ChatwootManager:
             logger.error(f"Failed to check inbox state: {e}")
             return {"ok": False, "error": str(e)}
 
-    def send_template(self, number: str, template_name: str, category: str = "MARKETING", language: str = "es", variables: list = None, header_params: dict = None, button_suffix: str = None):
+    def send_template(self, number: str, template_name: str, category: str = "MARKETING", language: str = "es", variables: list = None, header_params: dict = None, button_suffix: str = None, campaign_id: int = None):
         inbox_id = self.default_inbox_id
         
         if not self._validate_number(number):
@@ -240,47 +240,53 @@ class ChatwootManager:
         try:
             contact_id = self._get_or_create_contact(number, inbox_id)
             conversation_id = self._get_conversation_id(contact_id, inbox_id)
-        
             
-            body_params = {}
+            # --- 1. BUILD PROCESSED PARAMS (Only if needed) ---
+            processed_params = {}
+            
+            # Add Body only if variables exist
             if variables:
-                for i, var in enumerate(variables):
-                    body_params[str(i + 1)] = str(var)
-            else:
-                # TRICK: Send a dummy variable. If the template has no variables, Meta ignores this.
-                # If it HAS a variable (that we missed), this fixes the crash.
-                body_params["1"] = "."
+                body_params = {str(i + 1): str(var) for i, var in enumerate(variables)}
+                processed_params["body"] = body_params
 
-            # --- 2. RESTORE PROCESSED PARAMS ---
-            # We MUST send this structure, or Chatwoot sends Plain Text.
-            processed_params = {
-                "body": body_params
-            }
+            # Add Header only if params exist
+            if header_params:
+                processed_params["header"] = header_params
 
+            # Add Buttons only if needed
+            if button_suffix:
+                processed_params["buttons"] = [{"type": "url", "parameter": str(button_suffix)}]
+
+            # --- 2. CONSTRUCT TEMPLATE PARAMS ---
             template_params_data = {
                 "name": template_name,
                 "category": category,
-                "language": language,
-                "processed_params": processed_params, 
+                "language": language
             }
 
-            # 5. Final Payload
+            # CRITICAL FIX: Only add 'processed_params' key if it's NOT empty.
+            # The manual log shows this key is MISSING for static templates.
+            if processed_params:
+                template_params_data["processed_params"] = processed_params
+
+            # --- 3. PAYLOAD (Replicating the UI Log) ---
             payload = {
                 "content": f"Template: {template_name}", 
                 "message_type": "outgoing",
                 "private": False,
-                "content_type": "input_select", 
+                "content_type": "text",  # The log shows "text", so we stick to it.
                 
-                # LOCATION A: For modern Chatwoot
+                # API Controller validation needs this:
                 "template_params": template_params_data,
                 
-                # LOCATION B: The "Self-Hosted" Safety Net
-                # Many self-hosted instances ONLY read from here because 
-                # the top-level key gets stripped by the API controller.
+                # Internal Worker needs this (Duplicate it here):
                 "additional_attributes": {
                     "template_params": template_params_data
                 }
             }
+
+            if campaign_id:
+                payload["campaign_id"] = campaign_id
 
             url = f"{self.base_url}/api/v1/accounts/{self.account_id}/conversations/{conversation_id}/messages"
             
