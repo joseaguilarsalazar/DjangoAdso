@@ -241,44 +241,34 @@ class ChatwootManager:
             contact_id = self._get_or_create_contact(number, inbox_id)
             conversation_id = self._get_conversation_id(contact_id, inbox_id)
             
-            # Build template params
-            template_params = {
-                "name": template_name,
-                "language": language,
-                "category": category,
-            }
+            # Build processed_params
+            processed_params = {}
             
-            # Add parameters if they exist
-            if variables or header_params or button_suffix:
-                processed_params = {}
-                
-                if variables:
-                    # Try indexed format: {"1": "value1", "2": "value2"}
-                    processed_params["body"] = {str(i+1): str(v) for i, v in enumerate(variables)}
-                
-                if header_params:
-                    processed_params["header"] = header_params
-                
-                if button_suffix:
-                    processed_params["buttons"] = [{"type": "url", "parameter": str(button_suffix)}]
-                
-                template_params["processed_params"] = processed_params
+            if variables:
+                # WhatsApp format: indexed parameters
+                processed_params["body"] = {str(i+1): str(v) for i, v in enumerate(variables)}
+            
+            if header_params:
+                processed_params["header"] = header_params
+            
+            if button_suffix:
+                processed_params["buttons"] = [{"type": "url", "parameter": str(button_suffix)}]
 
-            # ✅ KEY FIX: Add content_type and content_attributes
+            # ✅ CORRECT FORMAT: Remove content_type, use proper template structure
             payload = {
-                "content": template_name,
                 "message_type": "outgoing",
-                "content_type": "input_select",  # This tells Chatwoot it's a template
                 "private": False,
-                "template_params": template_params,
-                # Try adding this too:
-                "content_attributes": {
-                    "items": [{
-                        "title": template_name,
-                        "value": template_name
-                    }]
+                "template_params": {
+                    "name": template_name,
+                    "category": category,
+                    "language": language,
+                    "namespace": ""  # Add your namespace if you have one
                 }
             }
+            
+            # Only add processed_params if there are variables
+            if processed_params:
+                payload["template_params"]["processed_params"] = processed_params
 
             if campaign_id:
                 payload["campaign_id"] = campaign_id
@@ -294,9 +284,16 @@ class ChatwootManager:
             
             resp.raise_for_status()
             
-            logger.info(f"✅ Response: {resp.json()}")
+            response_data = resp.json()
+            logger.info(f"✅ Response: {response_data}")
             
-            return {"ok": True, "status_code": resp.status_code, "response": resp.json()}
+            # Check if source_id is populated (means WhatsApp message was sent)
+            if response_data.get('source_id'):
+                logger.info(f"✅ WhatsApp message sent! Source ID: {response_data['source_id']}")
+            else:
+                logger.warning(f"⚠️ Message created but no source_id - may not have been sent to WhatsApp")
+            
+            return {"ok": True, "status_code": resp.status_code, "response": response_data}
 
         except Exception as e:
             logger.error(f"❌ Failed: {e}")
