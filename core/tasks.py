@@ -114,7 +114,7 @@ def enviar_encuesta_masiva_task(target_number=None):
         # (Aunque lo ideal es que coincida exacto, esto ayuda en testing)
         pacientes = pacientes.filter(telf_pac__icontains=target_number)
         if pacientes.count() == 0:
-            new_paciente = Paciente(telf_pac=target_number, nombres="Test", apellidos="Paciente")
+            new_paciente = Paciente(telf_pac=target_number, nomb_pac="Test", apel_pac="Paciente")
             new_paciente.save()
             pacientes = Paciente.objects.filter(id=new_paciente.id)
         logger.info(f"🧪 MODO TEST ACTIVADO: Buscando coincidencias para '{target_number}'")
