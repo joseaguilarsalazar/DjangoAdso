@@ -247,41 +247,10 @@ class ChatwootManager:
                 for i, var in enumerate(variables):
                     body_params[str(i + 1)] = str(var)
 
-            # 2. Processed Params Container
-            processed_params = {
-                "body": body_params
-            }
-
-            # 3. Header Params (with Filename check)
-            if header_params:
-                processed_params["header"] = header_params
-                # Ensure filename exists if it's a document, otherwise WhatsApp shows 'untitled'
-                if header_params.get('media_type') == 'document' and 'filename' not in header_params:
-                     # Fallback name if none provided
-                    processed_params["header"]['filename'] = "Archivo.pdf"
-
-            # 4. Buttons (The Safe Way)
-            # Only add this block if we actually have a dynamic variable for the button
-            if button_suffix:
-                processed_params["buttons"] = [
-                    {
-                        "type": "url",
-                        "index": 0, # Assuming the dynamic button is the first one
-                        "sub_type": "url",
-                        "parameters": [
-                            {
-                                "type": "text",
-                                "text": str(button_suffix)
-                            }
-                        ]
-                    }
-                ]
-
             template_params_data = {
                 "name": template_name,
                 "category": category,
                 "language": language, 
-                "processed_params": processed_params
             }
 
             # 5. Final Payload
