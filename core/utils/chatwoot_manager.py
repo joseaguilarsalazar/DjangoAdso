@@ -230,7 +230,7 @@ class ChatwootManager:
             logger.error(f"Failed to check inbox state: {e}")
             return {"ok": False, "error": str(e)}
 
-    def send_template(self, number: str, template_name: str, category: str = "MARKETING", language: str = "es", variables: list = None, header_params: dict = None):
+    def send_template(self, number: str, template_name: str, category: str = "MARKETING", language: str = "es", variables: list = None, header_params: dict = None, button_suffix: str = None):
         inbox_id = self.default_inbox_id
         
         if not self._validate_number(number):
@@ -241,29 +241,48 @@ class ChatwootManager:
             contact_id = self._get_or_create_contact(number, inbox_id)
             conversation_id = self._get_conversation_id(contact_id, inbox_id)
             
-            # --- 1. Build the Body Params {"1": "value", "2": "value"} ---
+            # 1. Body Params
             body_params = {}
             if variables:
                 for i, var in enumerate(variables):
-                    # WhatsApp requires string values for parameters
                     body_params[str(i + 1)] = str(var)
 
-            # --- 2. Build processed_params ---
-            # We explicitly start with body. 
+            # 2. Processed Params Container
             processed_params = {
                 "body": body_params
             }
 
-            # Only add header if it strictly exists and is not empty
-            # Sending "header": null often breaks the validation
+            # 3. Header Params (with Filename check)
             if header_params:
                 processed_params["header"] = header_params
+                # Ensure filename exists if it's a document, otherwise WhatsApp shows 'untitled'
+                if header_params.get('media_type') == 'document' and 'filename' not in header_params:
+                     # Fallback name if none provided
+                    processed_params["header"]['filename'] = "Archivo.pdf"
 
-            # --- 3. Construct the Payload strictly according to Docs ---
+            # 4. Buttons (The Safe Way)
+            # Only add this block if we actually have a dynamic variable for the button
+            if button_suffix:
+                processed_params["buttons"] = [
+                    {
+                        "type": "url",
+                        "index": 0, # Assuming the dynamic button is the first one
+                        "sub_type": "url",
+                        "parameters": [
+                            {
+                                "type": "text",
+                                "text": str(button_suffix)
+                            }
+                        ]
+                    }
+                ]
+
+            # 5. Final Payload
             payload = {
                 "content": f"Template: {template_name}", 
                 "message_type": "outgoing",
                 "private": False,
+                "content_type": "text", 
                 "template_params": {
                     "name": template_name,
                     "category": category,
@@ -275,10 +294,6 @@ class ChatwootManager:
             url = f"{self.base_url}/api/v1/accounts/{self.account_id}/conversations/{conversation_id}/messages"
             
             logger.info(f"📤 Sending Template '{template_name}' to {number}")
-            
-            # Debug: Print payload to verify structure matches docs exactly
-            # print(json.dumps(payload, indent=2)) 
-            
             resp = requests.post(url, json=payload, headers=self.headers)
             resp.raise_for_status()
             
