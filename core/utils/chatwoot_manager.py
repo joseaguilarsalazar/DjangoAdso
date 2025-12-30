@@ -262,7 +262,7 @@ class ChatwootManager:
                     "name": template_name,
                     "category": category,
                     "language": language,
-                    "namespace": ""  # Add your namespace if you have one
+                    "namespace": self._get_inbox_namespace(inbox_id)  # Add your namespace if you have one
                 }
             }
             
@@ -300,6 +300,25 @@ class ChatwootManager:
             if hasattr(e, 'response') and e.response:
                 logger.error(f"Response: {e.response.text}")
             return {"ok": False, "error": str(e)}
+
+    
+    def _get_inbox_namespace(self, inbox_id: int):
+        """Get WhatsApp namespace from inbox configuration"""
+        url = f"{self.base_url}/api/v1/accounts/{self.account_id}/inboxes/{inbox_id}"
+        try:
+            resp = requests.get(url, headers=self.headers)
+            resp.raise_for_status()
+            inbox_data = resp.json()
+            
+            # The namespace might be in provider_config or additional_attributes
+            provider_config = inbox_data.get('provider_config', {})
+            namespace = provider_config.get('business_account_id') or provider_config.get('namespace', '')
+            
+            logger.info(f"📋 Inbox namespace: {namespace}")
+            return namespace
+        except Exception as e:
+            logger.error(f"❌ Failed to get namespace: {e}")
+            return ""
 
 if __name__ == "__main__":
     # Test execution
