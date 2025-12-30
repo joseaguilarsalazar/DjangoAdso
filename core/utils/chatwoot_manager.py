@@ -240,17 +240,28 @@ class ChatwootManager:
         try:
             contact_id = self._get_or_create_contact(number, inbox_id)
             conversation_id = self._get_conversation_id(contact_id, inbox_id)
+        
             
-            # 1. Body Params
             body_params = {}
             if variables:
                 for i, var in enumerate(variables):
                     body_params[str(i + 1)] = str(var)
+            else:
+                # TRICK: Send a dummy variable. If the template has no variables, Meta ignores this.
+                # If it HAS a variable (that we missed), this fixes the crash.
+                body_params["1"] = "."
+
+            # --- 2. RESTORE PROCESSED PARAMS ---
+            # We MUST send this structure, or Chatwoot sends Plain Text.
+            processed_params = {
+                "body": body_params
+            }
 
             template_params_data = {
                 "name": template_name,
                 "category": category,
-                "language": language, 
+                "language": language,
+                "processed_params": processed_params, 
             }
 
             # 5. Final Payload
@@ -258,7 +269,7 @@ class ChatwootManager:
                 "content": f"Template: {template_name}", 
                 "message_type": "outgoing",
                 "private": False,
-                "content_type": "text", 
+                "content_type": "input_select", 
                 
                 # LOCATION A: For modern Chatwoot
                 "template_params": template_params_data,
