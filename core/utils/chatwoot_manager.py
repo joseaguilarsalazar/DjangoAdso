@@ -241,42 +241,44 @@ class ChatwootManager:
             contact_id = self._get_or_create_contact(number, inbox_id)
             conversation_id = self._get_conversation_id(contact_id, inbox_id)
             
-            # 2. Construct Variable Map
+            # --- 1. Build the Body Params {"1": "value", "2": "value"} ---
             body_params = {}
             if variables:
                 for i, var in enumerate(variables):
+                    # WhatsApp requires string values for parameters
                     body_params[str(i + 1)] = str(var)
 
-            # 3. Construct Template Parameters
-            template_params_payload = {
-                "name": template_name,
-                "category": category,
-                "language": language,
-                "processed_params": {
-                    "body": body_params
-                }
+            # --- 2. Build processed_params ---
+            # We explicitly start with body. 
+            processed_params = {
+                "body": body_params
             }
-            
-            if header_params:
-                template_params_payload['processed_params']['header'] = header_params
 
-            # 4. Construct Final Payload
-            # FIX: We add 'content_type': 'text' and duplicate params into 'additional_attributes'
+            # Only add header if it strictly exists and is not empty
+            # Sending "header": null often breaks the validation
+            if header_params:
+                processed_params["header"] = header_params
+
+            # --- 3. Construct the Payload strictly according to Docs ---
             payload = {
                 "content": f"Template: {template_name}", 
                 "message_type": "outgoing",
-                "content_type": "text",  # <--- CRITICAL: Defines the base type
                 "private": False,
-                "template_params": template_params_payload,
-                # Safety Net: Some Chatwoot versions look here for API-created messages
-                "additional_attributes": {
-                    "template_params": template_params_payload
+                "template_params": {
+                    "name": template_name,
+                    "category": category,
+                    "language": language,
+                    "processed_params": processed_params
                 }
             }
 
             url = f"{self.base_url}/api/v1/accounts/{self.account_id}/conversations/{conversation_id}/messages"
             
             logger.info(f"📤 Sending Template '{template_name}' to {number}")
+            
+            # Debug: Print payload to verify structure matches docs exactly
+            # print(json.dumps(payload, indent=2)) 
+            
             resp = requests.post(url, json=payload, headers=self.headers)
             resp.raise_for_status()
             
