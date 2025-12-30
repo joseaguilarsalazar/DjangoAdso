@@ -241,19 +241,16 @@ class ChatwootManager:
             contact_id = self._get_or_create_contact(number, inbox_id)
             conversation_id = self._get_conversation_id(contact_id, inbox_id)
             
-            # --- 1. BUILD PROCESSED PARAMS (Only if needed) ---
+            # --- 1. BUILD PROCESSED PARAMS ---
             processed_params = {}
             
-            # Add Body only if variables exist
             if variables:
-                body_params = {str(i + 1): str(var) for i, var in enumerate(variables)}
+                body_params = [{"type": "text", "text": str(var)} for var in variables]
                 processed_params["body"] = body_params
 
-            # Add Header only if params exist
             if header_params:
                 processed_params["header"] = header_params
 
-            # Add Buttons only if needed
             if button_suffix:
                 processed_params["buttons"] = [{"type": "url", "parameter": str(button_suffix)}]
 
@@ -264,25 +261,31 @@ class ChatwootManager:
                 "language": language
             }
 
-            # CRITICAL FIX: Only add 'processed_params' key if it's NOT empty.
-            # The manual log shows this key is MISSING for static templates.
             if processed_params:
                 template_params_data["processed_params"] = processed_params
 
-            # --- 3. PAYLOAD (Replicating the UI Log) ---
+            # --- 3. PAYLOAD (CRITICAL FIXES) ---
             payload = {
-                "content": f"Template: {template_name}", 
+                "content": f"Template: {template_name}",
                 "message_type": "outgoing",
                 "private": False,
-                "content_type": "text",  # The log shows "text", so we stick to it.
+                "content_type": "input_select",  # ✅ CHANGED from "text"
                 
-                # API Controller validation needs this:
-                "template_params": template_params_data,
+                # ✅ ADD content_attributes
+                "content_attributes": {
+                    "submitted_values": [
+                        {
+                            "name": template_name,
+                            "category": category,
+                            "language": language,
+                            "namespace": "",  # Add if you have a namespace
+                            "processed_params": processed_params if processed_params else {}
+                        }
+                    ]
+                },
                 
-                # Internal Worker needs this (Duplicate it here):
-                "additional_attributes": {
-                    "template_params": template_params_data
-                }
+                # Keep template_params for API validation
+                "template_params": template_params_data
             }
 
             if campaign_id:
@@ -291,6 +294,8 @@ class ChatwootManager:
             url = f"{self.base_url}/api/v1/accounts/{self.account_id}/conversations/{conversation_id}/messages"
             
             logger.info(f"📤 Sending Template '{template_name}' to {number}")
+            logger.debug(f"Payload: {json.dumps(payload, indent=2)}")  # Debug logging
+            
             resp = requests.post(url, json=payload, headers=self.headers)
             resp.raise_for_status()
             
