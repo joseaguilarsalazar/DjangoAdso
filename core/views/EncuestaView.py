@@ -24,7 +24,7 @@ class TriggerSurveyBroadcastView(APIView):
 
         # Pass the test_number to the Celery task
         # If test_number is None, the task should default to sending to everyone
-        task = enviar_encuesta_masiva_task.delay(target_number=test_number)
+        task = enviar_encuesta_masiva_task.delay(target_number=test_number, year=year)
 
         # Determine message based on mode
         mode_message = f"Modo TEST: Enviando únicamente a {test_number}" if test_number else "Modo MASIVO: Iniciando envío a toda la base de usuarios"
