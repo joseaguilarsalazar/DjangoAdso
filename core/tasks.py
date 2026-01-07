@@ -106,7 +106,7 @@ def enviar_encuesta_masiva_task(target_number=None):
     client = WhatsAppManager()
     
     # 2. Base Query
-    pacientes = Paciente.objects.exclude(telf_pac__isnull=True).exclude(telf_pac__exact='').select_related('clinica')
+    pacientes = Paciente.objects.exclude(telf_pac__isnull=True).exclude(telf_pac__exact='')
     
     # --- FILTRO DE MODO TEST ---
     if target_number:
