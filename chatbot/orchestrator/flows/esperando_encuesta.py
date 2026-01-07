@@ -9,7 +9,7 @@ from .default_chat import default_chat
 
 logger = logging.getLogger(__name__)
 
-def esperando_encuesta(messages, chat: Chat, instance: str):
+def esperando_encuesta(messages, chat: Chat):
     """
     Analyzes the patient's survey response to extract sentiment and actionable insights.
     """
