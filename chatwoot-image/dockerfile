@@ -1,0 +1,9 @@
+# 1. Use the official Chatwoot image as the base
+# Using 'latest' ensures you always get the newest version when you rebuild
+FROM chatwoot/chatwoot:latest
+
+# 2. Override the default start command
+# This creates a chain: 
+# First, it runs the database migration. 
+# If that succeeds (&&), it starts the Chatwoot server.
+CMD sh -c "bundle exec rails db:migrate && bundle exec rails s -b 0.0.0.0 -p 3000"
