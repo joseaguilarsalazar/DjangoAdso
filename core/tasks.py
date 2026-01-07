@@ -98,7 +98,7 @@ ENCUESTA_TEMPLATE = {
 }
 
 @shared_task
-def enviar_encuesta_masiva_task(target_number=None):
+def enviar_encuesta_masiva_task(target_number=None, year=None):
     """
     Envía el template de encuesta a todos los pacientes únicos usando la API Directa de Meta.
     """
@@ -122,6 +122,11 @@ def enviar_encuesta_masiva_task(target_number=None):
         logger.info(f"🧪 MODO TEST ACTIVADO: Enviando a '{target_number}'")
     else:
         logger.info(f"🚀 Iniciando campaña masiva a {pacientes.count()} pacientes.")
+
+    if year:
+        pacientes = pacientes.filter(cita__fecha__year=year).distinct()
+        
+        logger.info(f"📅 Filtro por año {year} aplicado. Pacientes restantes: {pacientes.count()}")
 
     mensajes_enviados = 0
     numeros_procesados = set() 
