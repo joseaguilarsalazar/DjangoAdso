@@ -7,6 +7,7 @@ from .models import Paciente
 import logging
 import time
 from chatbot.models import Chat
+from core.utils.whatsapp_manager import WhatsAppManager
 
 logger = logging.getLogger(__name__)
 
@@ -99,78 +100,87 @@ ENCUESTA_TEMPLATE = {
 @shared_task
 def enviar_encuesta_masiva_task(target_number=None):
     """
-    Envía el template de encuesta a todos los pacientes únicos.
-    Si target_number está presente, filtra solo ese número para testing.
+    Envía el template de encuesta a todos los pacientes únicos usando la API Directa de Meta.
     """
-    manager = ChatwootManager()
+    # 1. Instanciar el nuevo cliente directo
+    client = WhatsAppManager()
     
-    # 1. Base Query: Obtener pacientes con teléfono válido
-    pacientes = Paciente.objects.exclude(telf_pac__isnull=True).exclude(telf_pac__exact='').select_related('clinica')
+    # 2. Base Query
+    pacientes = Paciente.objects.exclude(telf_pac__isnull=True).exclude(telf_pac__exact='')
     
-    # --- MODIFICACIÓN: FILTRO DE MODO TEST ---
+    # --- FILTRO DE MODO TEST ---
     if target_number:
-        # Si recibimos un número, filtramos el QuerySet para traer SOLO ese paciente.
-        # Usamos icontains por si el input es "999888777" pero en DB está como "999 888 777"
-        # (Aunque lo ideal es que coincida exacto, esto ayuda en testing)
         pacientes = pacientes.filter(telf_pac__icontains=target_number)
+        
+        # Si no existe en DB, creamos uno temporal para probar
         if pacientes.count() == 0:
+            logger.info(f"🧪 Creando paciente dummy para test: {target_number}")
             new_paciente = Paciente(telf_pac=target_number, nomb_pac="Test", apel_pac="Paciente", clinica_id=1)
             new_paciente.save()
             pacientes = Paciente.objects.filter(id=new_paciente.id)
-        logger.info(f"🧪 MODO TEST ACTIVADO: Buscando coincidencias para '{target_number}'")
+            
+        logger.info(f"🧪 MODO TEST ACTIVADO: Enviando a '{target_number}'")
     else:
-        logger.info(f"🚀 Iniciando campaña masiva de encuestas a {pacientes.count()} candidatos potenciales.")
+        logger.info(f"🚀 Iniciando campaña masiva a {pacientes.count()} pacientes.")
 
     mensajes_enviados = 0
     numeros_procesados = set() 
     errores = 0
 
     if not pacientes.exists() and target_number:
-        logger.warning(f"⚠️ MODO TEST: No se encontró ningún paciente con el número {target_number}")
-        return "Modo Test: Número no encontrado en DB."
+        return "Modo Test: Error generando paciente."
 
     for paciente in pacientes:
         # Normalizar teléfono
-        telefono = str(paciente.telf_pac).strip().replace(' ', '')
-
-        print(telefono)
+        raw_phone = str(paciente.telf_pac).strip().replace(' ', '')
         
+        # --- FIX IMPORTANTE PARA META API ---
+        # Meta requiere el código de país (51) sin el símbolo '+'.
+        # Si el número tiene 9 dígitos (celular Perú), le agregamos 51.
+        if len(raw_phone) == 9:
+            telefono = f"51{raw_phone}"
+        elif raw_phone.startswith('+'):
+            telefono = raw_phone.replace('+', '')
+        else:
+            telefono = raw_phone
+
         # --- LÓGICA DE DEDUPLICACIÓN ---
         if telefono in numeros_procesados:
             continue 
         
         numeros_procesados.add(telefono)
 
-        # --- SELECCIÓN DE INBOX ---
-        inbox_alias = 'adso_iquitos_instance' 
-
-        # --- PREPARACIÓN DE VARIABLES ---
-        variables = []
-
         try:
-            # Enviar Template
-            manager.send_template(
-                number=telefono,
+            # --- NUEVA LÓGICA DE ENVÍO DIRECTO ---
+            # Como el template es texto plano, enviamos components vacío list []
+            # Si tuvieras variables en el futuro, usarías: client.build_components(...)
+            resp = client.send_template(
+                to_number=telefono,
                 template_name=ENCUESTA_TEMPLATE["name"],
-                category=ENCUESTA_TEMPLATE["category"],
-                language=ENCUESTA_TEMPLATE["language"],
-                variables=variables,
+                language_code=ENCUESTA_TEMPLATE["language"],
+                components=[] 
             )
-            mensajes_enviados += 1
 
-            # Buscar o crear Chat para rastrear estado
-            chat = Chat.objects.filter(number=telefono).first()
-            if not chat:
-                chat = Chat.objects.create(number=telefono)
-            
-            chat.current_state = "esperando_encuesta"
-            chat.save()
+            if resp['ok']:
+                mensajes_enviados += 1
+                
+                # --- ACTUALIZACIÓN DE ESTADO LOCAL ---
+                # Seguimos usando tu modelo Chat para saber a quién se le envió
+                chat = Chat.objects.filter(number=telefono).first()
+                if not chat:
+                    chat = Chat.objects.create(number=telefono)
+                
+                chat.current_state = "esperando_encuesta"
+                chat.save()
+            else:
+                logger.error(f"❌ Meta rechazó el mensaje a {telefono}: {resp.get('error')}")
+                errores += 1
 
-            # ⚠️ Rate Limiting (Solo si es masivo, en test no es tan critico pero no hace daño)
-            time.sleep(0.5) 
+            # Rate Limiting (Meta permite hasta 80 mensajes/seg, pero 0.1s es seguro y amable)
+            time.sleep(0.1) 
 
         except Exception as e:
-            logger.error(f"❌ Error enviando a {telefono}: {e}")
+            logger.error(f"❌ Excepción enviando a {telefono}: {e}")
             errores += 1
 
     logger.info(f"🏁 Finalizado. Enviados: {mensajes_enviados}. Errores: {errores}. Mode: {'TEST' if target_number else 'MASIVO'}")

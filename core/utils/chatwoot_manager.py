@@ -241,64 +241,55 @@ class ChatwootManager:
             contact_id = self._get_or_create_contact(number, inbox_id)
             conversation_id = self._get_conversation_id(contact_id, inbox_id)
             
-            # Build processed_params
+            # --- 1. BUILD PARAMS (Mimic UI behavior) ---
             processed_params = {}
             
+            # Add body only if we have variables
             if variables:
-                # WhatsApp format: indexed parameters
-                processed_params["body"] = {str(i+1): str(v) for i, v in enumerate(variables)}
+                body_params = {str(i + 1): str(var) for i, var in enumerate(variables)}
+                processed_params["body"] = body_params
             
+            # Add header/buttons if they exist
             if header_params:
                 processed_params["header"] = header_params
-            
             if button_suffix:
                 processed_params["buttons"] = [{"type": "url", "parameter": str(button_suffix)}]
 
-            # ✅ CORRECT FORMAT: Remove content_type, use proper template structure
+            # --- 2. THE SECRET SAUCE (From your successful logs) ---
+            template_params_data = {
+                "name": template_name,
+                "category": category,
+                "language": language,
+                "format_version": "legacy",  # <--- NEW: This was missing!
+                "processed_params": processed_params # <--- Keep this, even if empty {}
+            }
+
+            # --- 3. PAYLOAD ---
             payload = {
+                "content": f"Template: {template_name}", 
                 "message_type": "outgoing",
                 "private": False,
-                "template_params": {
-                    "name": template_name,
-                    "category": category,
-                    "language": language,
-                    "namespace": self._get_inbox_namespace(inbox_id)  # Add your namespace if you have one
+                "content_type": "text", 
+                
+                # We put the data ONLY in additional_attributes, matching the UI log
+                "additional_attributes": {
+                    "template_params": template_params_data
                 }
             }
-            
-            # Only add processed_params if there are variables
-            if processed_params:
-                payload["template_params"]["processed_params"] = processed_params
 
             if campaign_id:
                 payload["campaign_id"] = campaign_id
 
             url = f"{self.base_url}/api/v1/accounts/{self.account_id}/conversations/{conversation_id}/messages"
             
-            logger.info(f"📤 Payload: {json.dumps(payload, indent=2)}")
-            
+            logger.info(f"📤 Sending Template '{template_name}' to {number}")
             resp = requests.post(url, json=payload, headers=self.headers)
-            
-            if resp.status_code >= 400:
-                logger.error(f"❌ Status {resp.status_code}: {resp.text}")
-            
             resp.raise_for_status()
             
-            response_data = resp.json()
-            logger.info(f"✅ Response: {response_data}")
-            
-            # Check if source_id is populated (means WhatsApp message was sent)
-            if response_data.get('source_id'):
-                logger.info(f"✅ WhatsApp message sent! Source ID: {response_data['source_id']}")
-            else:
-                logger.warning(f"⚠️ Message created but no source_id - may not have been sent to WhatsApp")
-            
-            return {"ok": True, "status_code": resp.status_code, "response": response_data}
+            return {"ok": True, "status_code": resp.status_code, "response": resp.json()}
 
         except Exception as e:
-            logger.error(f"❌ Failed: {e}")
-            if hasattr(e, 'response') and e.response:
-                logger.error(f"Response: {e.response.text}")
+            logger.error(f"❌ Template Failed: {e}")
             return {"ok": False, "error": str(e)}
 
     

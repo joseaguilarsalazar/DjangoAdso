@@ -56,6 +56,8 @@ CORS_ALLOWED_ORIGINS = [
     'https://adso-ui.mishu-soft.org',
 ]
 
+META_WHATSAPP_TOKEN=env('META_WHATSAPP_TOKEN')
+META_PHONE_NUMBER_ID=env('META_PHONE_NUMBER_ID')
 
 # Application definition
 
