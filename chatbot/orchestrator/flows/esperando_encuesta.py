@@ -36,7 +36,7 @@ def esperando_encuesta(messages, chat: Chat):
             # Trying both field names 'telf_pac' (from previous tasks) and 'telefono' (from your snippet) just in case
             paciente = Paciente.objects.filter(telf_pac__icontains=clean_phone).first() 
             if not paciente:
-                 paciente = Paciente.objects.filter(telefono__icontains=clean_phone).first()
+                 paciente = Paciente.objects.filter(telf_pac__icontains=clean_phone).first()
 
             if paciente:
                 logger.info(f"✅ [Encuesta] Step 2: Patient found: {paciente} (ID: {paciente.id})")
