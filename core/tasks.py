@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from .models import Paciente
 import logging
 import time
-from chatbot.models import Chat
+from chatbot.models import Chat, Message
 from core.utils.whatsapp_manager import WhatsAppManager
 
 logger = logging.getLogger(__name__)
@@ -169,6 +169,24 @@ def enviar_encuesta_masiva_task(target_number=None):
                 chat = Chat.objects.filter(number=telefono).first()
                 if not chat:
                     chat = Chat.objects.create(number=telefono)
+
+                new_message = Message.objects.create(
+                    chat=chat,
+                    text = """Hola,
+Esperamos que te encuentres muy bien.
+
+En nuestra clínica valoramos mucho la confianza que nos brindaste este año al cuidar tu salud dental. Por eso, queremos seguir mejorando para ti y para cada uno de nuestros pacientes.
+
+Si deseas, nos encantaría que nos regales un breve comentario:
+* ¿Qué fue lo que más valoraste de nuestra atención?
+* ¿Hay algo que crees que podríamos mejorar?
+* ¿O alguna sugerencia para nuestro equipo?
+
+Tu opinión es muy importante para nosotros y nos ayuda a seguir creciendo y brindándote una atención cada vez más cercana y de calidad.
+
+¡Muchas gracias por ser parte de nuestra familia dental""",
+                    from_user=False,
+                    )
                 
                 chat.current_state = "esperando_encuesta"
                 chat.save()
