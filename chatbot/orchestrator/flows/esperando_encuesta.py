@@ -9,26 +9,49 @@ from .default_chat import default_chat
 
 logger = logging.getLogger(__name__)
 
-
 def esperando_encuesta(messages, chat: Chat, instance: str):
     """
     Analyzes the patient's survey response to extract sentiment and actionable insights.
     """
+    logger.info(f"📍 [Encuesta] Starting analysis for Chat ID: {chat.id}")
+
     # 1. Get the text context
-    transcription, history = transcript_history(messages)
+    try:
+        transcription, history = transcript_history(messages)
+        logger.info(f"📝 [Encuesta] Step 1: Transcription extracted. Length: {len(transcription)} chars. Text: '{transcription[:50]}...'")
+    except Exception as e:
+        logger.error(f"❌ [Encuesta] Step 1 Failed: Error extracting transcript: {e}")
+        return "Error procesando su respuesta."
 
     # 2. Identify the patient (Crucial for linking data)
-    # We assume the chat is linked to a phone, and we find the patient by that phone.
-    # Adjust this logic based on how you link Chats to Patients in your system.
-    phone_number = chat.phone_number # Assuming your Chat model has the phone number
+    paciente = None
     try:
-        # We strip the '+' or standardizing logic you use
-        clean_phone = phone_number.replace('+', '').strip()
-        paciente = Paciente.objects.filter(telefono__icontains=clean_phone).first()
-    except Exception:
+        # NOTE: standard Chat model field is usually 'number', verifying if 'phone_number' exists
+        phone_number = getattr(chat, 'number', getattr(chat, 'phone_number', None))
+        
+        if phone_number:
+            clean_phone = str(phone_number).replace('+', '').strip()
+            logger.info(f"🔍 [Encuesta] Step 2: Looking for patient with phone: {clean_phone}")
+            
+            # Trying both field names 'telf_pac' (from previous tasks) and 'telefono' (from your snippet) just in case
+            paciente = Paciente.objects.filter(telf_pac__icontains=clean_phone).first() 
+            if not paciente:
+                 paciente = Paciente.objects.filter(telefono__icontains=clean_phone).first()
+
+            if paciente:
+                logger.info(f"✅ [Encuesta] Step 2: Patient found: {paciente} (ID: {paciente.id})")
+            else:
+                logger.warning(f"⚠️ [Encuesta] Step 2: Patient NOT found for phone {clean_phone}")
+        else:
+             logger.error("❌ [Encuesta] Step 2: Chat object has no phone number.")
+            
+    except Exception as e:
+        logger.error(f"⚠️ [Encuesta] Step 2 Error: Could not link patient: {e}")
         paciente = None
 
-    # 3. Define the AI Prompt for Business Intelligence
+    # 3. Define the AI Prompt
+    logger.info("🧠 [Encuesta] Step 3: Generating AI Prompt...")
+    
     prompt = f"""
     You are a Data Analyst for a Dental Clinic. You are analyzing a response from a patient to a satisfaction survey.
 
@@ -45,16 +68,16 @@ def esperando_encuesta(messages, chat: Chat, instance: str):
         "aspectos_positivos": ["list", "of", "things", "liked"],
         "areas_mejora": ["list", "of", "complaints", "or", "improvements"],
         "sugerencias": "Summary of any specific suggestion",
-        "requiere_atencion_humana": boolean, // Set TRUE if user is angry, mentions pain, medical issues, or specifically asks for a call.
-        "response_message": "string" // Generate a polite, empathetic, short response in Spanish based on their sentiment.
+        "requiere_atencion_humana": boolean,
+        "response_message": "string",
         "change_logic" : boolean
     }}
 
     ### Rules for 'response_message':
-    - If POSITIVE: Thank them warmly and say we are happy to serve them.
-    - If NEGATIVE/IMPROVEMENT: Thank them for their honesty, apologize if needed, and say we will take this into account to improve.
+    - If POSITIVE: Thank them warmly.
+    - If NEGATIVE/IMPROVEMENT: Thank them for honesty and apologize if needed.
     - Keep it short and natural (WhatsApp style).
-    - In case the user anwsers something unrelated to the questions, like asking for scheduling an apointment return the change_logic value as true, so the system can answer the user coherently
+    - If the user answers something unrelated (like scheduling an appointment), set "change_logic": true.
 
     ### Input Text (Patient Response):
     "{transcription}"
@@ -62,24 +85,33 @@ def esperando_encuesta(messages, chat: Chat, instance: str):
 
     try:
         # 4. Call LLM
+        logger.info("🚀 [Encuesta] Step 4: Sending request to AI Model...")
         response = client.chat.completions.create(
-            model="deepseek-chat", # or gpt-4o-mini / gpt-3.5-turbo
+            model="deepseek-chat", # or gpt-4o-mini
             messages=[{"role": "user", "content": prompt}],
             max_tokens=350,
             temperature=0.5,
             response_format={"type": "json_object"},
         )
+        logger.info("📥 [Encuesta] Step 5: AI Response received.")
 
-        data = json.loads(response.choices[0].message.content)
+        # 5. Parse JSON
+        raw_content = response.choices[0].message.content
+        logger.debug(f"📜 [Encuesta] Step 6: Raw Content: {raw_content}")
+        
+        data = json.loads(raw_content)
+        logger.info(f"✅ [Encuesta] Step 6: JSON Parsed successfully. Sentiment: {data.get('sentiment')}")
 
+        # 6. Check Logic Change
         if data.get('change_logic', False):
-        # If the user response indicates a change in logic (e.g., wants to schedule an appointment)
+            logger.info("🔀 [Encuesta] Step 7: 'change_logic' is TRUE. Switching to default flow.")
             chat.current_state = "default"
             chat.save()
             return default_chat(messages, chat)
 
-        # 5. Save Data (Making the $73 worth it)
+        # 7. Save Data
         if paciente:
+            logger.info("💾 [Encuesta] Step 8: Saving survey data to DB...")
             EncuestaSatisfaccion.objects.create(
                 paciente=paciente,
                 texto_original=transcription,
@@ -89,22 +121,26 @@ def esperando_encuesta(messages, chat: Chat, instance: str):
                 sugerencias=data.get('sugerencias', ''),
                 requiere_atencion_humana=data.get('requiere_atencion_humana', False)
             )
+            logger.info("✅ [Encuesta] Step 8: Data saved.")
             
-            # OPTIONAL: Send internal alert if 'requiere_atencion_humana' is True
             if data.get('requiere_atencion_humana'):
-                logger.warning(f"URGENT FEEDBACK from {paciente}: {transcription}")
-                # Trigger a Telegram alert to your admin group here if you want
+                logger.warning(f"🚨 [Encuesta] URGENT ATTENTION REQUIRED for Patient {paciente.id}")
+        else:
+            logger.info("ℹ️ [Encuesta] Step 8: Skipping DB save (No Patient linked).")
 
-        # 6. Update State
+        # 8. Update State
+        logger.info("🔄 [Encuesta] Step 9: Resetting chat state to 'default'.")
         chat.current_state = "default"
         chat.save()
 
-        # 7. Return the dynamic response generated by AI
-        return data.get('response_message', "¡Muchas gracias por sus comentarios! Nos ayudan mucho a mejorar.")
+        # 9. Return Response
+        final_message = data.get('response_message', "¡Muchas gracias por sus comentarios!")
+        logger.info(f"📤 [Encuesta] Step 10: Returning response: '{final_message}'")
+        return final_message
 
     except Exception as e:
-        logger.error(f"Error processing survey: {e}")
-        # Fallback in case AI fails
+        logger.error(f"❌ [Encuesta] CRITICAL ERROR during processing: {e}", exc_info=True)
+        # Fallback
         chat.current_state = "default"
         chat.save()
         return "¡Muchas gracias por su respuesta! La hemos registrado correctamente."
