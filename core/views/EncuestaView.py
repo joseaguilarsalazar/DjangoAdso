@@ -14,7 +14,8 @@ class TriggerSurveyBroadcastView(APIView):
     def post(self, request):
         confirm = request.data.get('confirm', False)
         # Capture the specific number for testing (optional)
-        test_number = request.data.get('number', None) 
+        test_number = request.data.get('number', None)
+        year= request.data.get('year', None) 
         
         if not confirm:
             return Response({
