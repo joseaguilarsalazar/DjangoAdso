@@ -40,4 +40,5 @@ urlpatterns = [
     path('ingresos_egresos_histograma/', IngresosEgresosHistogramaApiView.as_view()),
     path('recent-patients/', RecentPatientsCountView.as_view()),
     path('trigger-survey-broadcast/', TriggerSurveyBroadcastView.as_view()),
+    path('encuesta-status/', EncuestaStatusView.as_view()),
 ]

@@ -35,6 +35,7 @@ from .statisticsViews import (
 )
 from .EncuestaView import TriggerSurveyBroadcastView
 from .recent_patients import RecentPatientsCountView
+from encuestaResultAnalyzer import EncuestaStatusView
 
 __all__ = [
     # coreViewsets
@@ -74,6 +75,7 @@ __all__ = [
     "TodayScheduleApi",
     "RecentPatientsCountView",
     "TriggerSurveyBroadcastView",
+    "EncuestaStatusView",
 
     # statisticsViews
     "CitasHistogramaApiView",
