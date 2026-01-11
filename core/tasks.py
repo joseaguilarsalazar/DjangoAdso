@@ -1,13 +1,17 @@
 from celery import shared_task
 from .models import Cita, Clinica
+from chatbot.models import Chat
 from .utils.chatwoot_manager import ChatwootManager
 from .utils.TelegramApiManager import TelegramApiManager
 from datetime import date, timedelta
 from .models import Paciente
 import logging
 import time
-from chatbot.models import Chat, Message
+from chatbot.models import Chat, Message, EncuestaSatisfaccion
 from core.utils.whatsapp_manager import WhatsAppManager
+from chatbot.orchestrator.flows.AI_Client import client
+from chatbot.orchestrator.flows.trascript_history import transcript_history
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -208,3 +212,119 @@ Tu opinión es muy importante para nosotros y nos ayuda a seguir creciendo y bri
 
     logger.info(f"🏁 Finalizado. Enviados: {mensajes_enviados}. Errores: {errores}. Mode: {'TEST' if target_number else 'MASIVO'}")
     return f"Mode: {'TEST' if target_number else 'BROADCAST'} | Enviados: {mensajes_enviados}, Errores: {errores}"
+    
+    
+
+
+@shared_task
+def analyze_survey_responses_task(target_number=None, year=None):
+
+    ENCUESTA_TEXT = """Esperamos que te encuentres muy bien.
+
+        En nuestra clínica valoramos mucho la confianza que nos brindaste este año al cuidar tu salud dental. Por eso, queremos seguir mejorando para ti y para cada uno de nuestros pacientes.
+
+        Si deseas, nos encantaría que nos regales un breve comentario:
+        • ¿Qué fue lo que más valoraste de nuestra atención?
+        • ¿Hay algo que crees que podríamos mejorar?
+        • ¿O alguna sugerencia para nuestro equipo?
+
+        Tu opinión es muy importante para nosotros y nos ayuda a seguir creciendo y brindándote una atención cada vez más cercana y de calidad.
+
+        ¡Muchas gracias por ser parte de nuestra familia dental!"""
+    # 1. Base Query
+    pacientes = Paciente.objects.exclude(telf_pac__isnull=True).exclude(telf_pac__exact='')
+
+    # --- FILTERS ---
+    if target_number:
+        pacientes = pacientes.filter(telf_pac__icontains=target_number)
+        if not pacientes.exists():
+            logger.info(f"🧪 Creando paciente dummy: {target_number}")
+            new_paciente = Paciente.objects.create(telf_pac=target_number, nomb_pac="Test", apel_pac="User", clinica_id=1)
+            pacientes = Paciente.objects.filter(id=new_paciente.id)
+    
+    if year:
+        pacientes = pacientes.filter(cita__fecha__year=year).distinct()
+
+    logger.info(f"🚀 Starting AI Analysis for {pacientes.count()} patients.")
+    processed = 0
+
+    for patient in pacientes:
+        try:
+            # 2. Robust Phone Matching
+            clean_phone = str(patient.telf_pac).strip().replace(' ', '').replace('+', '')
+            # Try exact match first, then contains
+            chat = Chat.objects.filter(number__icontains=clean_phone).first()
+            
+            if not chat:
+                continue
+
+            # 3. Get History
+            # Ensure we get enough context. Adjust limit if necessary.
+            messages = chat.last_messages(limit=15) 
+            
+            # Optimization: If only 1 message (the survey itself) or empty, skip LLM
+            if len(messages) < 2: 
+                continue
+
+            # Assuming transcript_history returns (text, list)
+            transcript_text, _ = transcript_history(messages)
+
+            # 4. Improved Prompt
+            prompt = f"""
+            You are a Data Analyst for a Dental Clinic. Analyze the chat history to find the patient's response to this survey:
+            "{ENCUESTA_TEXT}"
+
+            Chat History:
+            {transcript_text}
+
+            Determine if the patient actually answered the survey or provided relevant feedback.
+            If they only talked about appointments/scheduling/unrelated topics, set "is_relevant": false.
+
+            Return JSON:
+            {{
+                "is_relevant": boolean, 
+                "main_sentiment": "POSITIVE" | "NEUTRAL" | "NEGATIVE",
+                "positive_points": "string summary",
+                "improvement_areas": "string summary",
+                "suggestions": "string summary"
+            }}
+            """
+
+            response = client.chat.completions.create(
+                model="deepseek-chat",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=350,
+                temperature=0.0, # Lower temperature for analytical tasks
+                response_format={"type": "json_object"},
+            )
+
+            # 5. Robust Parsing
+            content = response.choices[0].message.content
+            # Fix common LLM markdown issue
+            if content.startswith("```json"):
+                content = content.replace("```json", "").replace("```", "")
+            
+            data = json.loads(content)
+
+            # 6. Only Save if Relevant
+            if data.get("is_relevant", False):
+                EncuestaSatisfaccion.objects.update_or_create(
+                    paciente=patient,
+                    defaults={
+                        "sentimiento": data.get("main_sentiment", "NEUTRAL"),
+                        "aspectos_positivos": data.get("positive_points", ""),
+                        "areas_mejora": data.get("improvement_areas", ""),
+                        "sugerencias": data.get("suggestions", ""),
+                        "texto_original": transcript_text[-1000:], # Save just the last part to save space
+                    }
+                )
+                processed += 1
+                logger.info(f"✅ Feedback saved for {patient.id}")
+            else:
+                logger.info(f"ℹ️ Irrelevant chat for {patient.id}")
+
+        except Exception as e:
+            logger.error(f"❌ Error analyzing patient {patient.id}: {e}")
+            continue
+
+    return f"Analysis finished. Processed {processed} relevant responses."
