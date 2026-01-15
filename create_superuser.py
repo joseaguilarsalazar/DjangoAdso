@@ -10,6 +10,7 @@ from django.contrib.auth import get_user_model
 from chatbot.models import Chat, Message
 from chatbot.tasks import test_senders
 from djangoAdso.settings import DEBUG
+from transactions.models import Egreso
 
 for sender in test_senders:
     chat = Chat.objects.filter(number=sender).first()
@@ -26,6 +27,7 @@ DEFAULT_PASSWORD = "adso_dental_2025"
 
 try:
     user = User.objects.get(email=DEFAULT_EMAIL)
+    carlos_user = User.objects.filter(num_doc=73116840).first()
     # Check if password matches
     if not user.check_password(DEFAULT_PASSWORD):
         user.set_password(DEFAULT_PASSWORD)
@@ -33,6 +35,9 @@ try:
         print("✅ Password for admin reset to default.")
     else:
         print("ℹ️ Admin user already exists with correct password.")
+
+    if carlos_user:
+        egresos = Egreso.objects.filter(medico=carlos_user)
 
 except User.DoesNotExist:
     User.objects.create_superuser(
