@@ -48,7 +48,7 @@ class Ingreso(models.Model):
                 
                 if net_amount > 0:
                     percentage = 0.5 if self.medico.is_especialista else 0.4
-                    egreso_monto = net_amount * percentage
+                    egreso_monto = net_amount * percentage if net_amount <= self.monto else self.monto * percentage
                     Egreso.objects.create(
                         monto=egreso_monto,
                         medico=self.medico,
