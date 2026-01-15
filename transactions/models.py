@@ -49,7 +49,8 @@ class Ingreso(models.Model):
                         medico=self.medico,
                         tratamientoPaciente=self.tratamientoPaciente,
                         description='pago al medico',
-                        fecha_registro=self.fecha_registro
+                        fecha_registro=self.fecha_registro,
+                        clinica = self.medico.clinica if self.medico and self.medico.clinica else None
                     )
 
     def __str__(self):
