@@ -38,8 +38,13 @@ class Ingreso(models.Model):
                     tratamientoPaciente=self.tratamientoPaciente,
                     medico__isnull=True
                 ).aggregate(models.Sum('monto'))['monto__sum'] or 0.0
+
+                total_trat_ingreso = Ingreso.objects.filter(
+                    tratamientoPaciente=self.tratamientoPaciente
+                ).aggregate(models.Sum('monto'))['monto__sum'] or 0.0
                 
-                net_amount = float(self.monto) - total_lab_egresos
+
+                net_amount = (float(self.monto) + total_trat_ingreso) - total_lab_egresos
                 
                 if net_amount > 0:
                     percentage = 0.5 if self.medico.is_especialista else 0.4
