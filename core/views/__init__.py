@@ -32,6 +32,7 @@ from .todayScheduleApi import TodayScheduleApi
 from .statisticsViews import (
     CitasHistogramaApiView,
     IngresosEgresosHistogramaApiView,
+    TratamientoStatisticsApiView,
 )
 from .EncuestaView import TriggerSurveyBroadcastView
 from .recent_patients import RecentPatientsCountView
@@ -80,4 +81,5 @@ __all__ = [
     # statisticsViews
     "CitasHistogramaApiView",
     "IngresosEgresosHistogramaApiView",
+    "TratamientoStatisticsApiView",
 ]
