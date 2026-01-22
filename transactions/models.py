@@ -16,6 +16,7 @@ class Ingreso(models.Model):
         related_name='ingresos' 
         )
     medico = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False)
+    porcentaje_medico = models.FloatField(null=True, blank=True) #from 0 to 100
 
     METODO_CHOICES = [
         ('Efectivo', 'Efectivo'),
@@ -47,7 +48,7 @@ class Ingreso(models.Model):
                 net_amount = (float(self.monto) + total_trat_ingreso) - total_lab_egresos
                 
                 if net_amount > 0:
-                    percentage = 0.5 if self.medico.is_especialista else 0.4
+                    percentage = self.porcentaje_medico / 100.0 if self.porcentaje_medico else (0.5 if self.medico.is_especialista else 0.4)
                     egreso_monto = net_amount * percentage if net_amount <= self.monto else self.monto * percentage
                     Egreso.objects.create(
                         monto=egreso_monto,
