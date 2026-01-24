@@ -122,3 +122,4 @@ class TratamientoStatisticsApiView(APIView):
             data[tratamiento_name]['total_egresos'] += total_egresos
             data[tratamiento_name]['net_balance'] += net_balance
             data[tratamiento_name]['count'] += 1
+        return Response(data)
