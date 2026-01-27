@@ -89,7 +89,13 @@ def recalculate_finances(tratamiento_id):
 
             if net_profit > 0:
                 # Logic for percentage
-                pct = ingreso.porcentaje_medico if ingreso.porcentaje_medico else Decimal('0.4')
+                if ingreso.porcentaje_medico:
+                    pct = Decimal(str(ingreso.porcentaje_medico))
+                else:
+                    # If medico is specialist 50%, else 40%
+                    pct = Decimal('50') if ingreso.medico.is_especialista else Decimal('40')
+                
+                # Now this division makes sense: 40 / 100 = 0.4
                 amount = net_profit * (pct / 100)
                 
                 if commission_egreso:
