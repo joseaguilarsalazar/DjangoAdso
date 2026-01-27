@@ -65,12 +65,17 @@ def recalculate_finances(tratamiento_id):
         ingresos = Ingreso.objects.filter(tratamientoPaciente=tratamiento).order_by('created_at')
         
         # 3. Get all LAB expenses
-        lab_expenses_total = Egreso.objects.filter(
+        lab_expenses_total_1 = Egreso.objects.filter(
             tratamientoPaciente=tratamiento, 
             tipo='LAB'
         ).aggregate(sum=models.Sum('monto'))['sum'] or Decimal(0)
 
-        remaining_lab_debt = lab_expenses_total
+        lab_expenses_total_2 = Ehreso.objects.filter(
+            tratamientoPaciente=tratamiento,
+            medico__isnull=True
+        ).aggregate(sum=models.Sum('monto'))['sum'] or Decimal(0)
+
+        remaining_lab_debt = lab_expenses_total1 + lab_expenses_total_2
 
         # 4. Replay the history
         for ingreso in ingresos:
