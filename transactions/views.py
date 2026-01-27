@@ -18,6 +18,7 @@ from core.models import Paciente, TratamientoPaciente
 from .filters import EgresoFilter
 from decimal import Decimal 
 from django.db.models import Sum
+import traceback
 
 class IngresoViewSet(viewsets.ModelViewSet):
     queryset = Ingreso.objects.all()
@@ -586,9 +587,16 @@ class CierreDeCajaApiView(APIView):
         except ValueError:
             return Response({'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=400)
         except Exception as e:
-            # Helpful for debugging: print the type of the error
-            print(f"Error: {e}") 
-            return Response({'error': str(e)}, status=500)
+            # This captures the full error stack
+            tb = traceback.format_exc() 
+            print(tb) # Prints to your server console
+            
+            # Returns the error and the location to your frontend/Postman
+            return Response({
+                'error': str(e),
+                'location': traceback.extract_tb(e.__traceback__)[-1].format(),
+                'full_traceback': tb
+            }, status=500)
 class DeudaPacienteApiView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
