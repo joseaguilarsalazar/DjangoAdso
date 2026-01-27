@@ -70,6 +70,7 @@ class Egreso(models.Model):
             return "lab"
         else:
             return "clinica"
+
         
 
 

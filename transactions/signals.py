@@ -58,64 +58,56 @@ def on_egreso_delete(sender, instance, **kwargs):
 
 def recalculate_finances(tratamiento_id):
     with transaction.atomic():
-        # 1. Lock records to prevent race conditions
+        # 1. Lock records
         tratamiento = TratamientoPaciente.objects.select_for_update().get(pk=tratamiento_id)
         
-        # 2. Get all money IN (Ordered by date)
+        # 2. Get all money IN
         ingresos = Ingreso.objects.filter(tratamientoPaciente=tratamiento).order_by('created_at')
         
-        # 3. Get all LAB expenses
-        lab_expenses_total_1 = Egreso.objects.filter(
+        # 3. Get TOTAL Lab Expenses (Fixed Double Counting)
+        # We use Q objects to filter: It is a lab expense if type is LAB *OR* if medico is null
+        lab_expenses_total = Egreso.objects.filter(
+            tratamientoPaciente=tratamiento
+        ).filter(
+            Q(tipo='LAB') | Q(medico__isnull=True)
+        ).aggregate(sum=Sum('monto'))['sum'] or Decimal(0)
+
+        remaining_lab_debt = lab_expenses_total
+
+        # 4. CRITICAL FIX: Wipe existing calculated commissions 
+        # This prevents "Legacy Data" from becoming ghosts that never update.
+        # We only delete type='DOC' associated with this treatment.
+        Egreso.objects.filter(
             tratamientoPaciente=tratamiento, 
-            tipo='LAB'
-        ).aggregate(sum=models.Sum('monto'))['sum'] or Decimal(0)
+            tipo='DOC'
+        ).delete()
 
-        lab_expenses_total_2 = Egreso.objects.filter(
-            tratamientoPaciente=tratamiento,
-            medico__isnull=True
-        ).aggregate(sum=models.Sum('monto'))['sum'] or Decimal(0)
-
-        remaining_lab_debt = lab_expenses_total_1 + lab_expenses_total_2
-
-        # 4. Replay the history
+        # 5. Replay the history
         for ingreso in ingresos:
-            # How much of this income is eaten by lab debt?
+            # Calculate deduction
             deduction = min(ingreso.monto, remaining_lab_debt)
             net_profit = ingreso.monto - deduction
             
-            # Decrease debt for next iteration
             remaining_lab_debt -= deduction
-
-            # Find or Create the commission linked strictly to THIS ingreso
-            commission_egreso = Egreso.objects.filter(
-                source_ingreso=ingreso, 
-                tipo='DOC'
-            ).first()
-
-            if net_profit > 0:
+            
+            # If there is profit, PAY THE DOCTOR
+            if net_profit > 0 and ingreso.medico:
                 # Logic for percentage
                 if ingreso.porcentaje_medico:
                     pct = Decimal(str(ingreso.porcentaje_medico))
                 else:
-                    # If medico is specialist 50%, else 40%
                     pct = Decimal('50') if ingreso.medico.is_especialista else Decimal('40')
                 
-                # Now this division makes sense: 40 / 100 = 0.4
                 amount = net_profit * (pct / 100)
                 
-                if commission_egreso:
-                    commission_egreso.monto = amount
-                    commission_egreso.save()
-                else:
-                    Egreso.objects.create(
-                        tipo='DOC',
-                        source_ingreso=ingreso,
-                        monto=amount,
-                        medico=ingreso.medico,
-                        tratamientoPaciente=tratamiento,
-                        # ... dates etc
-                    )
-            else:
-                # If profit dropped to 0 (due to new lab costs), delete existing commission
-                if commission_egreso:
-                    commission_egreso.delete()
+                # We always CREATE because we wiped the old ones above.
+                # This automatically fixes the 'source_ingreso' linking for the future.
+                Egreso.objects.create(
+                    tipo='DOC',
+                    source_ingreso=ingreso, # Now properly linked
+                    monto=amount,
+                    medico=ingreso.medico,
+                    tratamientoPaciente=tratamiento,
+                    description=f'Pago médico generado por ingreso {ingreso.id}',
+                    fecha_registro=ingreso.fecha_registro
+                )
