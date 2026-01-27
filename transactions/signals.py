@@ -42,7 +42,7 @@ def on_egreso_change(sender, instance, created, **kwargs):
         return
 
     # 2. If it's a Lab expense, the doctor's net might change.
-    if instance.tipo == 'LAB' and instance.tratamientoPaciente:
+    if (instance.tipo == 'LAB' and instance.tratamientoPaciente) or (instance.tratamientoPaciente and instance.medico == None):
         recalculate_finances(instance.tratamientoPaciente.id)
 
 @receiver(post_delete, sender=Egreso)
