@@ -70,7 +70,7 @@ def recalculate_finances(tratamiento_id):
             tipo='LAB'
         ).aggregate(sum=models.Sum('monto'))['sum'] or Decimal(0)
 
-        lab_expenses_total_2 = Ehreso.objects.filter(
+        lab_expenses_total_2 = Egreso.objects.filter(
             tratamientoPaciente=tratamiento,
             medico__isnull=True
         ).aggregate(sum=models.Sum('monto'))['sum'] or Decimal(0)
