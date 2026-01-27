@@ -587,15 +587,14 @@ class CierreDeCajaApiView(APIView):
         except ValueError:
             return Response({'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=400)
         except Exception as e:
-            # This captures the full error stack
-            tb = traceback.format_exc() 
-            print(tb) # Prints to your server console
+            # Get the full error trace as a string
+            full_trace = traceback.format_exc()
             
-            # Returns the error and the location to your frontend/Postman
+            print(full_trace) # Print to console so you can see it in your terminal
+            
             return Response({
-                'error': str(e),
-                'location': traceback.extract_tb(e.__traceback__)[-1].format(),
-                'full_traceback': tb
+                'error_message': str(e),
+                'traceback': full_trace  # This will contain the exact line number
             }, status=500)
 class DeudaPacienteApiView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
