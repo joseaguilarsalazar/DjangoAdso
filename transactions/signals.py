@@ -6,6 +6,7 @@ from decimal import Decimal
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from .models import Ingreso, Egreso
+from django.db.models import Q, Sum
 
 # --- INGRESO TRIGGERS ---
 @receiver(post_save, sender=Ingreso)
