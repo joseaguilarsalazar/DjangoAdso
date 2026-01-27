@@ -29,7 +29,7 @@ class Ingreso(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
 class Egreso(models.Model):
-    monto = models.FloatField()
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
     medico = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     description = models.TextField(max_length=2000, null=True, blank=True)
     tratamientoPaciente = models.ForeignKey(
