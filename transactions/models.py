@@ -1,5 +1,4 @@
 from django.db import models
-from django.db import transaction
 from core.models import (
     TratamientoPaciente, Clinica
 )
