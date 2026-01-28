@@ -5,8 +5,8 @@ from core.models import Cita, Tratamiento, TratamientoPaciente
 from transactions.models import Ingreso, Egreso
 from datetime import datetime, timedelta
 from datetime import date as dt
-from django.db.models import Sum, DateField
-from django.db.models.functions import Coalesce, Cast
+from django.db.models import Sum
+from django.db.models.functions import TruncDate
 
 class CitasHistogramaApiView(APIView):
     permission_classes = [IsAuthenticated]
@@ -69,53 +69,49 @@ class IngresosEgresosHistogramaApiView(APIView):
         else:
             end_date = dt.today()
 
-        # 2. Define the "Effective Date" logic
-        # This tells DB: Use fecha_registro. If NULL, extract the Date from created_at.
-        effective_date_annotation = Coalesce(
-            'fecha_registro', 
-            Cast('created_at', DateField())
-        )
+        # 2. Prepare Filters (EXACTLY matching CierreDeCaja logic)
+        # We filter by created_at__date__range
+        ingreso_filters = {'created_at__date__range': [start_date, end_date]}
+        egreso_filters = {'created_at__date__range': [start_date, end_date]}
 
-        # 3. Base Querysets with Annotation
-        ingresos_qs = Ingreso.objects.annotate(dia=effective_date_annotation)
-        egresos_qs = Egreso.objects.annotate(dia=effective_date_annotation)
-
-        # 4. Filter by Date Range
-        ingresos_qs = ingresos_qs.filter(dia__range=[start_date, end_date])
-        egresos_qs = egresos_qs.filter(dia__range=[start_date, end_date])
-
-        # 5. Optional: Filter by Tratamiento
         if tratamiento_id:
             tratamiento = Tratamiento.objects.filter(id=tratamiento_id).first()
             if tratamiento:
                 tp_ids = TratamientoPaciente.objects.filter(tratamiento=tratamiento).values_list('id', flat=True)
-                ingresos_qs = ingresos_qs.filter(tratamientoPaciente__in=tp_ids)
-                egresos_qs = egresos_qs.filter(tratamientoPaciente__in=tp_ids)
+                ingreso_filters['tratamientoPaciente__in'] = tp_ids
+                egreso_filters['tratamientoPaciente__in'] = tp_ids
 
-        # 6. Aggregate (Group by Day and Sum)
-        # This returns: [{'dia': 2026-01-28, 'total': 3586.00}, ...]
-        ingresos_data = (
-            ingresos_qs.values('dia')
+        # 3. Aggregation
+        # We use TruncDate('created_at') to align perfectly with created_at__date
+        
+        ingresos_by_day = (
+            Ingreso.objects.filter(**ingreso_filters)
+            .annotate(day=TruncDate('created_at'))
+            .values('day')
             .annotate(total=Sum('monto'))
-            .order_by('dia')
+            .order_by('day')
         )
         
-        egresos_data = (
-            egresos_qs.values('dia')
+        egresos_by_day = (
+            Egreso.objects.filter(**egreso_filters)
+            .annotate(day=TruncDate('created_at'))
+            .values('day')
             .annotate(total=Sum('monto'))
-            .order_by('dia')
+            .order_by('day')
         )
 
-        # Convert to dictionaries for fast matching: { date: amount }
-        ing_dict = {item['dia']: item['total'] for item in ingresos_data}
-        egr_dict = {item['dia']: item['total'] for item in egresos_data}
+        # 4. Map to Dictionary for O(1) Lookup
+        ingresos_dict = {item['day']: item['total'] for item in ingresos_by_day}
+        egresos_dict = {item['day']: item['total'] for item in egresos_by_day}
 
-        # 7. Build the final timeline
+        # 5. Build Timeline
         data = []
         current_date = start_date
+        
         while current_date <= end_date:
-            day_ingreso = ing_dict.get(current_date, 0)
-            day_egreso = egr_dict.get(current_date, 0)
+            # Get values or default to 0
+            day_ingreso = ingresos_dict.get(current_date, 0)
+            day_egreso = egresos_dict.get(current_date, 0)
             
             data.append({
                 'date': current_date,
