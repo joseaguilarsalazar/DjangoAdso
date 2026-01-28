@@ -5,6 +5,8 @@ from core.models import Cita, Tratamiento, TratamientoPaciente
 from transactions.models import Ingreso, Egreso
 from datetime import datetime, timedelta
 from datetime import date as dt
+from django.db.models import Sum, DateField
+from django.db.models.functions import Coalesce, Cast
 
 class CitasHistogramaApiView(APIView):
     permission_classes = [IsAuthenticated]
@@ -50,11 +52,13 @@ class CitasHistogramaApiView(APIView):
 
 class IngresosEgresosHistogramaApiView(APIView):
     permission_classes = [IsAuthenticated]
+    
     def get(self, request):
         start_date = request.query_params.get('start_date')
         end_date = request.query_params.get('end_date')
         tratamiento_id = request.query_params.get('tratamiento_id')
-        
+
+        # 1. Parse Dates
         if start_date:
             start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
         else:
@@ -64,43 +68,62 @@ class IngresosEgresosHistogramaApiView(APIView):
             end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
         else:
             end_date = dt.today()
-            
-        dates = []
-        current_date = start_date
-        data = []
 
-        while current_date <= end_date:
-            dates.append(current_date)
-            current_date += timedelta(days=1)
+        # 2. Define the "Effective Date" logic
+        # This tells DB: Use fecha_registro. If NULL, extract the Date from created_at.
+        effective_date_annotation = Coalesce(
+            'fecha_registro', 
+            Cast('created_at', DateField())
+        )
 
-        # Optimization: Fetch all transactions in range
-        # FIX: Changed 'fecha' to 'fecha_registro'
-        all_ingresos = Ingreso.objects.filter(fecha_registro__range=[start_date, end_date])
-        all_egresos = Egreso.objects.filter(fecha_registro__range=[start_date, end_date])
+        # 3. Base Querysets with Annotation
+        ingresos_qs = Ingreso.objects.annotate(dia=effective_date_annotation)
+        egresos_qs = Egreso.objects.annotate(dia=effective_date_annotation)
 
-        # Apply Tratamiento filter if needed
+        # 4. Filter by Date Range
+        ingresos_qs = ingresos_qs.filter(dia__range=[start_date, end_date])
+        egresos_qs = egresos_qs.filter(dia__range=[start_date, end_date])
+
+        # 5. Optional: Filter by Tratamiento
         if tratamiento_id:
             tratamiento = Tratamiento.objects.filter(id=tratamiento_id).first()
             if tratamiento:
                 tp_ids = TratamientoPaciente.objects.filter(tratamiento=tratamiento).values_list('id', flat=True)
-                # Ensure Ingreso has 'tratamientoPaciente' FK as defined in your model
-                all_ingresos = all_ingresos.filter(tratamientoPaciente__in=tp_ids)
-                all_egresos = all_egresos.filter(tratamientoPaciente__in=tp_ids)
+                ingresos_qs = ingresos_qs.filter(tratamientoPaciente__in=tp_ids)
+                egresos_qs = egresos_qs.filter(tratamientoPaciente__in=tp_ids)
 
-        for date_obj in dates:
-            # FIX: Changed 'fecha' to 'fecha_registro'
-            daily_ingresos = [i for i in all_ingresos if i.fecha_registro == date_obj]
-            daily_egresos = [e for e in all_egresos if e.fecha_registro == date_obj]
-            
-            total_ingresos = sum(i.monto for i in daily_ingresos)
-            total_egresos = sum(e.monto for e in daily_egresos)
+        # 6. Aggregate (Group by Day and Sum)
+        # This returns: [{'dia': 2026-01-28, 'total': 3586.00}, ...]
+        ingresos_data = (
+            ingresos_qs.values('dia')
+            .annotate(total=Sum('monto'))
+            .order_by('dia')
+        )
+        
+        egresos_data = (
+            egresos_qs.values('dia')
+            .annotate(total=Sum('monto'))
+            .order_by('dia')
+        )
+
+        # Convert to dictionaries for fast matching: { date: amount }
+        ing_dict = {item['dia']: item['total'] for item in ingresos_data}
+        egr_dict = {item['dia']: item['total'] for item in egresos_data}
+
+        # 7. Build the final timeline
+        data = []
+        current_date = start_date
+        while current_date <= end_date:
+            day_ingreso = ing_dict.get(current_date, 0)
+            day_egreso = egr_dict.get(current_date, 0)
             
             data.append({
-                'date': date_obj, 
-                'ingresos': total_ingresos, 
-                'egresos': total_egresos, 
-                'balance': total_ingresos - total_egresos
+                'date': current_date,
+                'ingresos': day_ingreso,
+                'egresos': day_egreso,
+                'balance': day_ingreso - day_egreso
             })
+            current_date += timedelta(days=1)
 
         return Response(data)
 
