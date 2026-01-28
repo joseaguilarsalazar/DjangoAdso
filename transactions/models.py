@@ -63,13 +63,17 @@ class Egreso(models.Model):
     def __str__(self):
         return f'{self.created_at} : S/{self.monto}'
     
-    def tipoEgreso(self):
+    def save(self, *args, **kwargs):
+        # 1. Custom Logic
         if self.tratamientoPaciente and self.medico:
-            return "odontologo"
-        elif self.tratamientoPaciente:
-            return "lab"
+            self.tipo = 'DOC'
+        elif self.tratamientoPaciente and not self.medico:
+            self.tipo = 'LAB'
         else:
-            return "clinica"
+            self.tipo = 'CLI'
+            
+        # 2. Call the "real" save method safely
+        super().save(*args, **kwargs)
 
         
 
