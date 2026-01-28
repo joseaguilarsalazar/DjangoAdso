@@ -216,7 +216,7 @@ class TratamientoPaciente(models.Model):
     asunto = models.CharField(max_length=200, default='tratamiento')
     observacion = models.TextField(max_length=1000, null=True, blank=True)
 
-    descuento = models.FloatField()
+    descuento = models.FloatField(default=0.0)
     descuento_porcentaje = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -266,6 +266,14 @@ class Cita(models.Model):
 
     def __str__(self):
         return f"Cita {self.paciente.name} {self.paciente.last_name} {self.fecha}"
+
+    def save(self, force_insert = ..., force_update = ..., using = ..., update_fields = ...):
+        if self.tratamiento and self.paciente:
+            new_tratamiento_paciente = TratamientoPaciente.objects.get_or_create(
+                paciente=self.paciente,
+                tratamiento=self.tratamiento,
+            )
+        return super().save(force_insert, force_update, using, update_fields)
     
 
 class Enfermedad(models.Model):

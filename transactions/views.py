@@ -16,6 +16,9 @@ from rest_framework.response import Response
 from datetime import datetime
 from core.models import Paciente, TratamientoPaciente
 from .filters import EgresoFilter
+from decimal import Decimal 
+from django.db.models import Sum
+import traceback
 
 class IngresoViewSet(viewsets.ModelViewSet):
     queryset = Ingreso.objects.all()
@@ -496,24 +499,22 @@ class CierreDeCajaApiView(APIView):
     )
     def get(self, request, *args, **kwargs):
         try:
-            # --- Parse date parameters ---
+            # ... (Date parsing logic remains the same) ...
             date_str = request.query_params.get('date')
             start_date_str = request.query_params.get('start_date')
             end_date_str = request.query_params.get('end_date')
             medico_id = request.query_params.get('medico')
             paciente_id = request.query_params.get('paciente')
-            group_by = request.query_params.get('group_by', 'pacientes') #option pacientes or metodo_pago
+            group_by = request.query_params.get('group_by', 'pacientes')
 
             today = datetime.now().date()
 
             if date_str:
-                # If 'date' provided, use it as both start and end
                 start_date = end_date = datetime.strptime(date_str, "%Y-%m-%d").date()
             elif start_date_str and end_date_str:
                 start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
                 end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
             else:
-                # Default to today
                 start_date = end_date = today
 
             # --- Query ingresos ---
@@ -523,44 +524,49 @@ class CierreDeCajaApiView(APIView):
             if paciente_id:
                 ingresos_qs = ingresos_qs.filter(tratamientoPaciente__paciente_id=paciente_id)
 
-            total_ingresos = sum(ing.monto or 0.0 for ing in ingresos_qs)
+            # FIX 1: Use DB Aggregation (Faster) or explicit Decimal casting
+            # This handles the sum safely in the database and returns a Decimal (or None)
+            total_ingresos = ingresos_qs.aggregate(total=Sum('monto'))['total'] or Decimal(0)
+            
             if group_by == 'pacientes':
                 ingresos_data = [
                     {
                         'id' : i.id,
-                        'paciente': f"{i.tratamientoPaciente.paciente.nomb_pac} {i.tratamientoPaciente.paciente.apel_pac}"
-                        if i.tratamientoPaciente else "Unknown",
+                        'paciente': f"{i.tratamientoPaciente.paciente.nomb_pac} {i.tratamientoPaciente.paciente.apel_pac}" if i.tratamientoPaciente else "Unknown",
                         'monto': i.monto,
                         'medico': str(i.medico) if i.medico else "Unknown",
                         'metodo': i.metodo,
                     }
                     for i in ingresos_qs
                 ]
-            else: #group_by metodo_pago
+            else: 
+                # FIX 2: Explicit Decimal(0) in the fallback if doing python math
                 ingresos_data = [
                     {
                         'metodo': 'efectivo',
-                        'monto': sum(i.monto for i in ingresos_qs if i.metodo == 'efectivo'),
+                        'monto': sum((i.monto or Decimal(0)) for i in ingresos_qs if i.metodo == 'Efectivo'), # Note: check capitalization of 'Efectivo'
                     },
                     {
                         'metodo': 'tarjeta',
-                        'monto': sum(i.monto for i in ingresos_qs if i.metodo == 'tarjeta'),
+                        'monto': sum((i.monto or Decimal(0)) for i in ingresos_qs if i.metodo == 'Tarjeta'),
                     },
                     {
                         'metodo': 'transferencia',
-                        'monto': sum(i.monto for i in ingresos_qs if i.metodo == 'transferencia'),
+                        'monto': sum((i.monto or Decimal(0)) for i in ingresos_qs if i.metodo == 'Transferencia'),
                     }
                 ]
-                 
 
             # --- Query egresos ---
             egresos_qs = Egreso.objects.filter(created_at__date__range=(start_date, end_date))
             if medico_id:
                 egresos_qs = egresos_qs.filter(medico_id=medico_id)
 
-            total_egresos = sum(egr.monto or 0.0 for egr in egresos_qs)
+            # FIX 3: DB Aggregation for Egresos too
+            total_egresos = egresos_qs.aggregate(total=Sum('monto'))['total'] or Decimal(0)
+
             egresos_data = [
                 {
+                    'id' : egr.id,
                     'monto': egr.monto,
                     'medico': str(egr.medico) if egr.medico else "Unknown",
                 }
@@ -568,12 +574,13 @@ class CierreDeCajaApiView(APIView):
             ]
 
             # --- Final response ---
+            # Now both variables are Decimal, so subtraction works
             data = {
                 'ingresos': ingresos_data,
                 'egresos': egresos_data,
                 'total_ingresos': total_ingresos,
                 'total_egresos': total_egresos,
-                'balance': total_ingresos - total_egresos,
+                'balance': total_ingresos - total_egresos, 
             }
 
             return Response(data, status=200)
@@ -581,7 +588,15 @@ class CierreDeCajaApiView(APIView):
         except ValueError:
             return Response({'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=400)
         except Exception as e:
-            return Response({'error': str(e)}, status=500)
+            # Get the full error trace as a string
+            full_trace = traceback.format_exc()
+            
+            print(full_trace) # Print to console so you can see it in your terminal
+            
+            return Response({
+                'error_message': str(e),
+                'traceback': full_trace  # This will contain the exact line number
+            }, status=500)
 class DeudaPacienteApiView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 

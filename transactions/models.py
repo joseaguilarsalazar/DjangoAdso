@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 # Create your models here.
 class Ingreso(models.Model):
-    monto = models.FloatField()
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
     tratamientoPaciente = models.ForeignKey(
         TratamientoPaciente, 
         on_delete=models.SET_NULL, 
@@ -16,6 +16,7 @@ class Ingreso(models.Model):
         related_name='ingresos' 
         )
     medico = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False)
+    porcentaje_medico = models.FloatField(null=True, blank=True) #from 0 to 100
 
     METODO_CHOICES = [
         ('Efectivo', 'Efectivo'),
@@ -26,44 +27,9 @@ class Ingreso(models.Model):
     fecha_registro = models.DateField(null=True, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        # Save the Ingreso first
-        with transaction.atomic():
-            super().save(*args, **kwargs)
-            if is_new and self.tratamientoPaciente:
-                # Calculate net amount after lab expenses for this tratamiento
-                total_lab_egresos = Egreso.objects.filter(
-                    tratamientoPaciente=self.tratamientoPaciente,
-                    medico__isnull=True
-                ).aggregate(models.Sum('monto'))['monto__sum'] or 0.0
-
-                total_trat_ingreso = Ingreso.objects.filter(
-                    tratamientoPaciente=self.tratamientoPaciente
-                ).aggregate(models.Sum('monto'))['monto__sum'] or 0.0
-                
-
-                net_amount = (float(self.monto) + total_trat_ingreso) - total_lab_egresos
-                
-                if net_amount > 0:
-                    percentage = 0.5 if self.medico.is_especialista else 0.4
-                    egreso_monto = net_amount * percentage if net_amount <= self.monto else self.monto * percentage
-                    Egreso.objects.create(
-                        monto=egreso_monto,
-                        medico=self.medico,
-                        tratamientoPaciente=self.tratamientoPaciente,
-                        description='pago al medico',
-                        fecha_registro=self.fecha_registro,
-                        clinica = self.medico.clinica if self.medico and self.medico.clinica else None
-                    )
-
-    def __str__(self):
-        # previously referenced self.paciente which doesn't exist; show tratamientoPaciente instead
-        return f"{self.tratamientoPaciente} : {self.created_at}"
     
 class Egreso(models.Model):
-    monto = models.FloatField()
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
     medico = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     description = models.TextField(max_length=2000, null=True, blank=True)
     tratamientoPaciente = models.ForeignKey(
@@ -75,6 +41,21 @@ class Egreso(models.Model):
 
     clinica = models.ForeignKey(Clinica, on_delete=models.CASCADE, null=True, blank=True)
 
+    TYPE_CHOICES = [
+        ('LAB', 'Laboratorio'),
+        ('DOC', 'Pago Medico'),
+        ('CLI', 'Clinica'),
+    ]
+    tipo = models.CharField(max_length=3, choices=TYPE_CHOICES, default='CLI')
+
+    source_ingreso = models.ForeignKey(
+        Ingreso, 
+        on_delete=models.CASCADE, # If income is deleted, commission is deleted
+        null=True, 
+        blank=True,
+        related_name='generated_egresos'
+    )
+
     fecha_registro = models.DateField(null=True, blank=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -82,76 +63,19 @@ class Egreso(models.Model):
     def __str__(self):
         return f'{self.created_at} : S/{self.monto}'
     
-    def tipoEgreso(self):
-        if self.tratamientoPaciente and self.medico:
-            return "odontologo"
-        elif self.tratamientoPaciente:
-            return "lab"
-        else:
-            return "clinica"
-        
     def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        with transaction.atomic():
-            super().save(*args, **kwargs)
+        # 1. Custom Logic
+        if self.tratamientoPaciente and self.medico:
+            self.tipo = 'DOC'
+        elif self.tratamientoPaciente and not self.medico:
+            self.tipo = 'LAB'
+        else:
+            self.tipo = 'CLI'
             
-            if is_new and self.tipoEgreso() == 'lab' and self.tratamientoPaciente:
-                # Recalculate doctor egresos for this tratamientoPaciente after lab expense
-                # 1. Get all ingresos ordered by creation date (oldest first)
-                ingresos = Ingreso.objects.filter(
-                    tratamientoPaciente=self.tratamientoPaciente
-                ).order_by('created_at')
-                
-                # 2. Calculate total lab egresos (including this new one)
-                total_lab_egresos = Egreso.objects.filter(
-                    tratamientoPaciente=self.tratamientoPaciente,
-                    medico__isnull=True
-                ).aggregate(models.Sum('monto'))['monto__sum'] or 0.0
-                
-                # 3. Consume lab expenses sequentially from ingresos
-                remaining_lab_expense = total_lab_egresos
-                
-                for ingreso in ingresos:
-                    if ingreso.medico:
-                        ingreso_monto = float(ingreso.monto)
-                        
-                        # Calculate net amount after deducting remaining lab expense
-                        if remaining_lab_expense > 0:
-                            # This ingreso must cover (part of) the lab expense first
-                            net_amount = max(0, ingreso_monto - remaining_lab_expense)
-                            remaining_lab_expense = max(0, remaining_lab_expense - ingreso_monto)
-                        else:
-                            # Lab expenses fully covered, full amount goes to doctor calculation
-                            net_amount = ingreso_monto
-                        
-                        # Find existing doctor egreso for this tratamiento and doctor
-                        doctor_egreso = Egreso.objects.filter(
-                            tratamientoPaciente=self.tratamientoPaciente,
-                            medico=ingreso.medico,
-                            description='pago al medico'
-                        ).first()
-                        
-                        if net_amount > 0:
-                            percentage = 0.5 if ingreso.medico.is_especialista else 0.4
-                            new_egreso_monto = net_amount * percentage
-                            
-                            if doctor_egreso:
-                                # Update existing egreso
-                                doctor_egreso.monto = new_egreso_monto
-                                doctor_egreso.save(update_fields=['monto', 'updated_at'])
-                            else:
-                                # Create new egreso if it doesn't exist
-                                Egreso.objects.create(
-                                    monto=new_egreso_monto,
-                                    medico=ingreso.medico,
-                                    tratamientoPaciente=self.tratamientoPaciente,
-                                    description='pago al medico',
-                                    fecha_registro=ingreso.fecha_registro
-                                )
-                        else:
-                            # Net amount is 0 or negative, delete existing egreso if it exists
-                            if doctor_egreso:
-                                doctor_egreso.delete()
+        # 2. Call the "real" save method safely
+        super().save(*args, **kwargs)
+
+        
 
 
 
