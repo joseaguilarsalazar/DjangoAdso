@@ -263,13 +263,13 @@ class Cita(models.Model):
     def __str__(self):
         return f"Cita {self.paciente.name} {self.paciente.last_name} {self.fecha}"
 
-    def save(self, force_insert = ..., force_update = ..., using = ..., update_fields = ...):
+    def save(self, *args, **kwargs):
         if self.tratamiento and self.paciente:
             new_tratamiento_paciente = TratamientoPaciente.objects.get_or_create(
                 paciente=self.paciente,
                 tratamiento=self.tratamiento,
             )
-        return super().save(force_insert, force_update, using, update_fields)
+        return super().save(*args, **kwargs)
     
 
 class Enfermedad(models.Model):
