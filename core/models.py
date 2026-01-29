@@ -261,7 +261,7 @@ class Cita(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Cita {self.paciente.name} {self.paciente.last_name} {self.fecha}"
+        return f"Cita {self.paciente.nomb_pac} {self.paciente.apell_pac} {self.fecha}"
 
     def save(self, *args, **kwargs):
         if self.tratamiento and self.paciente:
