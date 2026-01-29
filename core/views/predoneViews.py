@@ -58,7 +58,7 @@ def buscar_paciente(request):
     paciente_id = request.data.get('paciente')
     try:
         paciente = Paciente.objects.get(id=paciente_id)
-        return Response({'nombres': paciente.name.upper()})
+        return Response({'nombres': paciente.nomb_pac.upper()})
     except Paciente.DoesNotExist:
         return Response({'error': 'Paciente no encontrado'}, status=404)
 
@@ -149,7 +149,7 @@ def cargar_calendario(request):
     citas = Cita.objects.select_related('paciente', 'tratamiento').all()
 
     for cita in citas:
-        paciente = cita.paciente.name.upper()
+        paciente = cita.paciente.nomb_pac.upper()
         tratamiento = cita.tratamiento.tratamiento
         color = '#C92417' if cita.estadoCita == 'Asignado' else '#539B0A'
         eventos.append({
