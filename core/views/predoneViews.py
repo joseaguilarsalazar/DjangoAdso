@@ -58,7 +58,7 @@ def buscar_paciente(request):
     paciente_id = request.data.get('paciente')
     try:
         paciente = Paciente.objects.get(id=paciente_id)
-        return Response({'nombres': paciente.name.upper()})
+        return Response({'nombres': paciente.nomb_pac.upper()})
     except Paciente.DoesNotExist:
         return Response({'error': 'Paciente no encontrado'}, status=404)
 
