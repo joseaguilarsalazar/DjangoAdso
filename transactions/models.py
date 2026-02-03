@@ -15,6 +15,7 @@ class Ingreso(models.Model):
         related_name='ingresos' 
         )
     medico = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=False)
+    clinica = models.ForeignKey(Clinica, on_delete=models.CASCADE, null=True, blank=True)
     porcentaje_medico = models.FloatField(null=True, blank=True) #from 0 to 100
 
     METODO_CHOICES = [

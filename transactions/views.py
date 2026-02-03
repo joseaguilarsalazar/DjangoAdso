@@ -82,6 +82,8 @@ class IngresoViewSet(viewsets.ModelViewSet):
         }
     )
     def create(self, request, *args, **kwargs):
+        user = request.user
+        self.clinica = user.clinica if user.is_authenticated and hasattr(user, 'clinica') else None
         return super().create(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -269,6 +271,8 @@ class EgresoViewSet(viewsets.ModelViewSet):
         }
     )
     def create(self, request, *args, **kwargs):
+        user = request.user
+        self.clinica = user.clinica if user.is_authenticated and hasattr(user, 'clinica') else None
         return super().create(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -614,6 +618,7 @@ class CierreDeCajaApiView(APIView):
                 'error_message': str(e),
                 'traceback': full_trace  # This will contain the exact line number
             }, status=500)
+
 class DeudaPacienteApiView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
