@@ -4,7 +4,7 @@ from django.utils import timezone
 from .models import Cita, Paciente
 from .utils.chatwoot_manager import ChatwootManager
 import logging
-from .tasks import send_cita_reminder
+#from .tasks import send_cita_reminder
 from datetime import datetime, timedelta
 from django.conf import settings
 from .utils.TelegramApiManager import TelegramApiManager
@@ -157,7 +157,7 @@ Doctor: {doctor.name}'''
         remind_at = cita_dt - timedelta(hours=offset)
         eta = remind_at if remind_at > timezone.now() else timezone.now() + timedelta(minutes=1)
         
-        send_cita_reminder.apply_async((instance.id,), eta=eta)
+        #send_cita_reminder.apply_async((instance.id,), eta=eta)
 
 
 @receiver(post_delete, sender=Cita)
