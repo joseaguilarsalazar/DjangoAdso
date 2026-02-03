@@ -1,11 +1,9 @@
 
 from .models import Ingreso, Egreso, TratamientoPaciente
-from django.db import models
 from django.db import transaction
 from decimal import Decimal
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
-from .models import Ingreso, Egreso
 from django.db.models import Q, Sum
 
 # --- INGRESO TRIGGERS ---
@@ -86,9 +84,9 @@ def recalculate_finances(tratamiento_id):
         # LOGIC: If it has a doctor assigned AND it is not a Lab expense, DELETE IT.
         Egreso.objects.filter(
             tratamientoPaciente=tratamiento,
-            medico__isnull=False # It is a payment to a doctor
+            medico__isnull=False
         ).exclude(
-            tipo='LAB' # But do not delete it if it is a Lab expense (just in case)
+            tipo='LAB'
         ).delete()
         # ==============================================================================
 
