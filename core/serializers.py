@@ -1,8 +1,6 @@
 # your_app/serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from rest_framework.response import Response
-from rest_framework.status import HTTP_406_NOT_ACCEPTABLE
 from .models import ( 
     Tratamiento, 
     Especialidad, 
@@ -140,6 +138,10 @@ class CitaSerializer(serializers.ModelSerializer):
                 'email' : instance.medico.email,
             } if instance.medico else None
             representation["consultorio"] = ConsultorioSerializer(instance.consultorio).data if instance.consultorio else None
+            representation["tratamiento"] = {
+                'id' : instance.tratamiento.id,
+                'nombre' : instance.tratamiento.nombre,
+            } if instance.tratamiento else None
 
         return representation
     
