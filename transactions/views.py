@@ -19,6 +19,9 @@ from .filters import EgresoFilter
 from decimal import Decimal 
 from django.db.models import Sum
 import traceback
+from core.models import User
+from django.db.models import Q
+
 
 class IngresoViewSet(viewsets.ModelViewSet):
     queryset = Ingreso.objects.all()
@@ -499,6 +502,7 @@ class CierreDeCajaApiView(APIView):
     )
     def get(self, request, *args, **kwargs):
         try:
+            user : User = self.request.user
             # ... (Date parsing logic remains the same) ...
             date_str = request.query_params.get('date')
             start_date_str = request.query_params.get('start_date')
@@ -508,6 +512,8 @@ class CierreDeCajaApiView(APIView):
             group_by = request.query_params.get('group_by', 'pacientes')
 
             today = datetime.now().date()
+            
+            
 
             if date_str:
                 start_date = end_date = datetime.strptime(date_str, "%Y-%m-%d").date()
@@ -519,6 +525,11 @@ class CierreDeCajaApiView(APIView):
 
             # --- Query ingresos ---
             ingresos_qs = Ingreso.objects.filter(created_at__date__range=(start_date, end_date))
+            if not user.is_superuser:
+                ingresos_qs = ingresos_qs.filter(
+                    Q(medico__clinica=user.clinica) | 
+                    Q(tratamientoPaciente__paciente__clinica=user.clinica)
+                ).distinct()
             if medico_id:
                 ingresos_qs = ingresos_qs.filter(medico_id=medico_id)
             if paciente_id:
@@ -558,6 +569,12 @@ class CierreDeCajaApiView(APIView):
 
             # --- Query egresos ---
             egresos_qs = Egreso.objects.filter(created_at__date__range=(start_date, end_date))
+            if not user.is_superuser:
+                egresos_qs = egresos_qs.filter(
+                    Q(clinica=user.clinica) | 
+                    Q(medico__clinica=user.clinica) | 
+                    Q(tratamientoPaciente__paciente__clinica=user.clinica)
+                ).distinct()
             if medico_id:
                 egresos_qs = egresos_qs.filter(medico_id=medico_id)
 
