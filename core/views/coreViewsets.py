@@ -171,7 +171,7 @@ class PacienteViewSet(viewsets.ModelViewSet):
         queryset = Paciente.objects.all()
 
         # Example: filter by medico assigned to the paciente
-        if user.is_authenticated:
+        if user.is_authenticated and user.is_superuser == False:
             queryset = queryset.filter(clinica=user.clinica)
 
         return queryset

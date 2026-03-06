@@ -81,6 +81,7 @@ class PacienteFilter(django_filters.FilterSet):
     sexo = django_filters.ChoiceFilter(choices=Paciente.Sexo.choices)
     esta_pac = django_filters.ChoiceFilter(choices=Paciente.Estado.choices)
     estudios_pac = django_filters.ChoiceFilter(choices=Paciente.Estudios.choices)
+    convenio_pac = django_filters.ChoiceFilter(choices=Paciente.Convenios.choices)
 
     has_debt = django_filters.BooleanFilter(method='filter_has_debt')
 
@@ -91,7 +92,7 @@ class PacienteFilter(django_filters.FilterSet):
             'informacion_clinica', 'dire_pac', 'telf_pac', 'dni_pac', 'fena_pac',
             'fecha_registro', 'civi_pac', 'afil_pac', 'aler_pac', 'emai_pac',
             'titu_pac', 'pais_id', 'departamento_id', 'provincia_id', 'distrito_id',
-            'observacion', 'estudios_pac', 'detalleodontograma_pac', 'sexo', 'esta_pac'
+            'observacion', 'estudios_pac', 'detalleodontograma_pac', 'sexo', 'esta_pac', 'convenio_pac'
         ]
 
     def filter_has_debt(self, queryset, name, value):

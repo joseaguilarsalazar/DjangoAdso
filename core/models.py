@@ -139,6 +139,12 @@ class Paciente(models.Model):
 
     estudios_pac          = models.CharField("Estudios", max_length=100, choices=Estudios, default=Estudios.SECUNDARIA)
 
+    class Convenios(models.TextChoices):
+        PARTICULAR = 'PARTICULAR', 'Particular'
+        PETROPERU = 'PETROPERU', 'Petroperú'
+        OTRO = 'OTRO', 'Otro'
+
+    convenio_pac            = models.CharField("Convenio", max_length=20, choices=Convenios, default=Convenios.PARTICULAR)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
