@@ -142,9 +142,17 @@ class Paciente(models.Model):
     class Convenios(models.TextChoices):
         PARTICULAR = 'PARTICULAR', 'Particular'
         PETROPERU = 'PETROPERU', 'Petroperú'
+        MAPFRE = 'MAPFRE', 'Mapfre'
+        PROTECTORA = 'PROTECTORA', 'Protectora'
+        COL_ING = 'COLEGIO DE INGENIEROS', 'Colegio de Ingenieros'
+        LOS_ARBOLITOS = 'LOS ARBOLITOS', 'Los Arbolitos'
+        COL_OBS = 'COLEGIO DE OBSTETRAS', 'Colegio de Obstetras'
+        COL_CS = "COLEGIO CERSAR VALLEJO", "Colegio César Vallejo"
+        COL_ABG = "COLEGIO DE ABOGADOS", "Colegio de Abogados"
+        MOTOMAQ = 'MOTOMAQ', 'Motomaq'
         OTRO = 'OTRO', 'Otro'
 
-    convenio_pac            = models.CharField("Convenio", max_length=20, choices=Convenios, default=Convenios.PARTICULAR)
+    convenio_pac            = models.CharField("Convenio", max_length=50, choices=Convenios, default=Convenios.PARTICULAR)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
