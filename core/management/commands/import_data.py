@@ -459,6 +459,7 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f"Columna faltante en tratamientos: {e}"))
 
         try:
+            proclab_count = 0
             # Use BASE_DIR to ensure the path is absolute and reliable
             proclab_path = os.path.join('core', 'management', 'commands', 'proclab.csv')
             
