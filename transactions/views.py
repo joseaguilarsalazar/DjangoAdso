@@ -3,11 +3,12 @@ from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from .models import (
-    Ingreso, Egreso
+    Ingreso, Egreso, ProcLab
 )
 from .serializers import (
     IngresoSerializer,
     EgresoSerializer,
+    ProclabSerializer
 )
 # Add drf_yasg imports for schema docs
 from drf_yasg.utils import swagger_auto_schema
@@ -15,7 +16,7 @@ from drf_yasg import openapi
 from rest_framework.response import Response
 from datetime import datetime
 from core.models import Paciente, TratamientoPaciente
-from .filters import EgresoFilter
+from .filters import EgresoFilter, ProcLabFilter
 from decimal import Decimal 
 from django.db.models import Sum
 import traceback
@@ -733,3 +734,12 @@ class DeudaPacienteApiView(APIView):
             return Response(data, status=200)
         except Exception as e:
             return Response({'error': str(e)}, status=500)
+
+
+
+class ProcLabViewSet(viewsets.ModelViewSet):
+    queryset = ProcLab.objects.all()
+    serializer_class = ProclabSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend, ProcLabFilter]
+    ordering_fields = '__all__'

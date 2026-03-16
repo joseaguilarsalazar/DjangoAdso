@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Ingreso, Egreso
+from .models import Ingreso, Egreso, Proclab
 from core.models import TratamientoPaciente, Paciente # add import
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
@@ -179,3 +179,8 @@ class EgresoSerializer(serializers.ModelSerializer):
     class Meta:
         model= Egreso
         fields='__all__'
+
+class ProclabSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Proclab
+        fields = '__all__'

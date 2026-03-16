@@ -1,7 +1,8 @@
 import django_filters
 from .models import (
     Ingreso,
-    Egreso
+    Egreso,
+    ProcLab
 )
 from django.db.models.functions import TruncDate
 from django.db.models import Q
@@ -101,3 +102,10 @@ class EgresoFilter(django_filters.FilterSet):
         else:
             # If invalid value, return unfiltered queryset
             return queryset
+
+class ProcLabFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(field_name='name', lookup_expr='icontains')
+
+    class Meta:
+        model = ProcLab
+        fields = ['name']
