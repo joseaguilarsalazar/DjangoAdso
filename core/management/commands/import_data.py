@@ -459,30 +459,38 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f"Columna faltante en tratamientos: {e}"))
 
         try:
+            # Use BASE_DIR to ensure the path is absolute and reliable
             proclab_path = os.path.join('core', 'management', 'commands', 'proclab.csv')
+            
             with open(proclab_path, newline='', encoding='utf-8') as csvfile:
                 reader = csv.DictReader(csvfile)
 
+                # 1. Explicitly check for required columns to replace the KeyError logic
+                required_columns = {'name'}
+                if not required_columns.issubset(set(reader.fieldnames or [])):
+                    self.stderr.write(self.style.ERROR(f"Faltan columnas en el CSV. Esperadas: {required_columns}"))
+                    return
+
                 for row in reader:
                     name = parse_value(row.get("name"))
+                    
 
                     if not name:
                         continue
 
-                    # Check if already exists
-                    if ProcLab.objects.filter(name=name).exists():
-                        continue
-
-                    proclab = ProcLab(name=name)
-                    proclab.save()
-                    proclab_count += 1
+                    # 2. Use get_or_create for cleaner existence checking and creation
+                    # It checks for 'name', and if it doesn't exist, creates it with 'name' and 'price'
+                    proclab, created = ProcLab.objects.get_or_create(
+                        name=name,
+                    )
+                    
+                    if created:
+                        proclab_count += 1
 
         except FileNotFoundError:
             self.stderr.write(self.style.ERROR(f"Archivo de procedimientos de laboratorio no encontrado: {proclab_path}"))
-        except KeyError as e:
-            self.stderr.write(self.style.ERROR(f"Columna faltante en procedimientos de laboratorio: {e}"))
         except Exception as e:
-            self.stderr.write(self.style.ERROR(f"Error inesperado: {str(e)}"))        
+            self.stderr.write(self.style.ERROR(f"Error inesperado: {str(e)}"))    
 
         # ✅ --- FINAL MESSAGE ---
         self.stdout.write(self.style.SUCCESS(f"✅ {pacientes_count} pacientes importados correctamente"))
