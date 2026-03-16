@@ -5,12 +5,14 @@ from .views import (
     EgresoViewSet,
     CierreDeCajaApiView,
     DeudaPacienteApiView,
+    ProcLabViewSet,
 )
 
 
 router = DefaultRouter()
 router.register(r'ingresos', IngresoViewSet)
 router.register(r'egresos', EgresoViewSet)
+router.register(r'proclabs', ProcLabViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

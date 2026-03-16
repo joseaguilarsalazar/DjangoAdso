@@ -5,6 +5,7 @@ from django.utils.timezone import make_aware
 from core.models import Paciente, Especialidad, Clinica,  Consultorio, Enfermedad, Cita, CategoriaTratamiento, Tratamiento, Alergia
 import os
 from django.contrib.auth import get_user_model
+from transactions.models import ProcLab
 
 User = get_user_model()
 
@@ -456,9 +457,35 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f"Archivo de tratamientos no encontrado: {tratamientos_file_path}"))
         except KeyError as e:
             self.stderr.write(self.style.ERROR(f"Columna faltante en tratamientos: {e}"))
-        
+
+        try:
+            proclab_path = os.path.join('core', 'management', 'commands', 'proclab.csv')
+            with open(proclab_path, newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+
+                for row in reader:
+                    name = parse_value(row.get("name"))
+
+                    if not name:
+                        continue
+
+                    # Check if already exists
+                    if ProcLab.objects.filter(name=name).exists():
+                        continue
+
+                    proclab = ProcLab(name=name)
+                    proclab.save()
+                    proclab_count += 1
+
+        except FileNotFoundError:
+            self.stderr.write(self.style.ERROR(f"Archivo de procedimientos de laboratorio no encontrado: {proclab_path}"))
+        except KeyError as e:
+            self.stderr.write(self.style.ERROR(f"Columna faltante en procedimientos de laboratorio: {e}"))
+        except Exception as e:
+            self.stderr.write(self.style.ERROR(f"Error inesperado: {str(e)}"))        
 
         # ✅ --- FINAL MESSAGE ---
         self.stdout.write(self.style.SUCCESS(f"✅ {pacientes_count} pacientes importados correctamente"))
         self.stdout.write(self.style.SUCCESS(f"✅ {especialidades_count} especialidades importadas correctamente"))
         self.stdout.write(self.style.SUCCESS(f"✅ {enfermedades_count} enfermedades importadas correctamente"))
+        self.stdout.write(self.style.SUCCESS(f"✅ {proclab_count} procedimientos de laboratorio importados correctamente"))

@@ -28,6 +28,10 @@ class Ingreso(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+class ProcLab(models.Model):
+    name = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 class Egreso(models.Model):
     monto = models.DecimalField(max_digits=10, decimal_places=2)
     medico = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -57,6 +61,10 @@ class Egreso(models.Model):
     )
 
     fecha_registro = models.DateField(null=True, blank=False)
+
+    proclab = models.ForeignKey(ProcLab, on_delete=models.SET_NULL, null=True, blank=True)
+    proclab_quantity = models.PositiveIntegerField(null=True, blank=True, default=1)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -77,8 +85,3 @@ class Egreso(models.Model):
 
         
 
-
-
-# 1000, 200
-# 800 400
-#dfio23uy4r9p8023u45r2l3krfj
