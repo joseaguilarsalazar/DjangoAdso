@@ -3,52 +3,69 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from core.models import Cita, Tratamiento, TratamientoPaciente
 from transactions.models import Ingreso, Egreso
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from datetime import date as dt
 from django.db.models import Sum
-from django.db.models.functions import TruncDate
+from django.db.models.functions import TruncDate, Concat
+from django.db.models import Count, OuterRef, Q, Min, Subquery
+from django.db.models import Value as V
 
 class CitasHistogramaApiView(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        start_date = request.query_params.get('start_date')
-        end_date = request.query_params.get('end_date')
-        unique_patient_filter = request.query_params.get('unique_patient', 'false').lower() == 'true'
+        try:
+            start_date_str = request.query_params.get('start_date')
+            end_date_str = request.query_params.get('end_date')
+            
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else date.today()
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else date.today()
+        except ValueError:
+            return Response({"error": "Invalid date format. Use YYYY-MM-DD"}, status=400)
 
-        if start_date:
-            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
-        else:
-            start_date = dt.today()
+        # 1. Subquery: Find the absolute first appointment date for every patient
+        first_appointments = Cita.objects.filter(
+            paciente_id=OuterRef('paciente_id')
+        ).order_by().values('paciente_id').annotate(
+            first_date=Min('fecha')
+        ).values('first_date')
 
-        if end_date:
-            end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
-        else:
-            end_date = dt.today()
-            
-        dates = []
-        current_date = start_date
-        data = []
-        
-        while current_date <= end_date:
-            dates.append(current_date)
-            current_date += timedelta(days=1)
-            
-        # Optimization: Fetch all citas in range once, then process in memory
-        # CAUTION: Check your Cita model. Is the field 'fecha', 'fecha_cita', or 'fecha_registro'?
-        # I am assuming 'fecha' based on your old code, but if it crashes, check this field name!
-        all_citas = Cita.objects.filter(fecha__range=[start_date, end_date])
-        
-        for date_obj in dates:
-            # Filter the pre-fetched list for the current date
-            day_citas = [c for c in all_citas if c.fecha == date_obj]
-            
-            if unique_patient_filter:
-                unique_patients = {c.paciente.id for c in day_citas}
-                data.append({'date': date_obj, 'count': len(unique_patients)})
-            else:
-                data.append({'date': date_obj, 'count': len(day_citas)})
-                
-        return Response(data)
+        # 2. Base Queryset with 'is_new_patient' logic
+        # We annotate each appointment with whether it matches the patient's first ever date
+        queryset = Cita.objects.filter(fecha__range=[start_date, end_date]).annotate(
+            first_ever_date=Subquery(first_appointments),
+        ).annotate(
+            is_new_patient=Q(fecha=Min('first_ever_date')) # Logical check
+        )
+
+        # 3. Optimized Daily Histogram
+        # Now we count total, unique, and filter for those who are 'new'
+        histogram_data = (
+            queryset
+            .annotate(day=TruncDate('fecha'))
+            .values('day')
+            .annotate(
+                total_appointments=Count('id'),
+                unique_patients=Count('paciente_id', distinct=True),
+                # We only count IDs where the appointment date is the patient's first date
+                new_patients=Count('id', filter=Q(fecha=OuterRef('first_ever_date')), distinct=True)
+            )
+            .order_by('day')
+        )
+
+        # 4. Doctor Aggregation (Same as before)
+        doctor_data = (
+            Cita.objects.filter(fecha__range=[start_date, end_date], medico__isnull=False)
+            .annotate(full_name=Concat('medico__name', V(' '), 'medico__last_name'))
+            .values('full_name')
+            .annotate(count=Count('id'))
+        )
+        doctors_dict = {item['full_name']: item['count'] for item in doctor_data}
+
+        return Response({
+            "cita_count": list(histogram_data),
+            "doctor": doctors_dict,
+        })
 
 class IngresosEgresosHistogramaApiView(APIView):
     permission_classes = [IsAuthenticated]
@@ -103,6 +120,9 @@ class IngresosEgresosHistogramaApiView(APIView):
         # 4. Map to Dictionary for O(1) Lookup
         ingresos_dict = {item['day']: item['total'] for item in ingresos_by_day}
         egresos_dict = {item['day']: item['total'] for item in egresos_by_day}
+        total_ingresos = 0
+        total_egresos = 0
+        total_balance = 0
 
         # 5. Build Timeline
         data = []
@@ -112,6 +132,10 @@ class IngresosEgresosHistogramaApiView(APIView):
             # Get values or default to 0
             day_ingreso = ingresos_dict.get(current_date, 0)
             day_egreso = egresos_dict.get(current_date, 0)
+
+            total_ingresos += day_ingreso
+            total_egresos += day_egreso
+            total_balance += (day_ingreso - day_egreso)
             
             data.append({
                 'date': current_date,
@@ -120,8 +144,15 @@ class IngresosEgresosHistogramaApiView(APIView):
                 'balance': day_ingreso - day_egreso
             })
             current_date += timedelta(days=1)
+        
+        final_data = {
+            'timeline': data,
+            'total_ingresos': total_ingresos,
+            'total_egresos': total_egresos,
+            'total_balance': total_balance
+        }
 
-        return Response(data)
+        return Response(final_data)
 
 class TratamientoStatisticsApiView(APIView):
     permission_classes = [IsAuthenticated]

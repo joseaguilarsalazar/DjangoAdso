@@ -47,12 +47,12 @@ def register_patient(messages, chat: Chat):
 
 
             response = client.chat.completions.create(
-            model="deepseek-chat",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=200,
-            temperature=0.7,
-            response_format={"type": "json_object"},
-        )
+                model="deepseek-chat",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=200,
+                temperature=0.7,
+                response_format={"type": "json_object"},
+            )
 
             data = json.loads(response.choices[0].message.content)
             clinica_id = None
