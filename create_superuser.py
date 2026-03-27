@@ -20,6 +20,11 @@ for sender in test_senders:
         chat.extra_data = {}
         chat.save()
 
+all_chats = Chat.objects.all()
+for chat in all_chats:
+    chat.current_state = 'default'
+    chat.save()
+
 User = get_user_model()
 
 DEFAULT_EMAIL = "admin@gmail.com"
