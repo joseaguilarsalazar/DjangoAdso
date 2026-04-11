@@ -53,6 +53,16 @@ class Command(BaseCommand):
             }
         )
 
+        clinicaMisti, created = Clinica.objects.update_or_create(
+            nomb_clin='Clinica Dental Sede Misti', # The field used to find the match
+            defaults={
+                'direc_clin': 'Calle Misti 700',
+                'telf_clin': 980992776,
+                'email_clin': 'email 3',
+                'telegram_chat_id': '-5055463094', # <--- Replace with your actual Misti Chat ID
+            }
+        )
+
         alergias = [
             "Ninguna",
             "Látex",
