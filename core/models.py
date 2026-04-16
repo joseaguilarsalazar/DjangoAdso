@@ -98,7 +98,7 @@ class Paciente(models.Model):
     informacion_clinica   = models.CharField("Información clínica", max_length=70, blank=True, null=True)
     dire_pac              = models.CharField("Dirección", max_length=100, blank=True, null=True)
     telf_pac              = models.CharField("Teléfono", max_length=20, blank=True, null=True)
-    dni_pac               = models.CharField("DNI", max_length=10, unique=True, blank=True, null=True)
+    dni_pac               = models.CharField("DNI", max_length=10, blank=True, null=True)
     foto_paciente         = models.CharField("Foto (ruta)", max_length=255, blank=True, null=True)
     fena_pac              = models.DateField("Fecha de nacimiento", blank=True, null=True)
     fecha_registro        = models.DateTimeField("Fecha de registro", auto_now_add=True, blank=True, null=True)
@@ -155,6 +155,14 @@ class Paciente(models.Model):
     convenio_pac            = models.CharField("Convenio", max_length=50, choices=Convenios, default=Convenios.PARTICULAR)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['dni_pac', 'clinica'], 
+                name='unique_dni_pac_per_clinica'
+                )
+        ]
     
     def __str__(self):
         return f"{self.nomb_pac} {self.apel_pac}"
