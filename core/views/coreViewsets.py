@@ -193,6 +193,13 @@ class EspecialidadViewSet(viewsets.ModelViewSet):
     ordering_fields = '__all__'
     permission_classes = [IsAuthenticatedOrReadOnly]
 
+import traceback
+from rest_framework.response import Response
+from rest_framework import status, viewsets, filters
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+# Make sure your models and serializers are imported correctly
+
 class CitaViewSet(viewsets.ModelViewSet):
     serializer_class = CitaSerializer
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
@@ -211,6 +218,29 @@ class CitaViewSet(viewsets.ModelViewSet):
             qs = qs.filter(paciente__clinica=user.clinica)
 
         return qs
+
+    def create(self, request, *args, **kwargs):
+        """
+        Overridden to provide maximum debug data on POST / create errors.
+        """
+        try:
+            # Let DRF handle the standard creation, validation, and saving
+            return super().create(request, *args, **kwargs)
+            
+        except Exception as e:
+            # If anything breaks, catch it and extract the exact Python traceback
+            error_details = traceback.format_exc()
+            
+            # Return the exact error, the traceback, and the data that caused it
+            return Response(
+                {
+                    "error_message": str(e),
+                    "error_type": type(e).__name__,
+                    "traceback": error_details,
+                    "received_data": request.data
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class ClinicaViewSet(viewsets.ModelViewSet):
     queryset = Clinica.objects.all()
