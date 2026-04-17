@@ -274,6 +274,8 @@ class Cita(models.Model):
     reprogramado = models.BooleanField(default=False)
     tratamiento = models.ForeignKey(Tratamiento, on_delete=models.SET_NULL, null=True, blank=True)
 
+    anotacion = models.CharField(max_length=200, blank=True, null=True)
+
     fecha = models.DateField()
     hora = models.TimeField()
 
