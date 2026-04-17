@@ -37,6 +37,7 @@ from .statisticsViews import (
 from .EncuestaView import TriggerSurveyBroadcastView
 from .recent_patients import RecentPatientsCountView
 from .encuestaResultAnalyzer import EncuestaStatusView
+from .appointments_by_doctor import AppointmentsByDoctorApiView
 
 __all__ = [
     # coreViewsets
@@ -70,16 +71,17 @@ __all__ = [
     "buscar_paciente",
 
     #other views
-    "EnvioMensajeAPIView",
-    'MedicoListAPIView',
-    "HistorialApiView",
     "TodayScheduleApi",
+    "HistorialApiView",
+    'MedicoListAPIView',
+    "EncuestaStatusView",
+    "EnvioMensajeAPIView",
     "RecentPatientsCountView",
     "TriggerSurveyBroadcastView",
-    "EncuestaStatusView",
-
+    "AppointmentsByDoctorApiView",
+    
     # statisticsViews
     "CitasHistogramaApiView",
-    "IngresosEgresosHistogramaApiView",
     "TratamientoStatisticsApiView",
+    "IngresosEgresosHistogramaApiView",
 ]
