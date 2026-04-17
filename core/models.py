@@ -288,12 +288,21 @@ class Cita(models.Model):
         return f"Cita {self.paciente.nomb_pac} {self.paciente.apel_pac} {self.fecha}"
 
     def save(self, *args, **kwargs):
-        if self.tratamiento and self.paciente:
-            new_tratamiento_paciente = TratamientoPaciente.objects.get_or_create(
+        # 1. Check if this is a brand new appointment before saving
+        # If it has no ID (pk), it means it hasn't been saved to the database yet.
+        is_new_appointment = self.pk is None 
+
+        # 2. Let Django save the Cita normally
+        super().save(*args, **kwargs)
+
+        # 3. ONLY create the TratamientoPaciente if this is a brand new Cita
+        if is_new_appointment and self.tratamiento and self.paciente:
+            # We use .create() because the business logic allows the 
+            # same patient to have the same treatment multiple times on different dates.
+            TratamientoPaciente.objects.create(
                 paciente=self.paciente,
-                tratamiento=self.tratamiento,
+                tratamiento=self.tratamiento
             )
-        return super().save(*args, **kwargs)
     
 
 class Enfermedad(models.Model):
