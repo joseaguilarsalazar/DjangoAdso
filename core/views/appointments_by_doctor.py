@@ -10,15 +10,24 @@ User = get_user_model()
 class AppointmentsByDoctorSerializer(serializers.ModelSerializer):
     paciente = serializers.SerializerMethodField()
     hora = serializers.TimeField()
-    motivo = serializers.CharField(source='anotacion')
-    clinica = serializers.CharField(source='clinica.nombre')
+    
+    # Renamed to 'anotaciones' to match the frontend expectations. 
+    # Ensure 'source' matches your exact model field name (e.g., 'anotacion' or 'anotaciones')
+    anotaciones = serializers.CharField(source='anotacion', read_only=True, default='Sin anotaciones')
+    
+    # Using a method field safely prevents 500 errors if clinica is ever null
+    clinica = serializers.SerializerMethodField()
     
     class Meta:
         model = Cita
-        fields = ['paciente', 'hora', 'motivo', 'clinica']
+        fields = ['paciente', 'hora', 'anotaciones', 'clinica']
     
     def get_paciente(self, obj):
-        return str(obj.paciente)
+        return str(obj.paciente) if obj.paciente else "Paciente no registrado"
+
+    def get_clinica(self, obj):
+        # Safely checks if clinica exists before trying to access .nombre
+        return obj.clinica.nombre if obj.clinica else "Clínica no asignada"
 
 
 class AppointmentsByDoctorApiView(views.APIView):
