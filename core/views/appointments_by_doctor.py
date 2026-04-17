@@ -6,6 +6,8 @@ from rest_framework import views
 from ..models import Cita
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+import traceback
+
 User = get_user_model()
 class AppointmentsByDoctorSerializer(serializers.ModelSerializer):
     paciente = serializers.SerializerMethodField()
@@ -36,8 +38,6 @@ class AppointmentsByDoctorApiView(views.APIView):
     def get(self, request):
         """
         Retrieve appointments for the authenticated doctor on a specific date.
-        Query params:
-            - fecha: ISO format date (YYYY-MM-DD), defaults to today
         """
         doctor_id = request.query_params.get('medico_id')
         if not doctor_id:
@@ -66,11 +66,23 @@ class AppointmentsByDoctorApiView(views.APIView):
         else:
             appointment_date_filter = date.today()
 
-        # Optimize with select_related to avoid N+1 queries
-        appointments = Cita.objects.filter(
-            medico=doctor, 
-            fecha=appointment_date_filter
-        ).select_related('paciente', 'clinica').order_by('hora')
+        # --- DEBUG WRAPPER START ---
+        try:
+            # Optimize with select_related to avoid N+1 queries
+            appointments = Cita.objects.filter(
+                medico=doctor, 
+                fecha=appointment_date_filter
+            ).select_related('paciente', 'clinica').order_by('hora')
 
-        serializer = AppointmentsByDoctorSerializer(appointments, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            serializer = AppointmentsByDoctorSerializer(appointments, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            # If ANYTHING fails above, this will catch it and return the raw error data
+            print("ERROR INTERNO:", str(e)) # This prints to your Django terminal
+            
+            return Response({
+                "error": "Error interno del servidor",
+                "detalles": str(e),
+                "traceback": traceback.format_exc() # This gives you the exact line number of the crash
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
