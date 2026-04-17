@@ -1,3 +1,4 @@
+import traceback
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
@@ -12,7 +13,7 @@ User = get_user_model()
 class AppointmentsByDoctorSerializer(serializers.ModelSerializer):
     paciente = serializers.SerializerMethodField()
     hora = serializers.TimeField()
-    # Keeping the name as 'anotaciones' so it perfectly matches your frontend table
+    # Keeping 'anotaciones' to match your frontend table exactly
     anotaciones = serializers.CharField(source='anotacion', read_only=True, default='Sin anotaciones')
     clinica = serializers.SerializerMethodField()
     
@@ -25,7 +26,7 @@ class AppointmentsByDoctorSerializer(serializers.ModelSerializer):
 
     def get_clinica(self, obj):
         # Safely navigate from Cita -> Paciente -> Clinica
-        if obj.paciente and obj.paciente.clinica:
+        if obj.paciente and hasattr(obj.paciente, 'clinica') and obj.paciente.clinica:
             return obj.paciente.clinica.nombre
         return "Clínica no asignada"
 
@@ -67,11 +68,24 @@ class AppointmentsByDoctorApiView(views.APIView):
         else:
             appointment_date_filter = date.today()
 
-        # Update select_related to traverse the relationship to the clinic
-        appointments = Cita.objects.filter(
-            medico=doctor, 
-            fecha=appointment_date_filter
-        ).select_related('paciente', 'paciente__clinica').order_by('hora')
+        # --- DEBUG WRAPPER START ---
+        try:
+            # Updated select_related to traverse the relationship to the clinic via the patient
+            appointments = Cita.objects.filter(
+                medico=doctor, 
+                fecha=appointment_date_filter
+            ).select_related('paciente', 'paciente__clinica').order_by('hora')
 
-        serializer = AppointmentsByDoctorSerializer(appointments, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            serializer = AppointmentsByDoctorSerializer(appointments, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            # If ANYTHING fails above, this will catch it and return the raw error data
+            print("ERROR INTERNO:", str(e)) 
+            
+            return Response({
+                "error": "Error interno del servidor",
+                "detalles": str(e),
+                "traceback": traceback.format_exc() 
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # --- DEBUG WRAPPER END ---
