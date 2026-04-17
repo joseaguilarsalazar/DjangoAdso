@@ -27,7 +27,7 @@ class AppointmentsByDoctorSerializer(serializers.ModelSerializer):
     def get_clinica(self, obj):
         # Safely navigate from Cita -> Paciente -> Clinica
         if obj.paciente and hasattr(obj.paciente, 'clinica') and obj.paciente.clinica:
-            return obj.paciente.clinica.nombre
+            return obj.paciente.clinica.nomb_clin
         return "Clínica no asignada"
 
 
