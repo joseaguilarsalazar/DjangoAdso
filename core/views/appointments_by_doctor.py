@@ -6,18 +6,14 @@ from rest_framework import views
 from ..models import Cita
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-import traceback
 
 User = get_user_model()
+
 class AppointmentsByDoctorSerializer(serializers.ModelSerializer):
     paciente = serializers.SerializerMethodField()
     hora = serializers.TimeField()
-    
-    # Renamed to 'anotaciones' to match the frontend expectations. 
-    # Ensure 'source' matches your exact model field name (e.g., 'anotacion' or 'anotaciones')
+    # Keeping the name as 'anotaciones' so it perfectly matches your frontend table
     anotaciones = serializers.CharField(source='anotacion', read_only=True, default='Sin anotaciones')
-    
-    # Using a method field safely prevents 500 errors if clinica is ever null
     clinica = serializers.SerializerMethodField()
     
     class Meta:
@@ -28,8 +24,10 @@ class AppointmentsByDoctorSerializer(serializers.ModelSerializer):
         return str(obj.paciente) if obj.paciente else "Paciente no registrado"
 
     def get_clinica(self, obj):
-        # Safely checks if clinica exists before trying to access .nombre
-        return obj.clinica.nombre if obj.clinica else "Clínica no asignada"
+        # Safely navigate from Cita -> Paciente -> Clinica
+        if obj.paciente and obj.paciente.clinica:
+            return obj.paciente.clinica.nombre
+        return "Clínica no asignada"
 
 
 class AppointmentsByDoctorApiView(views.APIView):
@@ -38,6 +36,9 @@ class AppointmentsByDoctorApiView(views.APIView):
     def get(self, request):
         """
         Retrieve appointments for the authenticated doctor on a specific date.
+        Query params:
+            - fecha: ISO format date (YYYY-MM-DD), defaults to today
+            - medico_id: ID of the doctor
         """
         doctor_id = request.query_params.get('medico_id')
         if not doctor_id:
@@ -66,23 +67,11 @@ class AppointmentsByDoctorApiView(views.APIView):
         else:
             appointment_date_filter = date.today()
 
-        # --- DEBUG WRAPPER START ---
-        try:
-            # Optimize with select_related to avoid N+1 queries
-            appointments = Cita.objects.filter(
-                medico=doctor, 
-                fecha=appointment_date_filter
-            ).select_related('paciente', 'clinica').order_by('hora')
+        # Update select_related to traverse the relationship to the clinic
+        appointments = Cita.objects.filter(
+            medico=doctor, 
+            fecha=appointment_date_filter
+        ).select_related('paciente', 'paciente__clinica').order_by('hora')
 
-            serializer = AppointmentsByDoctorSerializer(appointments, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            # If ANYTHING fails above, this will catch it and return the raw error data
-            print("ERROR INTERNO:", str(e)) # This prints to your Django terminal
-            
-            return Response({
-                "error": "Error interno del servidor",
-                "detalles": str(e),
-                "traceback": traceback.format_exc() # This gives you the exact line number of the crash
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        serializer = AppointmentsByDoctorSerializer(appointments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
