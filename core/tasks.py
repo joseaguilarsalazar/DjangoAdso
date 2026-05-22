@@ -9,7 +9,7 @@ import logging
 import time
 #from chatbot.models import Chat, Message, EncuestaSatisfaccion
 from core.utils.whatsapp_manager import WhatsAppManager
-from chatbot.orchestrator.flows.AI_Client import client
+#from chatbot.orchestrator.flows.AI_Client import client
 #from chatbot.orchestrator.flows.trascript_history import transcript_history
 import json
 
