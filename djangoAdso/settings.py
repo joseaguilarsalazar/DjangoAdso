@@ -72,7 +72,7 @@ INSTALLED_APPS = [
     'accounts',
     'odontograma',
     'transactions',
-    'chatbot',
+    #'chatbot',
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
