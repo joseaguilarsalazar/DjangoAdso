@@ -36,7 +36,7 @@ from .statisticsViews import (
 )
 #from .EncuestaView import TriggerSurveyBroadcastView
 from .recent_patients import RecentPatientsCountView
-from .encuestaResultAnalyzer import EncuestaStatusView
+#from .encuestaResultAnalyzer import #EncuestaStatusView
 from .appointments_by_doctor import AppointmentsByDoctorApiView
 
 __all__ = [
