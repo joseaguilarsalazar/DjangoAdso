@@ -1,16 +1,16 @@
 from celery import shared_task
 from .models import Cita, Clinica
-from chatbot.models import Chat
+#from chatbot.models import Chat
 from .utils.chatwoot_manager import ChatwootManager
 from .utils.TelegramApiManager import TelegramApiManager
 from datetime import date, timedelta
 from .models import Paciente
 import logging
 import time
-from chatbot.models import Chat, Message, EncuestaSatisfaccion
+#from chatbot.models import Chat, Message, EncuestaSatisfaccion
 from core.utils.whatsapp_manager import WhatsAppManager
 from chatbot.orchestrator.flows.AI_Client import client
-from chatbot.orchestrator.flows.trascript_history import transcript_history
+#from chatbot.orchestrator.flows.trascript_history import transcript_history
 import json
 
 logger = logging.getLogger(__name__)
