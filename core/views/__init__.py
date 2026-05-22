@@ -77,7 +77,7 @@ __all__ = [
     #"EncuestaStatusView",
     "EnvioMensajeAPIView",
     "RecentPatientsCountView",
-    "TriggerSurveyBroadcastView",
+    #"TriggerSurveyBroadcastView",
     "AppointmentsByDoctorApiView",
     
     # statisticsViews
