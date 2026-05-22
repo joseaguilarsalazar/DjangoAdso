@@ -6,4 +6,4 @@ class CoreConfig(AppConfig):
     name = 'core'
     def ready(self):
         # Import signals to ensure they are registered
-        import core.signals
+        #import core.signals
