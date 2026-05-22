@@ -41,6 +41,6 @@ urlpatterns = [
     path('tratamiento-statistics/', TratamientoStatisticsApiView.as_view()),
     path('recent-patients/', RecentPatientsCountView.as_view()),
     path('trigger-survey-broadcast/', TriggerSurveyBroadcastView.as_view()),
-    path('encuesta-status/', #EncuestaStatusView.as_view()),
+   # path('encuesta-status/', #EncuestaStatusView.as_view()),
     path('appointments_by_doctor/', AppointmentsByDoctorApiView.as_view()),
 ]
