@@ -34,7 +34,7 @@ from .statisticsViews import (
     IngresosEgresosHistogramaApiView,
     TratamientoStatisticsApiView,
 )
-from .EncuestaView import TriggerSurveyBroadcastView
+#from .EncuestaView import TriggerSurveyBroadcastView
 from .recent_patients import RecentPatientsCountView
 from .encuestaResultAnalyzer import EncuestaStatusView
 from .appointments_by_doctor import AppointmentsByDoctorApiView
