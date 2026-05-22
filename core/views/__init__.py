@@ -74,7 +74,7 @@ __all__ = [
     "TodayScheduleApi",
     "HistorialApiView",
     'MedicoListAPIView',
-    "EncuestaStatusView",
+    #"EncuestaStatusView",
     "EnvioMensajeAPIView",
     "RecentPatientsCountView",
     "TriggerSurveyBroadcastView",
