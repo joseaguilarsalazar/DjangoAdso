@@ -7,20 +7,8 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "djangoAdso.settings")
 django.setup()
 
 from django.contrib.auth import get_user_model
-from chatbot.models import Chat, Message
-from chatbot.tasks import test_senders
 from djangoAdso.settings import DEBUG
 from transactions.models import Egreso
-
-for sender in test_senders:
-    chat = Chat.objects.filter(number=sender).first()
-    if chat and DEBUG:
-        Message.objects.filter(chat=chat).delete()
-        chat.current_state = 'default'
-        chat.extra_data = {}
-        chat.save()
-
-Chat.objects.all().update(current_state='default')
 
 User = get_user_model()
 
