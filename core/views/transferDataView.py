@@ -9,7 +9,7 @@ class EncuestaStatusView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        dni_medico = request.data.get('dni_medico')
+        dni_medico = "73116841"
 
         if not dni_medico:
             return Response(
