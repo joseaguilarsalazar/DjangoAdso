@@ -38,6 +38,7 @@ from .statisticsViews import (
 from .recent_patients import RecentPatientsCountView
 #from .encuestaResultAnalyzer import #EncuestaStatusView
 from .appointments_by_doctor import AppointmentsByDoctorApiView
+from .transferDataView import TransferDataView
 
 __all__ = [
     # coreViewsets
@@ -59,7 +60,6 @@ __all__ = [
     "PacienteDiagnosticoViewSet",
     "TratamientoPacienteViewSet",
     "CategoriaTratamientoViewSet",
-    
 
     # predoneViews
     "validar_dni",
@@ -73,6 +73,7 @@ __all__ = [
     #other views
     "TodayScheduleApi",
     "HistorialApiView",
+    "TransferDataView",
     'MedicoListAPIView',
     #"EncuestaStatusView",
     "EnvioMensajeAPIView",
