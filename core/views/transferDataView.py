@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from core.models import Paciente, Clinica  # Adjust import based on your file structure
 
 
-class EncuestaStatusView(APIView):
+class TransferDataView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
