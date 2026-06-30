@@ -156,9 +156,12 @@ class IngresosEgresosHistogramaApiView(APIView):
 
 class TratamientoStatisticsApiView(APIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
         start_date = request.query_params.get('start_date')
         end_date = request.query_params.get('end_date')
+        # Nuevo parámetro para el ordenamiento: 'money' (por defecto) o 'count'
+        order_by = request.query_params.get('order_by', 'money')
 
         if start_date:
             start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
@@ -172,11 +175,11 @@ class TratamientoStatisticsApiView(APIView):
 
         data = {}
         
-        # Ensure TratamientoPaciente has 'created_at' or change to 'fecha_registro'
+        # Optimización con select_related
         tratamientos_paciente = TratamientoPaciente.objects.filter(
             created_at__date__gte=start_date, 
             created_at__date__lte=end_date
-        ).select_related('tratamiento') # Optimization
+        ).select_related('tratamiento')
 
         for tp in tratamientos_paciente:
             t_name = tp.tratamiento.nombre
@@ -189,16 +192,9 @@ class TratamientoStatisticsApiView(APIView):
                     'count': 0
                 }
             
-            # Using the reverse relationship name 'ingresos' from your model definition:
-            # related_name='ingresos'
             ingresos = tp.ingresos.all() 
-            
-            # Assuming Egreso also has a FK to TratamientoPaciente?
-            # If not, this line below will crash. Check your Egreso model.
             egresos = Egreso.objects.filter(tratamientoPaciente=tp) 
 
-            # Calculate sums
-            # Use 'or 0' to handle None if database field allows nulls
             sum_ing = sum(i.monto for i in ingresos) or 0 
             sum_egr = sum(e.monto for e in egresos) or 0
             
@@ -206,5 +202,17 @@ class TratamientoStatisticsApiView(APIView):
             data[t_name]['total_egresos'] += float(sum_egr)
             data[t_name]['net_balance'] += float(sum_ing - sum_egr)
             data[t_name]['count'] += 1
+
+        # --- Lógica de Ordenamiento ---
+        if order_by == 'count':
+            # Ordena de mayor a menor según la cantidad de tratamientos registrados ('count')
+            sorted_data = sorted(data.items(), key=lambda item: item[1]['count'], reverse=True)
+        else:
+            # Ordena de mayor a menor según el balance neto (dinero recaudado)
+            sorted_data = sorted(data.items(), key=lambda item: item[1]['net_balance'], reverse=True)
+
+        # Convertimos la lista de tuplas ordenadas nuevamente en un diccionario estándar
+        # En Python 3.7+, los diccionarios preservan el orden de inserción perfectamente
+        ordered_response = dict(sorted_data)
             
-        return Response(data)
+        return Response(ordered_response)

@@ -61,6 +61,9 @@ class EgresoFilter(django_filters.FilterSet):
     created_date_after = django_filters.DateFilter(method='filter_created_after')
     created_date_before = django_filters.DateFilter(method='filter_created_before')
 
+    repetition_type = django_filters.ChoiceFilter(choices=Egreso.REPETITION_CHOICES, null=True, blank=True)
+    is_repeated = django_filters.BooleanFilter(field_name='is_repeated')
+
     class Meta:
         model = Egreso
         fields = [

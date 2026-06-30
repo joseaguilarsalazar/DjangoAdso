@@ -51,6 +51,15 @@ class Egreso(models.Model):
         ('CLI', 'Clinica'),
     ]
     tipo = models.CharField(max_length=3, choices=TYPE_CHOICES, default='CLI')
+    is_repeated = models.BooleanField(default=False)
+    REPETITION_CHOICES = [
+        ('DAILY', 'Diario'),
+        ('WEEKLY', 'Semanal'),
+        ('MONTHLY', 'Mensual'),
+        ('YEARLY', 'Anual'),
+    ]
+
+    repetition_type = models.CharField(max_length=10, choices=REPETITION_CHOICES, null=True, blank=True, default='MONTHLY')
 
     source_ingreso = models.ForeignKey(
         Ingreso, 

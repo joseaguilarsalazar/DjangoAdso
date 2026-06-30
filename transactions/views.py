@@ -317,8 +317,10 @@ class EgresoViewSet(viewsets.ModelViewSet):
                 medico__isnull=False
             )
             clinica_egresos = queryset.filter(
-                tratamientoPaciente__isnull=True
+                tratamientoPaciente__isnull=True,
+                is_repeated=False
             )
+            repeated_egresos = queryset.filter(is_repeated=True)
 
             lab_serializer = self.get_serializer(lab_egresos, many=True)
             odontologo_serializer = self.get_serializer(odontologo_egresos, many=True)
@@ -328,6 +330,7 @@ class EgresoViewSet(viewsets.ModelViewSet):
                 'lab': lab_serializer.data,
                 'odontologo': odontologo_serializer.data,
                 'clinica': clinica_serializer.data,
+                'repeated': repeated_egresos.values(),
             })
         return super().list(request, *args, **kwargs)
 
