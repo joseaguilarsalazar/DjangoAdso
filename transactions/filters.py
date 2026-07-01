@@ -73,6 +73,8 @@ class EgresoFilter(django_filters.FilterSet):
             'fecha_registro',
             'created_date_after',
             'created_date_before',
+            'repetition_type',
+            'is_repeated',
         ]
 
     def filter_created_after(self, queryset, name, value):

@@ -9,13 +9,6 @@ class TransferDataView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        dni_medico = "73116841"
-
-        if not dni_medico:
-            return Response(
-                {"error": "El parámetro 'dni_medico' es requerido en el cuerpo de la solicitud."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
 
         # 1. Obtener la clínica destino
         target_clinica = Clinica.objects.filter(nomb_clin="Clinica Dental Sede Misti").first()
@@ -38,8 +31,7 @@ class TransferDataView(APIView):
         #    - Su DNI NO figure en la lista de DNIs existentes (¡Aquí ocurre la magia de ignorar!).
         patient_ids = list(
             Paciente.objects.filter(
-                cita__medico__num_doc=dni_medico,
-                cita__medico__rol='medico'
+                cita__clinica_nomb_clin = "Clinica Dental Sede Iquitos"
             ).exclude(
                 clinica=target_clinica
             ).exclude(
