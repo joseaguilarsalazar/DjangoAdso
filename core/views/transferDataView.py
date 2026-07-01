@@ -2,14 +2,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from core.models import Paciente, Clinica  # Adjust import based on your file structure
+from core.models import Paciente, Clinica
 
 
 class TransferDataView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-
         # 1. Obtener la clínica destino
         target_clinica = Clinica.objects.filter(nomb_clin="Clinica Dental Sede Misti").first()
         if not target_clinica:
@@ -19,31 +18,27 @@ class TransferDataView(APIView):
             )
 
         # 2. Obtener la lista de DNIs que YA existen en la clínica de destino
-        # Excluimos valores nulos por si acaso hay registros incompletos
         existing_dnis = Paciente.objects.filter(
             clinica=target_clinica
         ).exclude(
             dni_pac__isnull=True
         ).values_list('dni_pac', flat=True)
 
-        # 3. Buscar los IDs de los pacientes del médico que:
-        #    - NO estén ya en la clínica objetivo.
-        #    - Su DNI NO figure en la lista de DNIs existentes (¡Aquí ocurre la magia de ignorar!).
-        patient_ids = list(
-            Paciente.objects.filter(
-                cita__clinica_nomb_clin = "Clinica Dental Sede Iquitos"
-            ).exclude(
-                clinica=target_clinica
-            ).exclude(
-                dni_pac__in=existing_dnis
-            ).values_list('id', flat=True).distinct()
-        )
+        # 3. Buscar los QuerySet de los pacientes (Corregido el camino del ORM)
+        # Cambiado de list() a un QuerySet directo para optimizar el rendimiento
+        patients_to_update = Paciente.objects.filter(
+            cita__consultorio__clinica__nomb_clin="Clinica Dental Sede Iquitos"
+        ).exclude(
+            clinica=target_clinica
+        ).exclude(
+            dni_pac__in=existing_dnis
+        ).distinct()
 
-        total_updated = len(patient_ids)
+        total_updated = patients_to_update.count()
 
         # 4. Actualizar masivamente en una sola consulta SQL segura
         if total_updated > 0:
-            Paciente.objects.filter(id__in=patient_ids).update(clinica=target_clinica)
+            patients_to_update.update(clinica=target_clinica)
         
         return Response(
             {
