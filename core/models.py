@@ -4,6 +4,7 @@ from django.contrib.auth.base_user import BaseUserManager
 
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
+from datetime import date, timedelta
 
 
 class Especialidad(models.Model):
@@ -113,6 +114,12 @@ class Paciente(models.Model):
     distrito_id           = models.IntegerField("ID distrito", blank=True, null=True)
     observacion           = models.CharField("Observaciones", max_length=100, blank=True, null=True)
     clinica = models.ForeignKey(Clinica, on_delete=models.CASCADE)
+
+    profilaxis_scheduled = models.BooleanField("Profilaxis Programada", default=False)
+    profilaxis_limit_date = models.DateField(null=True, blank=True)
+
+    monthly_control_scheduled = models.BooleanField(default=False)
+    control_limit_date = models.DateField(null=True, blank=True)
     
     registro_pac          = models.DateTimeField("Registro paciente", auto_now_add=True, blank=True, null=True)
     
@@ -275,12 +282,10 @@ class Cita(models.Model):
     tratamiento = models.ForeignKey(Tratamiento, on_delete=models.SET_NULL, null=True, blank=True)
 
     anotacion = models.CharField(max_length=200, blank=True, null=True)
-
     fecha = models.DateField()
     hora = models.TimeField()
 
     reminder_sent = models.BooleanField(default=False, blank=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -288,22 +293,92 @@ class Cita(models.Model):
         return f"Cita {self.paciente.nomb_pac} {self.paciente.apel_pac} {self.fecha}"
 
     def save(self, *args, **kwargs):
-        # 1. Check if this is a brand new appointment before saving
-        # If it has no ID (pk), it means it hasn't been saved to the database yet.
+        # 1. Detectar si es una cita completamente nueva antes de guardar
         is_new_appointment = self.pk is None 
 
-        # 2. Let Django save the Cita normally
+        # 2. Guardar la cita de forma regular en la Base de Datos
         super().save(*args, **kwargs)
 
-        # 3. ONLY create the TratamientoPaciente if this is a brand new Cita
+        # 3. Ejecutar automatizaciones solo si la cita es nueva y tiene la información requerida
         if is_new_appointment and self.tratamiento and self.paciente:
-            # We use .create() because the business logic allows the 
-            # same patient to have the same treatment multiple times on different dates.
+            
+            # A. Crear registro en TratamientoPaciente de la cita base
             TratamientoPaciente.objects.create(
                 paciente=self.paciente,
                 tratamiento=self.tratamiento
             )
-    
+
+            paciente = self.paciente
+
+            # Función helper interna para sumar meses de manera exacta sin romper años bisiestos
+            def add_months(source_date, months):
+                month = source_date.month - 1 + months
+                year = source_date.year + month // 12
+                month = month % 12 + 1
+                day = min(source_date.day, [31,
+                    29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28,
+                    31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month-1])
+                return date(year, month, day)
+
+            # ==========================================
+            # LÓGICA 1: PROFILAXIS + FLUOR (Cada 3 meses)
+            # ==========================================
+            # Verifica si no está programada o si el periodo anterior ya caducó
+            should_schedule_profilaxis = (
+                not paciente.profilaxis_scheduled or 
+                (paciente.profilaxis_limit_date and self.fecha > paciente.profilaxis_limit_date)
+            )
+
+            if should_schedule_profilaxis:
+                # 🛑 CRÍTICO: Marcamos el estado en el paciente ANTES de crear las citas hijas para romper la recursión
+                paciente.profilaxis_scheduled = True
+                paciente.profilaxis_limit_date = add_months(self.fecha, 12)
+                paciente.save(update_fields=['profilaxis_scheduled', 'profilaxis_limit_date'])
+
+                # Obtenemos o registramos el tratamiento institucional de profilaxis
+                tratamiento_prof, _ = Tratamiento.objects.get_or_create(
+                    nombre="PROFILAXIS + FLUOR",
+                    defaults={'precioBase': 0.0}  # Define un valor base por defecto si no existe
+                )
+
+                # Generar citas futuras a los 3, 6, 9 y 12 meses
+                for m in [3, 6, 9, 12]:
+                    Cita.objects.create(
+                        medico=self.medico,
+                        paciente=paciente,
+                        consultorio=self.consultorio,
+                        tratamiento=tratamiento_prof,
+                        fecha=add_months(self.fecha, m),
+                        hora=self.hora,
+                        anotacion="Profilaxis programada automáticamente (Control Anual)"
+                    )
+
+            # ==========================================
+            # LÓGICA 2: CONTROL MENSUAL (Cada mes)
+            # ==========================================
+            is_control_mensual = self.tratamiento.nombre.strip().upper() == "CONTROL MENSUAL"
+            should_schedule_control = is_control_mensual and (
+                not paciente.monthly_control_scheduled or 
+                (paciente.control_limit_date and self.fecha > paciente.control_limit_date)
+            )
+
+            if should_schedule_control:
+                # 🛑 CRÍTICO: Marcamos el estado en el paciente ANTES de crear las citas hijas
+                paciente.monthly_control_scheduled = True
+                paciente.control_limit_date = add_months(self.fecha, 12)
+                paciente.save(update_fields=['monthly_control_scheduled', 'control_limit_date'])
+
+                # Generar 12 citas consecutivas (una cada mes por 1 año)
+                for m in range(1, 13):
+                    Cita.objects.create(
+                        medico=self.medico,
+                        paciente=paciente,
+                        consultorio=self.consultorio,
+                        tratamiento=self.tratamiento,  # Reutiliza el mismo tratamiento (CONTROL MENSUAL)
+                        fecha=add_months(self.fecha, m),
+                        hora=self.hora,
+                        anotacion="Control mensual programado automáticamente"
+                    )
 
 class Enfermedad(models.Model):
     codigo = models.CharField(max_length=20, null=True, blank=True)

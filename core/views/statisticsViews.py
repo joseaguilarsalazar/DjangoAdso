@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from core.models import Cita, Tratamiento, TratamientoPaciente
+from core.models import Cita, Tratamiento, TratamientoPaciente, Paciente
 from transactions.models import Ingreso, Egreso
 from datetime import datetime, timedelta, date
 from datetime import date as dt
@@ -23,6 +23,12 @@ class CitasHistogramaApiView(APIView):
         except ValueError:
             return Response({"error": "Invalid date format. Use YYYY-MM-DD"}, status=400)
 
+        # 🛠️ NUEVA LÓGICA: Obtener el total de pacientes registrados en la clínica del usuario
+        user = request.user
+        total_pacientes_clinica = 0
+        if hasattr(user, 'clinica') and user.clinica:
+            total_pacientes_clinica = Paciente.objects.filter(clinica=user.clinica).count()
+
         # 1. Subquery: Find the absolute first appointment date for every patient
         first_appointments = Cita.objects.filter(
             paciente_id=OuterRef('paciente_id')
@@ -31,15 +37,13 @@ class CitasHistogramaApiView(APIView):
         ).values('first_date')
 
         # 2. Base Queryset with 'is_new_patient' logic
-        # We annotate each appointment with whether it matches the patient's first ever date
         queryset = Cita.objects.filter(fecha__range=[start_date, end_date]).annotate(
             first_ever_date=Subquery(first_appointments),
         ).annotate(
-            is_new_patient=Q(fecha=Min('first_ever_date')) # Logical check
+            is_new_patient=Q(fecha=Min('first_ever_date')) 
         )
 
         # 3. Optimized Daily Histogram
-        # Now we count total, unique, and filter for those who are 'new'
         histogram_data = (
             queryset
             .annotate(day=TruncDate('fecha'))
@@ -47,13 +51,12 @@ class CitasHistogramaApiView(APIView):
             .annotate(
                 total_appointments=Count('id'),
                 unique_patients=Count('paciente_id', distinct=True),
-                # We only count IDs where the appointment date is the patient's first date
                 new_patients=Count('id', filter=Q(fecha=OuterRef('first_ever_date')), distinct=True)
             )
             .order_by('day')
         )
 
-        # 4. Doctor Aggregation (Same as before)
+        # 4. Doctor Aggregation
         doctor_data = (
             Cita.objects.filter(fecha__range=[start_date, end_date], medico__isnull=False)
             .annotate(full_name=Concat('medico__name', V(' '), 'medico__last_name'))
@@ -62,9 +65,11 @@ class CitasHistogramaApiView(APIView):
         )
         doctors_dict = {item['full_name']: item['count'] for item in doctor_data}
 
+        # 🚀 Respuesta con la nueva propiedad incluida
         return Response({
             "cita_count": list(histogram_data),
             "doctor": doctors_dict,
+            "total_pacientes_clinica": total_pacientes_clinica,
         })
 
 class IngresosEgresosHistogramaApiView(APIView):
