@@ -12,7 +12,7 @@ class PatientsByDoctorListView(APIView):
         try:
             # 1. Subquery para obtener el ID del primer médico histórico de cada paciente
             first_appointment = Cita.objects.filter(
-                paciente_id=OuterRef('paciente_id'),
+                paciente_id=OuterRef('id'),
                 medico__isnull=False
             ).order_by('fecha', 'hora').values('medico_id')[:1]
 
