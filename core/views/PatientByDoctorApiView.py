@@ -20,7 +20,7 @@ class PatientsByDoctorListView(APIView):
             # Esto nos dará una fila por cada combinación de Paciente-Médico con su conteo
             appointments_summary = (
                 Cita.objects.filter(medico__isnull=False, paciente__isnull=False)
-                .values('paciente_id', 'medico_id', 'medico__name', 'medico__last_name')
+                .values('paciente_id', 'medico_id', 'medico__name')
                 .annotate(citas_con_medico=Count('id'))
                 .order_by('paciente_id', '-citas_con_medico')
             )
