@@ -45,4 +45,5 @@ urlpatterns = [
     path('appointments_by_doctor/', AppointmentsByDoctorApiView.as_view()),
     path('transfer-data/', TransferDataView.as_view()),
     path('revertir-pacientes-clinica-dos/', RevertirPacientesClinicaDosView.as_view()),
+    path("patient-by-doctor/", PatientsByDoctorListView.as_view()),
 ]

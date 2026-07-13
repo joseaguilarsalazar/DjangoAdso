@@ -40,6 +40,7 @@ from .recent_patients import RecentPatientsCountView
 from .appointments_by_doctor import AppointmentsByDoctorApiView
 from .transferDataView import TransferDataView
 from .errorFix import RevertirPacientesClinicaDosView
+from .PatientByDoctorApiView import PatientsByDoctorListView
 
 __all__ = [
     # coreViewsets
@@ -82,6 +83,7 @@ __all__ = [
     #"TriggerSurveyBroadcastView",
     "AppointmentsByDoctorApiView",
     "RevertirPacientesClinicaDosView",
+    "PatientsByDoctorListView",
     
     # statisticsViews
     "CitasHistogramaApiView",
