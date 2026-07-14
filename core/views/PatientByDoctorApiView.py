@@ -10,6 +10,9 @@ class PatientsByDoctorListView(APIView):
 
     def get(self, request):
         try:
+            # CLINICA FILTRADA (Hardcoded)
+            CLINIC_NAME = "Clinica Dental Sede Misti"  # <--- Cambia esto por el nombre real de la clínica
+
             # 1. Subquery para obtener el ID del primer médico histórico de cada paciente
             first_appointment = Cita.objects.filter(
                 paciente_id=OuterRef('id'),
@@ -17,16 +20,20 @@ class PatientsByDoctorListView(APIView):
             ).order_by('fecha', 'hora').values('medico_id')[:1]
 
             # 2. Obtener un resumen de citas por paciente y médico
-            # Esto nos dará una fila por cada combinación de Paciente-Médico con su conteo
+            # También filtramos las citas para que pertenezcan únicamente a pacientes de esa clínica
             appointments_summary = (
-                Cita.objects.filter(medico__isnull=False, paciente__isnull=False)
+                Cita.objects.filter(
+                    medico__isnull=False, 
+                    paciente__isnull=False,
+                    paciente__clinica__nomb_clin=CLINIC_NAME  # <--- Filtro de clínica en las citas (cambiar 'clinica__nombre' según tu modelo)
+                )
                 .values('paciente_id', 'medico_id', 'medico__name')
                 .annotate(citas_con_medico=Count('id'))
                 .order_by('paciente_id', '-citas_con_medico')
             )
 
             # 3. Mapear todos los pacientes a sus datos básicos y su primer médico
-            # Traemos solo los campos necesarios para optimizar la memoria
+            # FILTRADO por el nombre de la clínica hardcodeado
             patients_base = {
                 p['id']: {
                     'full_name': f"{p['nomb_pac']} {p['apel_pac']}".strip(),
@@ -35,13 +42,14 @@ class PatientsByDoctorListView(APIView):
                     'total_citas': 0,
                     'medicos_conteo': {} # {medico_id: {count, name}}
                 }
-                for p in Paciente.objects.annotate(
+                for p in Paciente.objects.filter(
+                    clinica__nombre=CLINIC_NAME  # <--- Filtro de clínica en Paciente (cambiar 'clinica__nombre' si tu relación/campo se llama diferente)
+                ).annotate(
                     first_doc=Subquery(first_appointment)
                 ).values('id', 'nomb_pac', 'apel_pac', 'telf_pac', 'first_doc')
             }
 
             # 4. Consolidar los conteos de citas en nuestro diccionario de pacientes
-            # Determinamos cuántas citas tiene el paciente con cada médico y su total general
             for entry in appointments_summary:
                 p_id = entry['paciente_id']
                 m_id = entry['medico_id']
@@ -56,12 +64,11 @@ class PatientsByDoctorListView(APIView):
                     }
 
             # Estructura final de respuesta por doctor
-            # Usamos "Sin Asignar" para los pacientes que no registran citas con médicos válidos
             doctors_group = {
                 "Sin Asignar": []
             }
 
-            # Helper para registrar pacientes dentro del grupo de un doctor en el diccionario
+            # Helper para registrar pacientes
             def add_to_doctor(doc_name, patient_info):
                 if doc_name not in doctors_group:
                     doctors_group[doc_name] = []
@@ -95,7 +102,6 @@ class PatientsByDoctorListView(APIView):
                     if first_doc_id in medicos:
                         add_to_doctor(medicos[first_doc_id]['name'], p_info)
                     else:
-                        # Fallback seguro al de mayor cantidad si el primero por alguna razón es nulo
                         add_to_doctor(top_doctor_name, p_info)
                     continue
 
