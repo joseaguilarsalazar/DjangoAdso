@@ -43,7 +43,7 @@ class PatientsByDoctorListView(APIView):
                     'medicos_conteo': {} # {medico_id: {count, name}}
                 }
                 for p in Paciente.objects.filter(
-                    clinica__nombre=CLINIC_NAME  # <--- Filtro de clínica en Paciente (cambiar 'clinica__nombre' si tu relación/campo se llama diferente)
+                    clinica__nomb_clin=CLINIC_NAME  # <--- Filtro de clínica en Paciente (cambiar 'clinica__nombre' si tu relación/campo se llama diferente)
                 ).annotate(
                     first_doc=Subquery(first_appointment)
                 ).values('id', 'nomb_pac', 'apel_pac', 'telf_pac', 'first_doc')
